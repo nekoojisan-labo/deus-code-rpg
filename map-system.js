@@ -8,7 +8,7 @@ class MapSystem {
         this.maps = {};
         this.mapImages = {};
         this.spriteImages = {};
-        this.assetVersion = '28';
+        this.assetVersion = '34';
         this.baseWidth = 800;
         this.baseHeight = 450;
         this.camera = { x: 0, y: 0 };
@@ -61,6 +61,7 @@ class MapSystem {
         this.removeLegacyMapDuplicates();
         this.preloadMapImages();
         this.preloadSpriteImages();
+        setTimeout(() => this.preloadAdjacentMapImages(this.currentMap), 250);
         
         // デバッグ: 利用可能なマップをログ出力
         console.log('Available maps:', Object.keys(this.maps));
@@ -1903,16 +1904,17 @@ class MapSystem {
     }
 
     applyWalkabilityOverrides() {
-        const previewEnabled = (() => {
+        const overridesDisabled = (() => {
             try {
                 const params = new URLSearchParams(window.location.search || '');
-                return params.get('walkabilityPreview') === '1';
+                const value = params.get('walkabilityPreview');
+                return value === '0' || value === 'false' || value === 'off';
             } catch {
                 return false;
             }
         })();
 
-        if (!previewEnabled) return;
+        if (overridesDisabled || typeof localStorage === 'undefined') return;
 
         const storageKeys = [
             'rpg-map-editor-v1',
@@ -1935,7 +1937,8 @@ class MapSystem {
         });
 
         Object.entries(overrides).forEach(([mapId, data]) => {
-            const map = this.maps[mapId];
+            const targetMapId = this.normalizeMapId(mapId);
+            const map = this.maps[targetMapId] || this.maps[mapId];
             if (!map || !data) return;
 
             const scale = map.worldScale || 1;
@@ -1961,6 +1964,7 @@ class MapSystem {
                 const spawnX = Number(exit.spawnX);
                 const spawnY = Number(exit.spawnY);
                 return {
+                    ...exit,
                     ...rect,
                     to: exit.to || '',
                     direction: exit.direction || '',
@@ -1991,6 +1995,7 @@ class MapSystem {
             }
 
             this.constrainMapNPCsToWalkable(map);
+            console.log(`[Map] Applied walkability override: ${mapId} -> ${targetMapId}`);
         });
     }
 
@@ -2459,40 +2464,87 @@ class MapSystem {
         return this.findSafeSpawnPoint(map, spawn.x, spawn.y, 24);
     }
 
-    preloadMapImages() {
-        Object.values(this.maps).forEach(map => {
-            if (!map.image || this.mapImages[map.image]) return;
-
-            const image = new Image();
-            image.src = `${map.image}?v=${this.assetVersion}`;
-            image.onload = () => {
-                console.log(`[Map] Loaded image: ${map.image}`);
-            };
-            image.onerror = () => {
-                console.warn(`[Map] Failed to load image: ${map.image}`);
-            };
-            this.mapImages[map.image] = image;
-        });
+    getOptimizedImagePath(path) {
+        if (typeof path !== 'string') return path;
+        const webpEligible = (
+            path.startsWith('assets/maps/') ||
+            path.startsWith('assets/characters/') ||
+            path.startsWith('assets/enemies/')
+        );
+        if (webpEligible && path.endsWith('.png')) {
+            return path.replace(/\.png$/, '.webp');
+        }
+        return path;
     }
 
-    preloadSpriteImages() {
-        const paths = new Set(Object.values(this.npcSpriteMap));
-        Object.values(this.maps).forEach(map => {
-            (map.npcs || []).forEach(npc => {
-                const path = npc.image || this.npcSpriteMap[npc.name];
-                if (path) paths.add(path);
-            });
+    getOptimizedMapImagePath(path) {
+        return this.getOptimizedImagePath(path);
+    }
+
+    loadImageWithFallback(cache, cacheKey, originalPath, label = 'Image') {
+        if (!originalPath) return null;
+        if (cache[cacheKey]) return cache[cacheKey];
+
+        const image = new Image();
+        const optimizedPath = this.getOptimizedImagePath(originalPath);
+        let usingFallback = optimizedPath === originalPath;
+
+        image.decoding = 'async';
+        image.onload = () => {
+            console.log(`[${label}] Loaded image: ${usingFallback ? originalPath : optimizedPath}`);
+        };
+        image.onerror = () => {
+            if (!usingFallback) {
+                console.warn(`[${label}] Failed to load optimized image: ${optimizedPath}. Falling back to ${originalPath}`);
+                usingFallback = true;
+                image.src = `${originalPath}?v=${this.assetVersion}`;
+                return;
+            }
+            console.warn(`[${label}] Failed to load image: ${originalPath}`);
+        };
+
+        cache[cacheKey] = image;
+        image.src = `${optimizedPath}?v=${this.assetVersion}`;
+        return image;
+    }
+
+    loadMapImage(mapOrId) {
+        const map = typeof mapOrId === 'string'
+            ? this.maps[this.normalizeMapId(mapOrId)]
+            : mapOrId;
+        if (!map || !map.image) return null;
+        return this.loadImageWithFallback(this.mapImages, map.image, map.image, 'Map');
+    }
+
+    loadSpriteImage(path) {
+        if (!path) return null;
+        return this.loadImageWithFallback(this.spriteImages, path, path, 'Sprite');
+    }
+
+    preloadMapImages(mapId = this.currentMap) {
+        this.loadMapImage(mapId);
+    }
+
+    preloadAdjacentMapImages(mapId = this.currentMap) {
+        const map = this.maps[this.normalizeMapId(mapId)];
+        if (!map || !Array.isArray(map.exits)) return;
+
+        const adjacentMapIds = new Set();
+        map.exits.forEach(exit => {
+            const targetMapId = exit && exit.to ? this.normalizeMapId(exit.to) : null;
+            if (targetMapId && this.maps[targetMapId]) adjacentMapIds.add(targetMapId);
         });
 
-        paths.forEach(path => {
-            if (this.spriteImages[path]) return;
+        adjacentMapIds.forEach(targetMapId => this.loadMapImage(targetMapId));
+    }
 
-            const image = new Image();
-            image.src = path;
-            image.onerror = () => {
-                console.warn(`[Sprite] Failed to load image: ${path}`);
-            };
-            this.spriteImages[path] = image;
+    preloadSpriteImages(mapId = this.currentMap) {
+        const map = this.maps[this.normalizeMapId(mapId)];
+        if (!map || !Array.isArray(map.npcs)) return;
+
+        map.npcs.forEach(npc => {
+            const path = this.getNPCSpritePath(npc);
+            this.loadSpriteImage(path);
         });
     }
 
@@ -2582,9 +2634,10 @@ class MapSystem {
         ctx.fillStyle = map.bgColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        if (map.image && this.mapImages[map.image] && this.mapImages[map.image].complete) {
+        const mapImage = map.image ? this.loadMapImage(map) : null;
+        if (mapImage && mapImage.complete && mapImage.naturalWidth > 0) {
             const bounds = this.getMapBounds();
-            ctx.drawImage(this.mapImages[map.image], -this.camera.x, -this.camera.y, bounds.width, bounds.height);
+            ctx.drawImage(mapImage, -this.camera.x, -this.camera.y, bounds.width, bounds.height);
         }
         
         // グリッド
@@ -2815,7 +2868,7 @@ class MapSystem {
 
         map.npcs.forEach(npc => {
             const spritePath = this.getNPCSpritePath(npc);
-            const sprite = spritePath ? this.spriteImages[spritePath] : null;
+            const sprite = spritePath ? this.loadSpriteImage(spritePath) : null;
             const position = this.worldToScreenPoint(npc.x, npc.y);
 
             // 影（NPCも濃く・大きく）
@@ -2833,8 +2886,10 @@ class MapSystem {
                     const frame = npc.isMoving
                         ? Math.floor(performance.now() / 130 + phaseOffset) % this.walkSprite.frames
                         : Math.floor(performance.now() / 520 + phaseOffset) % this.walkSprite.frames;
-                    const drawWidth = npc.hostile ? 60 : 54;
-                    const drawHeight = npc.hostile ? 76 : 69;
+                    const drawWidth = npc.hostile ? 56 : 48;
+                    const drawHeight = npc.hostile ? 72 : 62;
+                    const previousSmoothing = ctx.imageSmoothingEnabled;
+                    ctx.imageSmoothingEnabled = false;
                     ctx.drawImage(
                         sprite,
                         frame * this.walkSprite.frameWidth,
@@ -2846,6 +2901,7 @@ class MapSystem {
                         drawWidth,
                         drawHeight
                     );
+                    ctx.imageSmoothingEnabled = previousSmoothing;
                 } else {
                     const size = npc.hostile ? 50 : 44;
                     ctx.drawImage(sprite, position.x - size / 2, position.y - size, size, size * 1.25);
@@ -2965,6 +3021,37 @@ class MapSystem {
         return this.isMapPositionWalkable(map, x, y, size);
     }
 
+    isPointInsideRect(x, y, rect) {
+        return (
+            x >= rect.x &&
+            x <= rect.x + rect.width &&
+            y >= rect.y &&
+            y <= rect.y + rect.height
+        );
+    }
+
+    isBoxCoveredByWalkableRects(box, walkableRects) {
+        if (!walkableRects || walkableRects.length === 0) return true;
+
+        const centerX = (box.left + box.right) / 2;
+        const centerY = (box.top + box.bottom) / 2;
+        const points = [
+            { x: centerX, y: centerY },
+            { x: box.left, y: box.top },
+            { x: box.right, y: box.top },
+            { x: box.left, y: box.bottom },
+            { x: box.right, y: box.bottom },
+            { x: centerX, y: box.top },
+            { x: centerX, y: box.bottom },
+            { x: box.left, y: centerY },
+            { x: box.right, y: centerY }
+        ];
+
+        return points.every(point => (
+            walkableRects.some(rect => this.isPointInsideRect(point.x, point.y, rect))
+        ));
+    }
+
     isMapPositionWalkable(map, x, y, size = 24) {
         if (!map) return false;
 
@@ -2977,14 +3064,7 @@ class MapSystem {
         };
 
         if (map.walkableRects && map.walkableRects.length > 0) {
-            const inside = (rect) => (
-                box.left >= rect.x &&
-                box.right <= rect.x + rect.width &&
-                box.top >= rect.y &&
-                box.bottom <= rect.y + rect.height
-            );
-            const inWalkable = map.walkableRects.some(inside);
-            if (!inWalkable) return false;
+            if (!this.isBoxCoveredByWalkableRects(box, map.walkableRects)) return false;
         }
 
         if (map.buildings) {
@@ -3199,6 +3279,9 @@ class MapSystem {
     transitionToMap(mapId) {
         mapId = this.normalizeMapId(mapId);
         if (!this.maps[mapId]) return false;
+
+        this.loadMapImage(mapId);
+        this.preloadSpriteImages(mapId);
         
         this.transitioning = true;
         this.startTransitionCooldown();
@@ -3228,11 +3311,13 @@ class MapSystem {
 
                 // デバッグ: 遷移完了
                 console.log(`Map transition completed! New map: ${this.currentMap}`);
+                setTimeout(() => this.preloadAdjacentMapImages(mapId), 250);
             }, 300);
         } else {
             this.currentMap = mapId;
             this.transitioning = false;
             this.startTransitionCooldown();
+            setTimeout(() => this.preloadAdjacentMapImages(mapId), 250);
         }
         
         return true;
@@ -3293,7 +3378,7 @@ class MapSystem {
     // 衝突判定（建物）
     checkBuildingCollision(x, y, playerSize = 24) {
         const map = this.maps[this.currentMap];
-        if (!map || !map.buildings) return false;
+        if (!map) return false;
 
         const playerRadius = playerSize / 2;
         const playerBox = {
@@ -3303,28 +3388,19 @@ class MapSystem {
             bottom: y + playerRadius
         };
 
-        // walkable / exit の判定はプレイヤー中心点ベース（隣接矩形の隙間で詰まらないよう緩和）
-        if (map.walkableRects) {
-            const containsPoint = (rect) => (
-                x >= rect.x &&
-                x <= rect.x + rect.width &&
-                y >= rect.y &&
-                y <= rect.y + rect.height
-            );
+        const inExit = (map.exits || []).some(exit => this.isPointInsideRect(x, y, exit));
+        if (inExit) {
+            return false; // 出口は通行可能
+        }
 
-            const inExit = (map.exits || []).some(containsPoint);
-            if (inExit) {
-                return false; // 出口は通行可能（建物判定もスキップ）
-            }
-
-            const inWalkable = map.walkableRects.some(containsPoint);
-            if (!inWalkable) {
+        if (map.walkableRects && map.walkableRects.length > 0) {
+            if (!this.isBoxCoveredByWalkableRects(playerBox, map.walkableRects)) {
                 return true; // 歩行可能領域外
             }
         }
 
         // 建物 / 障害物の衝突は引き続きボックス判定
-        for (const building of map.buildings) {
+        for (const building of (map.buildings || [])) {
             const bLeft = building.x;
             const bRight = building.x + building.width;
             const bTop = building.y;
