@@ -2716,7 +2716,8 @@
             speed: 8,
             facing: 'down',
             stepCount: 0,
-            isMoving: false
+            isMoving: false,
+            animTime: 0
         };
 
         // グローバルプレイヤー参照
@@ -3510,18 +3511,19 @@
             ctx.fill();
 
             if (playerSpriteLoaded) {
-                const row = PLAYER_SPRITE_ROWS[player.facing] ?? PLAYER_SPRITE_ROWS.down;
-                const frame = player.isMoving ? Math.floor(performance.now() / 120) % 4 : 1;
+                const f = (mapSystem && mapSystem.computeWalkFrame)
+                    ? mapSystem.computeWalkFrame(player.facing, player.isMoving, player.animTime || 0)
+                    : { sx: (player.isMoving ? 0 : 0) * PLAYER_SPRITE_FRAME_WIDTH, sy: (PLAYER_SPRITE_ROWS[player.facing] ?? 0) * PLAYER_SPRITE_FRAME_HEIGHT, sw: PLAYER_SPRITE_FRAME_WIDTH, sh: PLAYER_SPRITE_FRAME_HEIGHT };
                 const drawWidth = 52;
                 const drawHeight = 66;
                 const previousSmoothing = ctx.imageSmoothingEnabled;
                 ctx.imageSmoothingEnabled = false;
                 ctx.drawImage(
                     playerSprite,
-                    frame * PLAYER_SPRITE_FRAME_WIDTH,
-                    row * PLAYER_SPRITE_FRAME_HEIGHT,
-                    PLAYER_SPRITE_FRAME_WIDTH,
-                    PLAYER_SPRITE_FRAME_HEIGHT,
+                    f.sx,
+                    f.sy,
+                    f.sw,
+                    f.sh,
                     playerDrawX - drawWidth / 2,
                     playerDrawY - drawHeight + 6,
                     drawWidth,
@@ -3593,23 +3595,23 @@
             let newX = player.x;
             let newY = player.y;
             player.isMoving = false;
+            const moveX = (keys['ArrowRight'] || keys['d'] ? 1 : 0) - (keys['ArrowLeft'] || keys['a'] ? 1 : 0);
+            const moveY = (keys['ArrowDown'] || keys['s'] ? 1 : 0) - (keys['ArrowUp'] || keys['w'] ? 1 : 0);
             
-            if (keys['ArrowUp'] || keys['w']) {
+            if (moveY < 0) {
                 newY = Math.max(18, player.y - speed);
-                player.facing = 'up';
             }
-            if (keys['ArrowDown'] || keys['s']) {
+            if (moveY > 0) {
                 newY = Math.min(mapBounds.height - 18, player.y + speed);
-                player.facing = 'down';
             }
-            if (keys['ArrowLeft'] || keys['a']) {
+            if (moveX < 0) {
                 newX = Math.max(18, player.x - speed);
-                player.facing = 'left';
             }
-            if (keys['ArrowRight'] || keys['d']) {
+            if (moveX > 0) {
                 newX = Math.min(mapBounds.width - 18, player.x + speed);
-                player.facing = 'right';
             }
+            if (moveX !== 0 && Math.abs(moveX) >= Math.abs(moveY)) player.facing = moveX > 0 ? 'right' : 'left';
+            else if (moveY !== 0) player.facing = moveY > 0 ? 'down' : 'up';
             
             // 衝突判定（旧座標を渡してNPCから離れる動きを許可）
             if (newX !== player.x || newY !== player.y) {
@@ -3626,6 +3628,7 @@
             // 移動した場合
             if (moved) {
                 player.isMoving = true;
+                player.animTime = (player.animTime || 0) + 16;
                 player.stepCount++;
                 document.getElementById('stepCount').textContent = player.stepCount;
                 

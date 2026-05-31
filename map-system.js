@@ -44,12 +44,7 @@ class MapSystem {
             'ギルドマスター': 'assets/characters/sprites/guildmaster_walk.png',
             '闇商人': 'assets/characters/sprites/dark_merchant_walk.png'
         };
-        this.walkSprite = {
-            frameWidth: 72,
-            frameHeight: 92,
-            frames: 4,
-            rows: { down: 0, left: 1, right: 2, up: 3 }
-        };
+        this.walkSprite = { frameWidth:72, frameHeight:92, frames:4, fps:7, frameSequence:[0,1,2,3], idleFrame:0, rows:{down:0,left:1,right:2,up:3} };
         this.tileSize = 32;
         this.mapWidth = 25;
         this.mapHeight = 19;
@@ -2028,7 +2023,9 @@ class MapSystem {
                 originY: Math.round(npc.y * scale),
                 wanderRadius: npc.static ? 0 : Math.round((npc.hostile ? 18 : 12) * scale),
                 wanderPhase: Math.random() * Math.PI * 2,
-                wanderSpeed: npc.hostile ? 0.0007 : 0.00045
+                wanderSpeed: npc.hostile ? 0.0007 : 0.00045,
+                facing: npc.facing || 'down',
+                animTime: 0
             }));
             this.constrainMapNPCsToWalkable(map);
         }
@@ -2445,6 +2442,24 @@ class MapSystem {
         let spawn;
 
         if (Number.isFinite(exit.spawnX) && Number.isFinite(exit.spawnY)) {
+            // 【店からの退出時のみ】手書きの spawnX/spawnY は worldScale(=1.55)と
+            // 噛み合わず、スケール後の入口判定の外側／壁の向こうに落ちて再入店不能になる。
+            // → 戻り先マップにある「元の店へ通じる入口」のスケール済みボックスの
+            //   直下（歩行可能床）へアンカーし直す。通常の街↔街遷移には影響させない。
+            const fromMapObj = this.previousMap
+                ? this.maps[this.normalizeMapId(this.previousMap)]
+                : null;
+            if (fromMapObj && fromMapObj.area === 'shop' && map && map.exits) {
+                const back = map.exits.find(e =>
+                    this.normalizeMapId(e.to) === this.normalizeMapId(this.previousMap));
+                if (back) {
+                    const doorScale = map.worldScale && map.worldScale > 0 ? map.worldScale : 1;
+                    const cx = back.x + back.width / 2;
+                    const cy = back.y + back.height + Math.round(28 * doorScale);
+                    return this.findSafeSpawnPoint(map, cx, cy, 24);
+                }
+            }
+
             spawn = {
                 x: Math.round(exit.spawnX * scale),
                 y: Math.round(exit.spawnY * scale)
@@ -2564,6 +2579,15 @@ class MapSystem {
 
     getDirectionRow(direction = 'down') {
         return this.walkSprite.rows[direction] ?? this.walkSprite.rows.down;
+    }
+
+    computeWalkFrame(facing, isMoving, animTimeMs) {
+        const ws = this.walkSprite;
+        const row = ws.rows[facing] ?? ws.rows.down;
+        let col;
+        if (!isMoving) { col = ws.idleFrame; }
+        else { const seq = ws.frameSequence; const idx = Math.floor((animTimeMs / 1000) * ws.fps) % seq.length; col = seq[idx]; }
+        return { sx: col * ws.frameWidth, sy: row * ws.frameHeight, sw: ws.frameWidth, sh: ws.frameHeight };
     }
 
     updateFacingFromDelta(npc, dx, dy) {
@@ -2881,21 +2905,17 @@ class MapSystem {
 
             if (sprite && sprite.complete && sprite.naturalWidth > 0) {
                 if (this.isWalkSpriteSheet(spritePath, sprite)) {
-                    const row = this.getDirectionRow(npc.facing);
-                    const phaseOffset = Math.floor((npc.wanderPhase || 0) * 10);
-                    const frame = npc.isMoving
-                        ? Math.floor(performance.now() / 130 + phaseOffset) % this.walkSprite.frames
-                        : Math.floor(performance.now() / 520 + phaseOffset) % this.walkSprite.frames;
+                    const f = this.computeWalkFrame(npc.facing, npc.isMoving, npc.animTime || 0);
                     const drawWidth = npc.hostile ? 56 : 48;
                     const drawHeight = npc.hostile ? 72 : 62;
                     const previousSmoothing = ctx.imageSmoothingEnabled;
                     ctx.imageSmoothingEnabled = false;
                     ctx.drawImage(
                         sprite,
-                        frame * this.walkSprite.frameWidth,
-                        row * this.walkSprite.frameHeight,
-                        this.walkSprite.frameWidth,
-                        this.walkSprite.frameHeight,
+                        f.sx,
+                        f.sy,
+                        f.sw,
+                        f.sh,
                         position.x - drawWidth / 2,
                         position.y - drawHeight + 6,
                         drawWidth,
@@ -2937,7 +2957,10 @@ class MapSystem {
         });
     }
 
-    updateNPCs(now = performance.now()) {
+    updateNPCs() {
+        const now = performance.now();
+        const dt = this._lastNpcUpdate ? (now - this._lastNpcUpdate) : 16;
+        this._lastNpcUpdate = now;
         const map = this.maps[this.currentMap];
         if (!map || !map.npcs) return;
 
@@ -2994,6 +3017,7 @@ class MapSystem {
             const dy = npc.y - oldY;
             npc.isMoving = Math.hypot(dx, dy) > 0.2;
             this.updateFacingFromDelta(npc, dx, dy);
+            if (npc.isMoving) { npc.animTime = (npc.animTime || 0) + dt; }
         });
     }
 
@@ -3252,7 +3276,10 @@ class MapSystem {
         const map = this.maps[this.currentMap];
         if (!map || !map.exits || this.transitioning || this.isTransitionCoolingDown()) return null;
 
-        const interactionRange = 34;
+        // worldScale(1.55等)のマップでは入口ボックスも拡大される為、Z判定半径も同率で拡大する。
+        // （拡大しないと退出スポーンが入口中心から ~47px 離れ、固定34pxでは再入店できない）
+        const rangeScale = (map.worldScale && map.worldScale > 0) ? map.worldScale : 1;
+        const interactionRange = 34 * rangeScale;
 
         for (const exit of map.exits) {
             if (exit.visible !== false) continue;
@@ -3279,6 +3306,11 @@ class MapSystem {
     transitionToMap(mapId) {
         mapId = this.normalizeMapId(mapId);
         if (!this.maps[mapId]) return false;
+
+        // 遷移元マップを記録（getSpawnPoint で「戻り先の入口」を特定する為。
+        // currentMap は下の setTimeout 内で書き換わり、getSpawnPoint 実行時には
+        // 既に遷移先になっている為、ここで控える）
+        this.previousMap = this.currentMap;
 
         this.loadMapImage(mapId);
         this.preloadSpriteImages(mapId);
