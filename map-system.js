@@ -1906,15 +1906,16 @@ class MapSystem {
     }
 
     applyWalkabilityOverrides() {
-        const overridesDisabled = (() => {
+        const previewParam = (() => {
             try {
                 const params = new URLSearchParams(window.location.search || '');
-                const value = params.get('walkabilityPreview');
-                return value === '0' || value === 'false' || value === 'off';
+                return params.get('walkabilityPreview');
             } catch {
-                return false;
+                return null;
             }
         })();
+        const overridesDisabled = previewParam === '0' || previewParam === 'false' || previewParam === 'off';
+        const previewEnabled = previewParam === '1' || previewParam === 'true' || previewParam === 'on';
 
         if (overridesDisabled) return;
 
@@ -1928,8 +1929,10 @@ class MapSystem {
             });
         }
 
-        // 2) localStorage（エディタの即時プレビュー。ブラウザ限定。焼き込みを上書き）
-        if (typeof localStorage !== 'undefined') {
+        // 2) localStorage（エディタの即時プレビュー。?walkabilityPreview=1 の時のみ適用。
+        //    以前は通常プレイでも常に焼き込みを上書きしており「最新ベイクが反映されない」
+        //    「古いエディタ保存が残り続ける」事故の温床だった）
+        if (previewEnabled && typeof localStorage !== 'undefined') {
             const storageKeys = [
                 'rpg-map-editor-v1',
                 'deusCodeWalkabilityOverrides'
@@ -3172,6 +3175,12 @@ class MapSystem {
     isMapPositionWalkable(map, x, y, size = 24) {
         if (!map) return false;
 
+        // マップ外は歩行不可（blacklist=全域可動モードでマップ外が「壁なし＝歩ける」
+        // 扱いになり、スポーン救済候補が画面外に確定するのを防ぐ）
+        const worldW = map.worldWidth || this.baseWidth;
+        const worldH = map.worldHeight || this.baseHeight;
+        if (x < 0 || y < 0 || x > worldW || y > worldH) return false;
+
         const radius = size / 2;
         const box = {
             left: x - radius,
@@ -3201,7 +3210,28 @@ class MapSystem {
     }
 
     findNearestWalkablePoint(map, x, y, size = 24) {
-        if (!map || !map.walkableRects || map.walkableRects.length === 0) return { x, y };
+        if (!map) return { x, y };
+
+        // blacklist=全域可動モード（walkableRects なし）: 矩形ベースの探索ができないので
+        // 格子スパイラルで最寄りの歩ける点を探す（旧実装は入力点をそのまま返し、
+        // 壁内スポーン時に「埋まって動けない」原因になっていた）
+        if (!map.walkableRects || map.walkableRects.length === 0) {
+            if (this.isMapPositionWalkable(map, x, y, size)) return { x: Math.round(x), y: Math.round(y) };
+            const step = 10;
+            for (let r = step; r <= 300; r += step) {
+                for (let dy = -r; dy <= r; dy += step) {
+                    for (let dx = -r; dx <= r; dx += step) {
+                        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; // 外周リングのみ
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        if (this.isMapPositionWalkable(map, nx, ny, size)) {
+                            return { x: Math.round(nx), y: Math.round(ny) };
+                        }
+                    }
+                }
+            }
+            return { x, y };
+        }
 
         const radius = size / 2;
         const candidates = [];
@@ -3586,6 +3616,14 @@ class MapSystem {
         const inExit = (map.exits || []).some(exit => this.isPointInsideRect(x, y, exit));
         if (inExit) {
             return false; // 出口は通行可能
+        }
+
+        // マップ外は通行不可（blacklist=全域可動モードは壁矩形の外が全て歩行可になる為、
+        // 境界チェックが無いと画面外へ歩け/スポーンできてしまう）
+        {
+            const worldW = map.worldWidth || this.baseWidth;
+            const worldH = map.worldHeight || this.baseHeight;
+            if (x < 0 || y < 0 || x > worldW || y > worldH) return true;
         }
 
         if (map.walkableRects && map.walkableRects.length > 0) {
