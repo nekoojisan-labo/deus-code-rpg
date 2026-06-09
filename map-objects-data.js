@@ -10,10 +10,10 @@ window.MAP_OBJECTS = {
     shinjuku_center_plaza: {
         image: 'assets/maps/shinjuku_center_plaza_clean_v1.png',
         exits: [
-            { x: 360, y: 24,  width: 80, height: 70, to: 'shinjuku_station_gate', direction: 'north', spawnX: 400, spawnY: 385, visible: false },
-            { x: 360, y: 404, width: 80, height: 42, to: 'shopping_street_north', direction: 'south', spawnX: 400, spawnY: 80, visible: false },
-            { x: 1,   y: 206, width: 58, height: 76, to: 'shrine_south_gate', direction: 'west', spawnX: 400, spawnY: 390, visible: false },
-            { x: 741, y: 206, width: 58, height: 76, to: 'tokyo_gov_approach', direction: 'east', spawnX: 52, spawnY: 220, visible: false }
+            { x: 360, y: 24,  width: 80, height: 70, to: 'shinjuku_station_gate', direction: 'north', spawnX: 400, spawnY: 385 },
+            { x: 360, y: 404, width: 80, height: 42, to: 'shopping_street_north', direction: 'south', spawnX: 400, spawnY: 80 },
+            { x: 1,   y: 206, width: 58, height: 76, to: 'shrine_south_gate', direction: 'west', spawnX: 400, spawnY: 390 },
+            { x: 741, y: 206, width: 58, height: 76, to: 'tokyo_gov_approach', direction: 'east', spawnX: 52, spawnY: 220 }
         ],
         objects: [
             { kind: 'solid_wall', x: 174, y: 118, footprint: { w: 348, h: 118 } },
@@ -71,8 +71,8 @@ window.MAP_OBJECTS = {
     shinjuku_station_gate: {
         image: 'assets/maps/shinjuku_station_gate_clean_v1.png',
         exits: [
-            { x: 360, y: 404, width: 80, height: 42, to: 'shinjuku_center_plaza', direction: 'south', spawnX: 400, spawnY: 124, visible: false },
-            { x: 560, y: 286, width: 124, height: 92, to: 'subway_concourse_a', direction: 'south', spawnX: 400, spawnY: 160, visible: false }
+            { x: 360, y: 404, width: 80, height: 42, to: 'shinjuku_center_plaza', direction: 'south', spawnX: 400, spawnY: 124 },
+            { x: 560, y: 286, width: 124, height: 92, to: 'subway_concourse_a', direction: 'south', spawnX: 400, spawnY: 160 }
         ],
         objects: [
             { kind: 'solid_wall', x: 400, y: 126, footprint: { w: 800, h: 126 } },
@@ -97,7 +97,7 @@ window.MAP_OBJECTS = {
     subway_concourse_a: {
         image: 'assets/maps/subway_concourse_a_clean_v1.png',
         exits: [
-            { x: 352, y: 58, width: 96, height: 92, to: 'shinjuku_station_gate', direction: 'north', spawnX: 620, spawnY: 320, visible: false }
+            { x: 352, y: 58, width: 96, height: 92, to: 'shinjuku_station_gate', direction: 'north', spawnX: 620, spawnY: 320 }
         ],
         objects: [
             { kind: 'solid_wall', x: 170, y: 118, footprint: { w: 340, h: 118 } },
@@ -221,8 +221,8 @@ window.MAP_OBJECTS = {
     shrine_south_gate: {
         image: 'assets/maps/shrine_south_gate_clean_v1.png',
         exits: [
-            { x: 360, y: 404, width: 80, height: 42, to: 'shinjuku_center_plaza', direction: 'south', spawnX: 400, spawnY: 130, visible: false },
-            { x: 714, y: 170, width: 78, height: 74, to: 'biodome_gate', direction: 'east', spawnX: 85, spawnY: 235, visible: false }
+            { x: 360, y: 404, width: 80, height: 42, to: 'shinjuku_center_plaza', direction: 'south', spawnX: 400, spawnY: 130 },
+            { x: 714, y: 170, width: 78, height: 74, to: 'biodome_gate', direction: 'east', spawnX: 85, spawnY: 235 }
         ],
         objects: [
             { kind: 'solid_wall', x: 400, y: 82,  footprint: { w: 800, h: 96  } },
@@ -246,7 +246,7 @@ window.MAP_OBJECTS = {
     biodome_gate: {
         image: 'assets/maps/biodome_gate_clean_v1.png',
         exits: [
-            { x: 1, y: 184, width: 48, height: 90, to: 'shrine_south_gate', direction: 'west', spawnX: 700, spawnY: 195, visible: false }
+            { x: 1, y: 184, width: 48, height: 90, to: 'shrine_south_gate', direction: 'west', spawnX: 700, spawnY: 195 }
         ],
         objects: [
             { kind: 'solid_wall', x: 238, y: 132, footprint: { w: 270, h: 132 } },
@@ -268,8 +268,8 @@ window.MAP_OBJECTS = {
     tokyo_gov_approach: {
         image: 'assets/maps/tokyo_gov_approach_clean_v1.png',
         exits: [
-            { x: 1,   y: 178, width: 70, height: 82, to: 'shinjuku_center_plaza', direction: 'west', spawnX: 660, spawnY: 240, visible: false },
-            { x: 360, y: 88,  width: 82, height: 62, to: 'tokyo_gov_floor2', direction: 'north', spawnX: 400, spawnY: 380, visible: false }
+            { x: 1,   y: 178, width: 70, height: 82, to: 'shinjuku_center_plaza', direction: 'west', spawnX: 660, spawnY: 240 },
+            { x: 360, y: 88,  width: 82, height: 62, to: 'tokyo_gov_floor2', direction: 'north', spawnX: 400, spawnY: 380 }
         ],
         objects: [
             { kind: 'solid_wall', x: 150, y: 130, footprint: { w: 300, h: 130 } },
