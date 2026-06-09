@@ -2480,7 +2480,9 @@ class MapSystem {
         const shopWalkabilityDetails = {
             shop_bank: {
                 walkableRects: [
-                    { x: 350, y: 405, width: 100, height: 45  },
+                    // 出口マット: 床(345,353,99x48=y353-401)との間に4px隙間があると
+                    // box判定(半径12)で出口に到達できず退店不能になる → y395まで延長して連結
+                    { x: 345, y: 395, width: 105, height: 55  },
                     { x: 125, y: 141, width: 103, height: 59  },
                     { x: 554, y: 151, width: 147, height: 53  },
                     { x: 234, y: 174, width: 316, height: 37  },

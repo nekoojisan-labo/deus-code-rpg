@@ -6,6 +6,9 @@
 // hand-authored exits had swapped directions (e.g. plaza north/west). Shop autoEnter
 // doors keep source position + visible:false.
 
+// 2026-06-10: 失われていた入口3つを復元 — subway左上シャッター→deep_tunnel(autoEnter)、
+// 鳥居→shrine_inner(接触・「本殿へ」)、和風家屋の門→house_1(autoEnter)。
+// bme→sss 到着スポーンを闇市ドア横(85,340)に修正。
 window.MAP_OBJECTS = {
   "shinjuku_center_plaza": {
     "image": "assets/maps/shinjuku_center_plaza_clean_v1.png",
@@ -699,6 +702,18 @@ window.MAP_OBJECTS = {
         "direction": "north",
         "spawnX": 550,
         "spawnY": 380
+      },
+      {
+        "x": 172,
+        "y": 76,
+        "width": 56,
+        "height": 42,
+        "to": "deep_tunnel",
+        "direction": "north",
+        "spawnX": 715,
+        "spawnY": 300,
+        "autoEnter": true,
+        "visible": false
       }
     ],
     "objects": [
@@ -1142,6 +1157,18 @@ window.MAP_OBJECTS = {
         "direction": "west",
         "spawnX": 685,
         "spawnY": 290
+      },
+      {
+        "x": 468,
+        "y": 108,
+        "width": 64,
+        "height": 62,
+        "to": "house_1",
+        "direction": "north",
+        "spawnX": 400,
+        "spawnY": 370,
+        "autoEnter": true,
+        "visible": false
       }
     ],
     "objects": [
@@ -1319,8 +1346,8 @@ window.MAP_OBJECTS = {
         "height": 240,
         "to": "shopping_street_south",
         "direction": "east",
-        "spawnX": 50,
-        "spawnY": 200
+        "spawnX": 85,
+        "spawnY": 340
       },
       {
         "x": 432,
@@ -1597,6 +1624,17 @@ window.MAP_OBJECTS = {
         "direction": "east",
         "spawnX": 85,
         "spawnY": 235
+      },
+      {
+        "x": 356,
+        "y": 108,
+        "width": 88,
+        "height": 48,
+        "to": "shrine_inner",
+        "direction": "north",
+        "spawnX": 400,
+        "spawnY": 370,
+        "label": "本殿へ"
       }
     ],
     "objects": [
