@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Deus Code RPG Map Object Editor</title>
+    <style>
+        :root {
+            --bg: #0b1020;
+            --panel: #121a2d;
+            --panel-2: #18233b;
+            --line: #2eeaff;
+            --line-soft: rgba(46, 234, 255, 0.35);
+            --text: #edf7ff;
+            --muted: #8ea8bf;
+            --warn: #ffd84d;
+            --danger: #ff5570;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        header {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            background: #0f1728;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 18px;
+            letter-spacing: 0;
+        }
+
+        button,
+        select,
+        input,
+        textarea {
+            color: var(--text);
+            background: #08101f;
+            border: 1px solid var(--line-soft);
+            border-radius: 6px;
+            font: inherit;
+        }
+
+        button,
+        select {
+            height: 34px;
+            padding: 0 10px;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        button.active,
+        button:hover {
+            border-color: var(--line);
+            box-shadow: 0 0 0 1px rgba(46, 234, 255, 0.18);
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 220px minmax(0, 1fr) 290px;
+            gap: 14px;
+            padding: 14px;
+        }
+
+        .panel {
+            min-height: 0;
+            background: var(--panel);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .panel h2 {
+            margin: 0 0 10px;
+            font-size: 14px;
+            color: #b9f7ff;
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .map-stage {
+            overflow: auto;
+            background: #050910;
+            border: 1px solid rgba(46, 234, 255, 0.22);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        canvas {
+            display: block;
+            width: min(100%, 800px);
+            height: auto;
+            image-rendering: auto;
+            border: 1px solid var(--line-soft);
+            background: #03070c;
+        }
+
+        .catalog {
+            display: grid;
+            gap: 8px;
+        }
+
+        .catalog button {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            justify-content: space-between;
+            height: auto;
+            min-height: 38px;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .catalog span {
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .field-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        label {
+            display: grid;
+            gap: 4px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        input {
+            width: 100%;
+            height: 32px;
+            padding: 0 8px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 160px;
+            padding: 8px;
+            resize: vertical;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 12px;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .row > * {
+            min-width: 0;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .danger {
+            border-color: rgba(255, 85, 112, 0.55);
+            color: #ffdce2;
+        }
+
+        @media (max-width: 980px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+
+            header {
+                align-items: stretch;
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Map Object Editor</h1>
+        <div class="row">
+            <select id="mapSelect"></select>
+            <button id="btnExport">Export</button>
+            <button id="btnSave">Save Preview</button>
+            <button id="btnTest">Test</button>
+        </div>
+    </header>
+
+    <main>
+        <section class="panel">
+            <h2>Catalog</h2>
+            <div class="toolbar">
+                <button id="toolSelect" class="active">Select</button>
+                <button id="toolSolid">Solid Rect</button>
+            </div>
+            <div id="catalog" class="catalog"></div>
+        </section>
+
+        <section class="panel">
+            <h2>Canvas</h2>
+            <div class="toolbar">
+                <button id="btnUndo">Undo</button>
+                <button id="btnDuplicate">Duplicate</button>
+                <button id="btnDelete" class="danger">Delete</button>
+                <span id="status" class="muted"></span>
+            </div>
+            <div class="map-stage">
+                <canvas id="canvas" width="800" height="450"></canvas>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>Selected</h2>
+            <div id="emptyState" class="muted">オブジェクトを選択してください。</div>
+            <div id="inspector" hidden>
+                <div class="field-grid">
+                    <label>kind<input id="fieldKind" disabled></label>
+                    <label>x<input id="fieldX" type="number"></label>
+                    <label>y<input id="fieldY" type="number"></label>
+                    <label>w<input id="fieldW" type="number"></label>
+                    <label>h<input id="fieldH" type="number"></label>
+                    <label>fp w<input id="fieldFpW" type="number"></label>
+                    <label>fp h<input id="fieldFpH" type="number"></label>
+                    <label>z<input id="fieldZ" type="number"></label>
+                    <label>solid<input id="fieldSolid" type="checkbox"></label>
+                    <label>visible<input id="fieldVisible" type="checkbox"></label>
+                    <label>flip<input id="fieldFlip" type="checkbox"></label>
+                </div>
+            </div>
+            <h2 style="margin-top:16px">Export</h2>
+            <textarea id="exportText" spellcheck="false"></textarea>
+            <div class="toolbar">
+                <button id="btnCopy">Copy</button>
+                <button id="btnDownload">Download</button>
+            </div>
+        </section>
+    </main>
+
+    <script src="object-catalog.js?v=2"></script>
+    <script src="map-objects-data.js?v=4"></script>
+    <script>
+        const BASE_W = 800;
+        const BASE_H = 450;
+        const STORAGE_KEY = 'deusCodeMapObjects';
+        const EDITOR_KEY = 'deusCodeMapObjectEditor';
+
+        const MAP_IMAGES = {
+            shinjuku_center_plaza: 'assets/maps/shinjuku_center_plaza.png',
+            shinjuku_station_gate: 'assets/maps/shinjuku_station_gate.png',
+            subway_concourse_a: 'assets/maps/subway_concourse_a.png',
+            shopping_street_north: 'assets/maps/shopping_street_north.png',
+            shopping_street_south: 'assets/maps/shopping_street_south.png',
+            black_market_entrance: 'assets/maps/black_market_entrance.png',
+            residential_street: 'assets/maps/residential_street.png',
+            shrine_south_gate: 'assets/maps/shrine_south_gate.png',
+            tokyo_gov_approach: 'assets/maps/tokyo_gov_approach.png',
+            biodome_gate: 'assets/maps/biodome_gate.png',
+            shop_weapon: 'assets/maps/shop_weapon.png',
+            shop_armor: 'assets/maps/shop_armor.png',
+            shop_item: 'assets/maps/shop_item.png',
+            shop_magic: 'assets/maps/shop_magic.png',
+            shop_inn: 'assets/maps/shop_inn.png',
+            shop_guild: 'assets/maps/shop_guild.png',
+            shop_bank: 'assets/maps/shop_bank.png',
+            shop_black_market: 'assets/maps/shop_black_market.png'
+        };
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const catalog = window.OBJECT_CATALOG || {};
+        const imageCache = {};
+        const spriteCache = {};
+        const state = {
+            mapId: 'shopping_street_north',
+            payload: loadPayload(),
+            selectedIndex: -1,
+            selectedKind: 'street_planter',
+            tool: 'select',
+            drag: null,
+            history: []
+        };
+
+        function clone(value) {
+            return JSON.parse(JSON.stringify(value));
+        }
+
+        function loadPayload() {
+            try {
+                const stored = JSON.parse(localStorage.getItem(EDITOR_KEY) || localStorage.getItem(STORAGE_KEY) || 'null');
+                if (stored && typeof stored === 'object') return stored;
+            } catch {}
+            return clone(window.MAP_OBJECTS || {});
+        }
+
+        function objects() {
+            if (!state.payload[state.mapId]) state.payload[state.mapId] = { objects: [] };
+            if (!Array.isArray(state.payload[state.mapId].objects)) state.payload[state.mapId].objects = [];
+            return state.payload[state.mapId].objects;
+        }
+
+        function resolveObject(object) {
+            const defaults = catalog[object.kind] || {};
+            return {
+                ...defaults,
+                ...object,
+                footprint: {
+                    ...(defaults.footprint || { w: 32, h: 16 }),
+                    ...(object.footprint || {})
+                },
+                solid: object.solid !== undefined ? object.solid : defaults.solid !== false,
+                visible: object.visible !== undefined ? object.visible : defaults.visible !== false,
+                flip: !!object.flip
+            };
+        }
+
+        function getImage(path, cache = imageCache) {
+            if (!path) return null;
+            if (cache[path]) return cache[path];
+            const img = new Image();
+            img.onload = render;
+            img.onerror = render;
+            img.src = path;
+            cache[path] = img;
+            return img;
+        }
+
+        function footprintRect(object) {
+            const resolved = resolveObject(object);
+            const fp = resolved.footprint;
+            return {
+                x: resolved.x - fp.w / 2,
+                y: resolved.y - fp.h,
+                w: fp.w,
+                h: fp.h
+            };
+        }
+
+        function spriteRect(object) {
+            const resolved = resolveObject(object);
+            return {
+                x: resolved.x - (resolved.w || 0) / 2,
+                y: resolved.y - (resolved.h || 0),
+                w: resolved.w || 0,
+                h: resolved.h || 0
+            };
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, BASE_W, BASE_H);
+            ctx.fillStyle = '#070d18';
+            ctx.fillRect(0, 0, BASE_W, BASE_H);
+
+            const activeMapData = state.payload[state.mapId] || {};
+            const bg = getImage(activeMapData.image || MAP_IMAGES[state.mapId]);
+            if (bg && bg.complete && bg.naturalWidth > 0) {
+                ctx.drawImage(bg, 0, 0, BASE_W, BASE_H);
+            }
+
+            const sorted = objects()
+                .map((object, index) => ({ object: resolveObject(object), index }))
+                .sort((a, b) => ((a.object.z ?? a.object.y) - (b.object.z ?? b.object.y)) || (a.index - b.index));
+
+            sorted.forEach(({ object, index }) => drawEditorObject(object, index));
+            if (state.drag && state.drag.type === 'solid') {
+                drawRect(normalizeRect(state.drag.start, state.drag.current), 'rgba(255,216,77,0.18)', '#ffd84d');
+            }
+            updateStatus();
+            updateExport();
+            updateInspector();
+        }
+
+        function drawEditorObject(object, index) {
+            const selected = index === state.selectedIndex;
+            const rect = footprintRect(object);
+            drawRect(rect, object.solid ? 'rgba(255,85,112,0.18)' : 'rgba(46,234,255,0.12)', selected ? '#ffd84d' : '#2eeaff');
+
+            if (object.visible !== false && object.w > 0 && object.h > 0) {
+                const s = spriteRect(object);
+                const img = getImage(object.sprite, spriteCache);
+                ctx.save();
+                ctx.globalAlpha = selected ? 1 : 0.86;
+                if (img && img.complete && img.naturalWidth > 0) {
+                    ctx.drawImage(img, s.x, s.y, s.w, s.h);
+                } else if (object.sprite) {
+                    drawRect(s, 'rgba(46,234,255,0.12)', '#2eeaff');
+                }
+                ctx.restore();
+            }
+
+            ctx.fillStyle = selected ? '#ffd84d' : '#ffffff';
+            ctx.beginPath();
+            ctx.arc(object.x, object.y, selected ? 4 : 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawRect(rect, fill, stroke) {
+            ctx.fillStyle = fill;
+            ctx.strokeStyle = stroke;
+            ctx.lineWidth = 1;
+            ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+            ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+        }
+
+        function normalizeRect(a, b) {
+            const x = Math.min(a.x, b.x);
+            const y = Math.min(a.y, b.y);
+            return {
+                x,
+                y,
+                w: Math.abs(a.x - b.x),
+                h: Math.abs(a.y - b.y)
+            };
+        }
+
+        function pointerToCanvas(event) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: Math.round((event.clientX - rect.left) * BASE_W / rect.width),
+                y: Math.round((event.clientY - rect.top) * BASE_H / rect.height)
+            };
+        }
+
+        function hitTest(point) {
+            for (let i = objects().length - 1; i >= 0; i--) {
+                const object = resolveObject(objects()[i]);
+                const fp = footprintRect(object);
+                const sp = spriteRect(object);
+                const inFp = point.x >= fp.x && point.x <= fp.x + fp.w && point.y >= fp.y && point.y <= fp.y + fp.h;
+                const inSp = object.visible !== false && point.x >= sp.x && point.x <= sp.x + sp.w && point.y >= sp.y && point.y <= sp.y + sp.h;
+                if (inFp || inSp) return i;
+            }
+            return -1;
+        }
+
+        function pushHistory() {
+            state.history.push(clone(state.payload));
+            if (state.history.length > 80) state.history.shift();
+        }
+
+        canvas.addEventListener('pointerdown', event => {
+            const point = pointerToCanvas(event);
+            canvas.setPointerCapture(event.pointerId);
+
+            if (state.tool === 'solid') {
+                pushHistory();
+                state.drag = { type: 'solid', start: point, current: point };
+                render();
+                return;
+            }
+
+            if (state.tool === 'place') {
+                pushHistory();
+                const defaults = catalog[state.selectedKind] || {};
+                objects().push({
+                    kind: state.selectedKind,
+                    x: point.x,
+                    y: point.y,
+                    ...(defaults.sprite === null ? { visible: false } : {})
+                });
+                state.selectedIndex = objects().length - 1;
+                state.tool = 'select';
+                syncToolButtons();
+                render();
+                return;
+            }
+
+            const hit = hitTest(point);
+            state.selectedIndex = hit;
+            if (hit >= 0) {
+                pushHistory();
+                const object = objects()[hit];
+                state.drag = {
+                    type: 'move',
+                    index: hit,
+                    start: point,
+                    origin: { x: object.x, y: object.y }
+                };
+            }
+            render();
+        });
+
+        canvas.addEventListener('pointermove', event => {
+            if (!state.drag) return;
+            const point = pointerToCanvas(event);
+            if (state.drag.type === 'solid') {
+                state.drag.current = point;
+            } else if (state.drag.type === 'move') {
+                const object = objects()[state.drag.index];
+                object.x = Math.round(state.drag.origin.x + point.x - state.drag.start.x);
+                object.y = Math.round(state.drag.origin.y + point.y - state.drag.start.y);
+            }
+            render();
+        });
+
+        canvas.addEventListener('pointerup', () => {
+            if (!state.drag) return;
+            if (state.drag.type === 'solid') {
+                const rect = normalizeRect(state.drag.start, state.drag.current);
+                if (rect.w >= 4 && rect.h >= 4) {
+                    objects().push({
+                        kind: 'solid_wall',
+                        x: Math.round(rect.x + rect.w / 2),
+                        y: Math.round(rect.y + rect.h),
+                        footprint: { w: Math.round(rect.w), h: Math.round(rect.h) }
+                    });
+                    state.selectedIndex = objects().length - 1;
+                }
+            }
+            state.drag = null;
+            render();
+        });
+
+        function setup() {
+            const mapSelect = document.getElementById('mapSelect');
+            Object.keys(MAP_IMAGES).forEach(mapId => {
+                const option = document.createElement('option');
+                option.value = mapId;
+                option.textContent = mapId;
+                mapSelect.appendChild(option);
+            });
+            mapSelect.value = state.mapId;
+            mapSelect.addEventListener('change', () => {
+                state.mapId = mapSelect.value;
+                state.selectedIndex = -1;
+                render();
+            });
+
+            const catalogNode = document.getElementById('catalog');
+            Object.entries(catalog).forEach(([kind, item]) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.innerHTML = `<strong>${item.name || kind}</strong><span>${kind}</span>`;
+                button.addEventListener('click', () => {
+                    state.selectedKind = kind;
+                    state.tool = 'place';
+                    syncToolButtons();
+                });
+                catalogNode.appendChild(button);
+            });
+
+            document.getElementById('toolSelect').addEventListener('click', () => {
+                state.tool = 'select';
+                syncToolButtons();
+            });
+            document.getElementById('toolSolid').addEventListener('click', () => {
+                state.tool = 'solid';
+                syncToolButtons();
+            });
+            document.getElementById('btnUndo').addEventListener('click', undo);
+            document.getElementById('btnDelete').addEventListener('click', deleteSelected);
+            document.getElementById('btnDuplicate').addEventListener('click', duplicateSelected);
+            document.getElementById('btnExport').addEventListener('click', updateExport);
+            document.getElementById('btnSave').addEventListener('click', savePreview);
+            document.getElementById('btnTest').addEventListener('click', () => {
+                savePreview();
+                window.open('index.html?objectsPreview=1&v=object-editor', '_blank');
+            });
+            document.getElementById('btnCopy').addEventListener('click', async () => {
+                await navigator.clipboard.writeText(document.getElementById('exportText').value);
+            });
+            document.getElementById('btnDownload').addEventListener('click', downloadExport);
+
+            [
+                'fieldX', 'fieldY', 'fieldW', 'fieldH',
+                'fieldFpW', 'fieldFpH', 'fieldZ',
+                'fieldSolid', 'fieldVisible', 'fieldFlip'
+            ].forEach(id => document.getElementById(id).addEventListener('input', applyInspector));
+
+            render();
+        }
+
+        function syncToolButtons() {
+            document.getElementById('toolSelect').classList.toggle('active', state.tool === 'select');
+            document.getElementById('toolSolid').classList.toggle('active', state.tool === 'solid');
+        }
+
+        function updateStatus() {
+            document.getElementById('status').textContent = `${state.mapId} / ${objects().length} objects`;
+        }
+
+        function updateInspector() {
+            const object = objects()[state.selectedIndex];
+            document.getElementById('emptyState').hidden = !!object;
+            document.getElementById('inspector').hidden = !object;
+            if (!object) return;
+            const resolved = resolveObject(object);
+            document.getElementById('fieldKind').value = object.kind;
+            document.getElementById('fieldX').value = Math.round(resolved.x || 0);
+            document.getElementById('fieldY').value = Math.round(resolved.y || 0);
+            document.getElementById('fieldW').value = Math.round(resolved.w || 0);
+            document.getElementById('fieldH').value = Math.round(resolved.h || 0);
+            document.getElementById('fieldFpW').value = Math.round(resolved.footprint.w || 0);
+            document.getElementById('fieldFpH').value = Math.round(resolved.footprint.h || 0);
+            document.getElementById('fieldZ').value = object.z ?? '';
+            document.getElementById('fieldSolid').checked = resolved.solid !== false;
+            document.getElementById('fieldVisible').checked = resolved.visible !== false;
+            document.getElementById('fieldFlip').checked = !!resolved.flip;
+        }
+
+        function applyInspector() {
+            const object = objects()[state.selectedIndex];
+            if (!object) return;
+            object.x = Number(document.getElementById('fieldX').value) || 0;
+            object.y = Number(document.getElementById('fieldY').value) || 0;
+            object.w = Number(document.getElementById('fieldW').value) || 0;
+            object.h = Number(document.getElementById('fieldH').value) || 0;
+            object.footprint = {
+                w: Number(document.getElementById('fieldFpW').value) || 1,
+                h: Number(document.getElementById('fieldFpH').value) || 1
+            };
+            const z = document.getElementById('fieldZ').value;
+            if (z === '') delete object.z;
+            else object.z = Number(z) || 0;
+            object.solid = document.getElementById('fieldSolid').checked;
+            object.visible = document.getElementById('fieldVisible').checked;
+            object.flip = document.getElementById('fieldFlip').checked;
+            render();
+        }
+
+        function undo() {
+            const previous = state.history.pop();
+            if (!previous) return;
+            state.payload = previous;
+            state.selectedIndex = -1;
+            render();
+        }
+
+        function deleteSelected() {
+            if (state.selectedIndex < 0) return;
+            pushHistory();
+            objects().splice(state.selectedIndex, 1);
+            state.selectedIndex = -1;
+            render();
+        }
+
+        function duplicateSelected() {
+            const object = objects()[state.selectedIndex];
+            if (!object) return;
+            pushHistory();
+            const copy = clone(object);
+            copy.x += 12;
+            copy.y += 12;
+            objects().push(copy);
+            state.selectedIndex = objects().length - 1;
+            render();
+        }
+
+        function compactPayload() {
+            const compact = {};
+            Object.entries(state.payload).forEach(([mapId, data]) => {
+                const list = (data && Array.isArray(data.objects)) ? data.objects : [];
+                const image = data && typeof data.image === 'string' ? data.image : '';
+                const exits = (data && Array.isArray(data.exits)) ? data.exits : [];
+                if (list.length > 0 || image || exits.length > 0) {
+                    compact[mapId] = {
+                        ...(image ? { image } : {}),
+                        ...(exits.length > 0 ? { exits } : {}),
+                        objects: list
+                    };
+                }
+            });
+            return compact;
+        }
+
+        function updateExport() {
+            document.getElementById('exportText').value =
+                `window.MAP_OBJECTS = ${JSON.stringify(compactPayload(), null, 4)};\n`;
+        }
+
+        function savePreview() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(compactPayload()));
+            localStorage.setItem(EDITOR_KEY, JSON.stringify(state.payload));
+            updateStatus();
+        }
+
+        function downloadExport() {
+            const blob = new Blob([document.getElementById('exportText').value], { type: 'text/javascript' });
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = 'map-objects-data.js';
+            anchor.click();
+            URL.revokeObjectURL(url);
+        }
+
+        setup();
+    </script>
+</body>
+</html>

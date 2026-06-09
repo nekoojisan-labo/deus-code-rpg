@@ -8,7 +8,8 @@ class MapSystem {
         this.maps = {};
         this.mapImages = {};
         this.spriteImages = {};
-        this.assetVersion = '50';
+        this.objectImages = {};
+        this.assetVersion = '56';
         this.baseWidth = 800;
         this.baseHeight = 450;
         this.camera = { x: 0, y: 0 };
@@ -60,8 +61,10 @@ class MapSystem {
         this.applyScreenMapOverrides();
         this.applyShopImageMapOverrides();
         this.removeLegacyMapDuplicates();
+        this.applyObjectLayerDefinitions();
         this.preloadMapImages();
         this.preloadSpriteImages();
+        this.preloadObjectImages();
         setTimeout(() => this.preloadAdjacentMapImages(this.currentMap), 250);
         
         // デバッグ: 利用可能なマップをログ出力
@@ -1906,16 +1909,15 @@ class MapSystem {
     }
 
     applyWalkabilityOverrides() {
-        const previewParam = (() => {
+        const overridesDisabled = (() => {
             try {
                 const params = new URLSearchParams(window.location.search || '');
-                return params.get('walkabilityPreview');
+                const value = params.get('walkabilityPreview');
+                return value === '0' || value === 'false' || value === 'off';
             } catch {
-                return null;
+                return false;
             }
         })();
-        const overridesDisabled = previewParam === '0' || previewParam === 'false' || previewParam === 'off';
-        const previewEnabled = previewParam === '1' || previewParam === 'true' || previewParam === 'on';
 
         if (overridesDisabled) return;
 
@@ -1929,10 +1931,8 @@ class MapSystem {
             });
         }
 
-        // 2) localStorage（エディタの即時プレビュー。?walkabilityPreview=1 の時のみ適用。
-        //    以前は通常プレイでも常に焼き込みを上書きしており「最新ベイクが反映されない」
-        //    「古いエディタ保存が残り続ける」事故の温床だった）
-        if (previewEnabled && typeof localStorage !== 'undefined') {
+        // 2) localStorage（エディタの即時プレビュー。ブラウザ限定。焼き込みを上書き）
+        if (typeof localStorage !== 'undefined') {
             const storageKeys = [
                 'rpg-map-editor-v1',
                 'deusCodeWalkabilityOverrides'
@@ -2017,6 +2017,179 @@ class MapSystem {
             this.constrainMapNPCsToWalkable(map);
             console.log(`[Map] Applied walkability override: ${mapId} -> ${targetMapId}`);
         });
+    }
+
+    isObjectLayerMap(mapOrId) {
+        const map = typeof mapOrId === 'string'
+            ? this.maps[this.normalizeMapId(mapOrId)]
+            : mapOrId;
+        return !!(map && map.objectLayer === true && Array.isArray(map.objects));
+    }
+
+    isCurrentObjectLayerMap() {
+        return this.isObjectLayerMap(this.currentMap);
+    }
+
+    applyObjectLayerDefinitions() {
+        const payload = {};
+        const baked = (typeof window !== 'undefined' && window.MAP_OBJECTS) || null;
+        if (baked) {
+            Object.entries(baked).forEach(([mapId, data]) => {
+                payload[mapId] = { ...(payload[mapId] || {}), ...(data || {}) };
+            });
+        }
+
+        const previewEnabled = (() => {
+            try {
+                const params = new URLSearchParams(window.location.search || '');
+                const value = params.get('objectsPreview');
+                return value === '1' || value === 'true' || value === 'on';
+            } catch {
+                return false;
+            }
+        })();
+
+        if (previewEnabled && typeof localStorage !== 'undefined') {
+            try {
+                const stored = JSON.parse(localStorage.getItem('deusCodeMapObjects') || '{}');
+                Object.entries(stored).forEach(([mapId, data]) => {
+                    payload[mapId] = { ...(payload[mapId] || {}), ...(data || {}) };
+                });
+            } catch (error) {
+                console.warn('[Map] Failed to parse object-layer preview data:', error);
+            }
+        }
+
+        Object.entries(payload).forEach(([mapId, data]) => {
+            const targetMapId = this.normalizeMapId(mapId);
+            const map = this.maps[targetMapId] || this.maps[mapId];
+            if (!map || !data || !Array.isArray(data.objects)) return;
+
+            const scale = map.worldScale || 1;
+            const objects = data.objects
+                .map((object, index) => this.resolveMapObject(object, scale, index))
+                .filter(Boolean);
+
+            if (typeof data.image === 'string' && data.image) {
+                map.image = data.image;
+            }
+            if (Array.isArray(data.exits)) {
+                const exits = data.exits
+                    .map(exit => this.resolveObjectLayerExit(exit, scale))
+                    .filter(Boolean);
+                if (exits.length > 0) map.exits = exits;
+            }
+            map.objectLayer = true;
+            map.objectSource = data.objects.map(object => ({ ...object }));
+            map.objects = objects;
+            map.walkableRects = [];
+            map.drawProceduralObjects = false;
+            this.rebuildObjectLayerCollisions(map);
+            this.constrainMapNPCsToWalkable(map);
+            console.log(`[Map] Applied object layer: ${mapId} -> ${targetMapId} (${objects.length} objects)`);
+        });
+    }
+
+    resolveObjectLayerExit(exit, scale = 1) {
+        if (!exit || !exit.to) return null;
+        const x = Number(exit.x);
+        const y = Number(exit.y);
+        const width = Number(exit.width);
+        const height = Number(exit.height);
+        if (![x, y, width, height].every(Number.isFinite) || width <= 0 || height <= 0) return null;
+
+        const spawnX = Number(exit.spawnX);
+        const spawnY = Number(exit.spawnY);
+        return {
+            ...exit,
+            x: Math.round(x * scale),
+            y: Math.round(y * scale),
+            width: Math.round(width * scale),
+            height: Math.round(height * scale),
+            to: exit.to,
+            direction: exit.direction || '',
+            spawnX: Number.isFinite(spawnX) ? Math.round(spawnX) : undefined,
+            spawnY: Number.isFinite(spawnY) ? Math.round(spawnY) : undefined
+        };
+    }
+
+    resolveMapObject(object, scale = 1, index = 0) {
+        if (!object || !object.kind) return null;
+        const catalog = (typeof window !== 'undefined' && window.OBJECT_CATALOG) || {};
+        const defaults = catalog[object.kind] || {};
+        const baseFootprint = {
+            ...(defaults.footprint || {}),
+            ...(object.footprint || {})
+        };
+        const merged = {
+            ...defaults,
+            ...object,
+            footprint: baseFootprint
+        };
+
+        const x = Number(merged.x);
+        const y = Number(merged.y);
+        if (![x, y].every(Number.isFinite)) return null;
+
+        const w = Number.isFinite(Number(merged.w)) ? Number(merged.w) : 0;
+        const h = Number.isFinite(Number(merged.h)) ? Number(merged.h) : 0;
+        const fpW = Number(baseFootprint.w);
+        const fpH = Number(baseFootprint.h);
+        if (![fpW, fpH].every(Number.isFinite) || fpW <= 0 || fpH <= 0) return null;
+
+        const scaled = {
+            ...merged,
+            id: merged.id || `${merged.kind}_${index}`,
+            x: Math.round(x * scale),
+            y: Math.round(y * scale),
+            w: Math.round(w * scale),
+            h: Math.round(h * scale),
+            footprint: {
+                w: Math.round(fpW * scale),
+                h: Math.round(fpH * scale)
+            },
+            solid: merged.solid !== false,
+            visible: merged.visible !== false,
+            __objectLayer: true
+        };
+
+        if (Number.isFinite(Number(merged.z))) {
+            scaled.z = Math.round(Number(merged.z) * scale);
+        }
+
+        return scaled;
+    }
+
+    getObjectFootprintRect(object) {
+        if (!object || !object.footprint) return null;
+        const width = Number(object.footprint.w);
+        const height = Number(object.footprint.h);
+        if (![object.x, object.y, width, height].every(Number.isFinite) || width <= 0 || height <= 0) return null;
+        return {
+            x: Math.round(object.x - width / 2),
+            y: Math.round(object.y - height),
+            width: Math.round(width),
+            height: Math.round(height)
+        };
+    }
+
+    rebuildObjectLayerCollisions(map) {
+        if (!this.isObjectLayerMap(map)) return;
+        map.buildings = map.objects
+            .filter(object => object.solid !== false)
+            .map(object => {
+                const rect = this.getObjectFootprintRect(object);
+                if (!rect) return null;
+                return {
+                    ...rect,
+                    type: 'collision',
+                    collisionOnly: true,
+                    objectLayer: true,
+                    objectKind: object.kind,
+                    objectId: object.id
+                };
+            })
+            .filter(Boolean);
     }
 
     prepareScrollableMap(map) {
@@ -2513,7 +2686,8 @@ class MapSystem {
         const webpEligible = (
             path.startsWith('assets/maps/') ||
             path.startsWith('assets/characters/') ||
-            path.startsWith('assets/enemies/')
+            path.startsWith('assets/enemies/') ||
+            path.startsWith('assets/objects/')
         );
         if (webpEligible && path.endsWith('.png')) {
             return path.replace(/\.png$/, '.webp');
@@ -2565,6 +2739,11 @@ class MapSystem {
         return this.loadImageWithFallback(this.spriteImages, path, path, 'Sprite');
     }
 
+    loadObjectImage(path) {
+        if (!path) return null;
+        return this.loadImageWithFallback(this.objectImages, path, path, 'Object');
+    }
+
     preloadMapImages(mapId = this.currentMap) {
         this.loadMapImage(mapId);
     }
@@ -2589,6 +2768,16 @@ class MapSystem {
         map.npcs.forEach(npc => {
             const path = this.getNPCSpritePath(npc);
             this.loadSpriteImage(path);
+        });
+    }
+
+    preloadObjectImages(mapId = this.currentMap) {
+        const map = this.maps[this.normalizeMapId(mapId)];
+        if (!map || !Array.isArray(map.objects)) return;
+
+        map.objects.forEach(object => {
+            if (object.visible === false || !object.sprite) return;
+            this.loadObjectImage(object.sprite);
         });
     }
 
@@ -2990,66 +3179,208 @@ class MapSystem {
         }
     }
 
+    drawObjectFallback(ctx, object, position) {
+        if (!object || object.visible === false) return;
+
+        const w = Math.max(12, object.w || (object.footprint ? object.footprint.w : 28));
+        const h = Math.max(18, object.h || 40);
+        const left = Math.round(position.x - w / 2);
+        const top = Math.round(position.y - h);
+        const colorMap = {
+            street_planter: ['#244b3b', '#3f8b69'],
+            vending_machine: ['#13283a', '#28b7e8'],
+            holo_sign: ['#101a2c', '#25f4ff'],
+            street_lamp: ['#1b2534', '#9ff5ff'],
+            shop_counter: ['#1b2534', '#b8f7ff'],
+            shelf_wall: ['#171f2b', '#60d9ff']
+        };
+        const [fill, stroke] = colorMap[object.kind] || ['#1a2230', '#34f5ff'];
+
+        ctx.save();
+        ctx.fillStyle = fill;
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 0.92;
+
+        if (object.kind === 'street_lamp') {
+            ctx.beginPath();
+            ctx.moveTo(position.x, top + 10);
+            ctx.lineTo(position.x, position.y - 6);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(position.x, top + 8, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        } else if (object.kind === 'holo_sign') {
+            ctx.fillRect(left + 6, top + 10, w - 12, h - 20);
+            ctx.strokeRect(left + 6, top + 10, w - 12, h - 20);
+            ctx.beginPath();
+            ctx.moveTo(left + w / 2, top + 16);
+            ctx.lineTo(left + w - 12, top + h / 2);
+            ctx.lineTo(left + w / 2, top + h - 16);
+            ctx.lineTo(left + 12, top + h / 2);
+            ctx.closePath();
+            ctx.stroke();
+        } else {
+            ctx.fillRect(left, top, w, h);
+            ctx.strokeRect(left, top, w, h);
+            ctx.fillStyle = 'rgba(255,255,255,0.18)';
+            ctx.fillRect(left + 6, top + 8, Math.max(4, w - 12), 4);
+        }
+
+        ctx.restore();
+    }
+
+    drawObject(ctx, object) {
+        if (!object || object.visible === false) return;
+
+        const position = this.worldToScreenPoint(object.x, object.y);
+        const w = object.w || 0;
+        const h = object.h || 0;
+        if (w <= 0 || h <= 0) return;
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
+        ctx.beginPath();
+        ctx.ellipse(position.x, position.y + 3, Math.max(10, w * 0.28), 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        const sprite = object.sprite ? this.loadObjectImage(object.sprite) : null;
+        if (sprite && sprite.complete && sprite.naturalWidth > 0) {
+            const dx = Math.round(position.x - w / 2);
+            const dy = Math.round(position.y - h);
+            const smoothing = ctx.imageSmoothingEnabled;
+            ctx.imageSmoothingEnabled = false;
+            if (object.flip) {
+                ctx.save();
+                ctx.translate(dx + w, dy);
+                ctx.scale(-1, 1);
+                ctx.drawImage(sprite, 0, 0, w, h);
+                ctx.restore();
+            } else {
+                ctx.drawImage(sprite, dx, dy, w, h);
+            }
+            ctx.imageSmoothingEnabled = smoothing;
+            return;
+        }
+
+        this.drawObjectFallback(ctx, object, position);
+    }
+
+    drawSingleNPC(ctx, npc, storyFlags) {
+        if (!npc || this.isNPCHidden(npc, storyFlags)) return;
+
+        const spritePath = this.getNPCSpritePath(npc);
+        const sprite = spritePath ? this.loadSpriteImage(spritePath) : null;
+        const shopStaff = this.isShopStaffNPC(npc, spritePath);
+        const position = this.worldToScreenPoint(npc.x, npc.y);
+
+        // 影（NPCも濃く・大きく）
+        const shadowRadiusX = npc.hostile ? 19 : 16;
+        const shadowRadiusY = npc.hostile ? 7 : 6;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+        ctx.beginPath();
+        ctx.ellipse(position.x, position.y + 4, shadowRadiusX, shadowRadiusY, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (sprite && sprite.complete && sprite.naturalWidth > 0) {
+            if (this.isWalkSpriteSheet(spritePath, sprite)) {
+                // フルフレーム再生(本物の歩行コマをそのまま送る・整数スナップ)
+                const f = this.computeWalkFrame(npc.facing, npc.isMoving, npc.animTime || 0);
+                const dw = npc.hostile ? 56 : 50, dh = npc.hostile ? 72 : 64;
+                const dx = Math.round(position.x - dw / 2);
+                const dy = Math.round(position.y - dh + 6);
+                const ps = ctx.imageSmoothingEnabled;
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(sprite, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
+                ctx.imageSmoothingEnabled = ps;
+            } else {
+                const size = npc.hostile ? 50 : 44;
+                ctx.drawImage(sprite, position.x - size / 2, position.y - size, size, size * 1.25);
+            }
+        } else {
+            ctx.font = '32px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(npc.emoji, position.x, position.y);
+        }
+
+        // クエストマーカー表示（ストーリーNPC用）
+        if (npc.questFlag && storyFlags) {
+            // フラグが立っていない場合、クエストマーカーを表示
+            if (!storyFlags[npc.questFlag]) {
+                ctx.font = '16px Arial';
+                ctx.fillStyle = '#ffff00';
+                ctx.fillText('！', position.x - 20, position.y - 15);
+
+                // 光るエフェクト
+                ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(position.x - 20, position.y - 20, 10, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        if (shopStaff && !npc.questFlag) {
+            this.drawShopStaffMarker(ctx, position.x + 18, position.y - 24);
+        }
+    }
+
+    drawWorldEntities(ctx, player, storyFlags, drawPlayerCallback) {
+        const map = this.maps[this.currentMap];
+        if (!this.isObjectLayerMap(map)) {
+            this.drawNPCs(ctx, storyFlags);
+            if (typeof drawPlayerCallback === 'function') drawPlayerCallback();
+            return;
+        }
+
+        const drawables = [];
+        let order = 0;
+
+        (map.objects || []).forEach(object => {
+            if (!object || object.visible === false) return;
+            if (!object.sprite && (!object.w || !object.h)) return;
+            drawables.push({
+                type: 'object',
+                depth: Number.isFinite(object.z) ? object.z : object.y,
+                order: order++,
+                object
+            });
+        });
+
+        (map.npcs || []).forEach(npc => {
+            if (this.isNPCHidden(npc, storyFlags)) return;
+            drawables.push({
+                type: 'npc',
+                depth: npc.y,
+                order: order++,
+                npc
+            });
+        });
+
+        if (player) {
+            drawables.push({
+                type: 'player',
+                depth: player.y,
+                order: order++,
+                player
+            });
+        }
+
+        drawables
+            .sort((a, b) => (a.depth - b.depth) || (a.order - b.order))
+            .forEach(entry => {
+                if (entry.type === 'object') this.drawObject(ctx, entry.object);
+                else if (entry.type === 'npc') this.drawSingleNPC(ctx, entry.npc, storyFlags);
+                else if (entry.type === 'player' && typeof drawPlayerCallback === 'function') drawPlayerCallback();
+            });
+    }
+
     drawNPCs(ctx, storyFlags) {
         const map = this.maps[this.currentMap];
         if (!map || !map.npcs) return;
 
         map.npcs.forEach(npc => {
-            if (this.isNPCHidden(npc, storyFlags)) return; // 撃破/加入済みは描画しない
-            const spritePath = this.getNPCSpritePath(npc);
-            const sprite = spritePath ? this.loadSpriteImage(spritePath) : null;
-            const shopStaff = this.isShopStaffNPC(npc, spritePath);
-            const position = this.worldToScreenPoint(npc.x, npc.y);
-
-            // 影（NPCも濃く・大きく）
-            const shadowRadiusX = npc.hostile ? 19 : 16;
-            const shadowRadiusY = npc.hostile ? 7 : 6;
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-            ctx.beginPath();
-            ctx.ellipse(position.x, position.y + 4, shadowRadiusX, shadowRadiusY, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            if (sprite && sprite.complete && sprite.naturalWidth > 0) {
-                if (this.isWalkSpriteSheet(spritePath, sprite)) {
-                    // フルフレーム再生(本物の歩行コマをそのまま送る・整数スナップ)
-                    const f = this.computeWalkFrame(npc.facing, npc.isMoving, npc.animTime || 0);
-                    const dw = npc.hostile ? 56 : 50, dh = npc.hostile ? 72 : 64;
-                    const dx = Math.round(position.x - dw / 2);
-                    const dy = Math.round(position.y - dh + 6);
-                    const ps = ctx.imageSmoothingEnabled;
-                    ctx.imageSmoothingEnabled = false;
-                    ctx.drawImage(sprite, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
-                    ctx.imageSmoothingEnabled = ps;
-                } else {
-                    const size = npc.hostile ? 50 : 44;
-                    ctx.drawImage(sprite, position.x - size / 2, position.y - size, size, size * 1.25);
-                }
-            } else {
-                ctx.font = '32px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(npc.emoji, position.x, position.y);
-            }
-
-            // クエストマーカー表示（ストーリーNPC用）
-            if (npc.questFlag && storyFlags) {
-                // フラグが立っていない場合、クエストマーカーを表示
-                if (!storyFlags[npc.questFlag]) {
-                    ctx.font = '16px Arial';
-                    ctx.fillStyle = '#ffff00';
-                    ctx.fillText('！', position.x - 20, position.y - 15);
-
-                    // 光るエフェクト
-                    ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.arc(position.x - 20, position.y - 20, 10, 0, Math.PI * 2);
-                    ctx.stroke();
-                }
-            }
-
-            if (shopStaff && !npc.questFlag) {
-                this.drawShopStaffMarker(ctx, position.x + 18, position.y - 24);
-            }
+            this.drawSingleNPC(ctx, npc, storyFlags);
         });
     }
 
@@ -3118,7 +3449,8 @@ class MapSystem {
     }
 
     constrainMapNPCsToWalkable(map) {
-        if (!map || !map.npcs || !map.walkableRects || map.walkableRects.length === 0) return;
+        if (!map || !map.npcs) return;
+        if (!this.isObjectLayerMap(map) && (!map.walkableRects || map.walkableRects.length === 0)) return;
 
         map.npcs.forEach(npc => {
             if (this.isMapPositionWalkable(map, npc.x, npc.y, 22)) {
@@ -3175,13 +3507,9 @@ class MapSystem {
     isMapPositionWalkable(map, x, y, size = 24) {
         if (!map) return false;
 
-        // マップ外は歩行不可（blacklist=全域可動モードでマップ外が「壁なし＝歩ける」
-        // 扱いになり、スポーン救済候補が画面外に確定するのを防ぐ）
-        const worldW = map.worldWidth || this.baseWidth;
-        const worldH = map.worldHeight || this.baseHeight;
-        if (x < 0 || y < 0 || x > worldW || y > worldH) return false;
-
         const radius = size / 2;
+        const boundsWidth = map.worldWidth || this.baseWidth;
+        const boundsHeight = map.worldHeight || this.baseHeight;
         const box = {
             left: x - radius,
             right: x + radius,
@@ -3189,7 +3517,16 @@ class MapSystem {
             bottom: y + radius
         };
 
-        if (map.walkableRects && map.walkableRects.length > 0) {
+        if (
+            box.left < 0 ||
+            box.top < 0 ||
+            box.right > boundsWidth ||
+            box.bottom > boundsHeight
+        ) {
+            return false;
+        }
+
+        if (!this.isObjectLayerMap(map) && map.walkableRects && map.walkableRects.length > 0) {
             if (!this.isBoxCoveredByWalkableRects(box, map.walkableRects)) return false;
         }
 
@@ -3212,28 +3549,37 @@ class MapSystem {
     findNearestWalkablePoint(map, x, y, size = 24) {
         if (!map) return { x, y };
 
-        // blacklist=全域可動モード（walkableRects なし）: 矩形ベースの探索ができないので
-        // 格子スパイラルで最寄りの歩ける点を探す（旧実装は入力点をそのまま返し、
-        // 壁内スポーン時に「埋まって動けない」原因になっていた）
-        if (!map.walkableRects || map.walkableRects.length === 0) {
-            if (this.isMapPositionWalkable(map, x, y, size)) return { x: Math.round(x), y: Math.round(y) };
-            const step = 10;
-            for (let r = step; r <= 300; r += step) {
-                for (let dy = -r; dy <= r; dy += step) {
-                    for (let dx = -r; dx <= r; dx += step) {
-                        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; // 外周リングのみ
-                        const nx = x + dx;
-                        const ny = y + dy;
-                        if (this.isMapPositionWalkable(map, nx, ny, size)) {
-                            return { x: Math.round(nx), y: Math.round(ny) };
-                        }
+        const boundsWidth = map.worldWidth || this.baseWidth;
+        const boundsHeight = map.worldHeight || this.baseHeight;
+        const radius = size / 2;
+        const clampCandidate = candidate => ({
+            x: Math.max(radius, Math.min(boundsWidth - radius, candidate.x)),
+            y: Math.max(radius, Math.min(boundsHeight - radius, candidate.y))
+        });
+
+        if (this.isObjectLayerMap(map) || !map.walkableRects || map.walkableRects.length === 0) {
+            const origin = clampCandidate({ x, y });
+            if (this.isMapPositionWalkable(map, origin.x, origin.y, size)) {
+                return { x: Math.round(origin.x), y: Math.round(origin.y) };
+            }
+
+            const directions = 16;
+            for (let distance = 10; distance <= 320; distance += 10) {
+                for (let i = 0; i < directions; i++) {
+                    const angle = (Math.PI * 2 * i) / directions;
+                    const candidate = clampCandidate({
+                        x: origin.x + Math.cos(angle) * distance,
+                        y: origin.y + Math.sin(angle) * distance
+                    });
+                    if (this.isMapPositionWalkable(map, candidate.x, candidate.y, size)) {
+                        return { x: Math.round(candidate.x), y: Math.round(candidate.y) };
                     }
                 }
             }
-            return { x, y };
+
+            return { x: Math.round(origin.x), y: Math.round(origin.y) };
         }
 
-        const radius = size / 2;
         const candidates = [];
 
         map.walkableRects.forEach(rect => {
@@ -3466,6 +3812,7 @@ class MapSystem {
 
         this.loadMapImage(mapId);
         this.preloadSpriteImages(mapId);
+        this.preloadObjectImages(mapId);
         
         this.transitioning = true;
         this.startTransitionCooldown();
@@ -3618,15 +3965,18 @@ class MapSystem {
             return false; // 出口は通行可能
         }
 
-        // マップ外は通行不可（blacklist=全域可動モードは壁矩形の外が全て歩行可になる為、
-        // 境界チェックが無いと画面外へ歩け/スポーンできてしまう）
-        {
-            const worldW = map.worldWidth || this.baseWidth;
-            const worldH = map.worldHeight || this.baseHeight;
-            if (x < 0 || y < 0 || x > worldW || y > worldH) return true;
+        const boundsWidth = map.worldWidth || this.baseWidth;
+        const boundsHeight = map.worldHeight || this.baseHeight;
+        if (
+            playerBox.left < 0 ||
+            playerBox.top < 0 ||
+            playerBox.right > boundsWidth ||
+            playerBox.bottom > boundsHeight
+        ) {
+            return true;
         }
 
-        if (map.walkableRects && map.walkableRects.length > 0) {
+        if (!this.isObjectLayerMap(map) && map.walkableRects && map.walkableRects.length > 0) {
             if (!this.isBoxCoveredByWalkableRects(playerBox, map.walkableRects)) {
                 return true; // 歩行可能領域外
             }

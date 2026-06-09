@@ -3024,8 +3024,10 @@
     <script src="equipment-system.js?v=50"></script>
     <script src="magic-system.js?v=47"></script>
     <script src="battle-system.js?v=54"></script>
-    <script src="map-walkability-data.js?v=11"></script>
-    <script src="map-system.js?v=54"></script>
+    <script src="map-walkability-data.js?v=9"></script>
+    <script src="object-catalog.js?v=2"></script>
+    <script src="map-objects-data.js?v=4"></script>
+    <script src="map-system.js?v=56"></script>
     <script src="map-system-grid.js"></script>
     <script src="player-grid-movement.js"></script>
     <script src="bgm-system.js?v=36"></script>
@@ -5998,11 +6000,15 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 if (mapSystem && mapSystem.drawCurrentMap) {
                     mapSystem.updateNPCs();
                     mapSystem.drawCurrentMap(ctx, canvas);
-                    mapSystem.drawNPCs(ctx, storyFlags);
+                    if (mapSystem.isCurrentObjectLayerMap && mapSystem.isCurrentObjectLayerMap()) {
+                        mapSystem.drawWorldEntities(ctx, player, storyFlags, drawPlayer);
+                    } else {
+                        mapSystem.drawNPCs(ctx, storyFlags);
+                        drawPlayer();
+                    }
+                } else {
+                    drawPlayer();
                 }
-
-                // プレイヤー描画
-                drawPlayer();
             }
 
             requestAnimationFrame(gameLoop);
