@@ -9,7 +9,7 @@ class MapSystem {
         this.mapImages = {};
         this.spriteImages = {};
         this.objectImages = {};
-        this.assetVersion = '63';
+        this.assetVersion = '64';
         this.baseWidth = 800;
         this.baseHeight = 450;
         this.camera = { x: 0, y: 0 };
@@ -1909,15 +1909,16 @@ class MapSystem {
     }
 
     applyWalkabilityOverrides() {
-        const overridesDisabled = (() => {
+        const previewParam = (() => {
             try {
                 const params = new URLSearchParams(window.location.search || '');
-                const value = params.get('walkabilityPreview');
-                return value === '0' || value === 'false' || value === 'off';
+                return params.get('walkabilityPreview');
             } catch {
-                return false;
+                return null;
             }
         })();
+        const overridesDisabled = previewParam === '0' || previewParam === 'false' || previewParam === 'off';
+        const previewEnabled = previewParam === '1' || previewParam === 'true' || previewParam === 'on';
 
         if (overridesDisabled) return;
 
@@ -1931,8 +1932,10 @@ class MapSystem {
             });
         }
 
-        // 2) localStorage（エディタの即時プレビュー。ブラウザ限定。焼き込みを上書き）
-        if (typeof localStorage !== 'undefined') {
+        // 2) localStorage（エディタの即時プレビュー。?walkabilityPreview=1 の時のみ適用。
+        //    通常プレイで常に焼き込みを上書きすると「最新ベイクが反映されない」
+        //    「古いエディタ保存が残り続ける」事故の温床になるため v11 で導入したゲート）
+        if (previewEnabled && typeof localStorage !== 'undefined') {
             const storageKeys = [
                 'rpg-map-editor-v1',
                 'deusCodeWalkabilityOverrides'
