@@ -9,7 +9,7 @@ class MapSystem {
         this.mapImages = {};
         this.spriteImages = {};
         this.objectImages = {};
-        this.assetVersion = '64';
+        this.assetVersion = '65';
         this.baseWidth = 800;
         this.baseHeight = 450;
         this.camera = { x: 0, y: 0 };
@@ -3729,8 +3729,10 @@ class MapSystem {
             // 方向制限付きの出口（建物入口など）はプレイヤーの向きが一致する時だけ反応
             if (exit.requireFacing && playerFacing && exit.requireFacing !== playerFacing) continue;
 
-            if (playerX >= exit.x && playerX <= exit.x + exit.width &&
-                playerY >= exit.y && playerY <= exit.y + exit.height) {
+            // 縁遷移を少し寛容化：出口の判定箱を数px外側へ広げ、ピンポイント当たりを緩和
+            const M = 8;
+            if (playerX >= exit.x - M && playerX <= exit.x + exit.width + M &&
+                playerY >= exit.y - M && playerY <= exit.y + exit.height + M) {
                 
                 // ロックチェック
                 if (exit.locked) {
