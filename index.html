@@ -3567,12 +3567,12 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         playerSprite.onerror = () => {
             if (!playerSpriteFallbackTried) {
                 playerSpriteFallbackTried = true;
-                playerSprite.src = 'assets/characters/sprites/kaito_walk.png?v=51';
+                playerSprite.src = 'assets/characters/sprites/kaito_walk.png?v=52';
                 return;
             }
             console.log('⚠️ プレイヤースプライト読み込み失敗 - 絵文字で表示');
         };
-        playerSprite.src = 'assets/characters/sprites/kaito_walk.webp?v=51';
+        playerSprite.src = 'assets/characters/sprites/kaito_walk.webp?v=52';
 
         // Input handling
         const keys = {};
