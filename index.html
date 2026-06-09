@@ -10,8 +10,8 @@
     <meta http-equiv="Expires" content="0">
     <title>デウス・コード 八百万の神託 - RPG Demo</title>
     <link rel="preload" as="image" href="assets/title/title-screen.webp" type="image/webp">
-    <!-- build: 2026-06-09T17:30 (mobile-layout-fix) -->
-    <script>window.__BUILD__='2026-06-09T17:30-mobile-layout-fix';</script>
+    <!-- build: 2026-06-09T18:45 (objective-guide-auto-hide) -->
+    <script>window.__BUILD__='2026-06-09T18:45-objective-guide-auto-hide';</script>
     <style>
         * {
             margin: 0;
@@ -2757,7 +2757,7 @@
             </div>
         </div>
 
-        <!-- 目標バナー（クエストガイド：今やるべきことと行き先を常時表示） -->
+        <!-- 目標バナー（クエストガイド：イベント更新時だけ一時表示） -->
         <div class="objective-banner" id="objectiveBanner" style="display:none;">
             <div class="obj-chapter" id="objChapter"></div>
             <div class="obj-row"><span class="obj-icon">🎯</span><span class="obj-title" id="objTitle"></span></div>
@@ -2774,8 +2774,10 @@
                 box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
                 backdrop-filter: blur(2px);
                 animation: objPop .35s ease;
+                transition: opacity .24s ease, transform .24s ease;
             }
             @keyframes objPop { from { opacity: 0; transform: translateX(-50%) translateY(-6px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+            .objective-banner.is-hiding { opacity: 0; transform: translateX(-50%) translateY(-8px); }
             .objective-banner .obj-chapter { font-size: 10px; letter-spacing: .12em; color: #7fb8d8; margin-bottom: 1px; }
             .objective-banner .obj-row { display: flex; align-items: center; justify-content: center; gap: 6px; }
             .objective-banner .obj-icon { font-size: 13px; }
@@ -2783,6 +2785,32 @@
             .objective-banner .obj-where { font-size: 11px; color: #9fb6cc; margin-top: 2px; }
             .objective-banner.cleared { border-color: rgba(255, 210, 63, 0.7); }
             .objective-banner.cleared .obj-title { color: #ffd23f; }
+            .quest-current-card {
+                margin: 0 0 10px;
+                padding: 9px 10px;
+                border: 1px solid rgba(0, 255, 255, 0.42);
+                border-radius: 6px;
+                background: rgba(0, 30, 54, 0.62);
+                box-shadow: inset 0 0 10px rgba(0, 255, 255, 0.08);
+            }
+            .quest-current-label {
+                color: #00ffff;
+                font-size: 12px;
+                font-weight: 700;
+                margin-bottom: 5px;
+            }
+            .quest-current-title {
+                color: #ffffff;
+                font-size: 14px;
+                font-weight: 700;
+                line-height: 1.45;
+            }
+            .quest-current-where {
+                color: #9fb6cc;
+                font-size: 11px;
+                line-height: 1.45;
+                margin-top: 3px;
+            }
             @media (max-width: 600px) {
                 .objective-banner { top: 4px; padding: 4px 10px 5px; }
                 .objective-banner .obj-title { font-size: 12px; }
@@ -4505,13 +4533,61 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             refreshObjective();
         }
 
-        // 目標バナーを現在の storyFlags から更新
-        function refreshObjective() {
+        const OBJECTIVE_BANNER_DURATION_MS = 4500;
+        let objectiveBannerTimer = null;
+        let objectiveBannerFadeTimer = null;
+
+        function clearObjectiveBannerTimers() {
+            if (objectiveBannerTimer) {
+                clearTimeout(objectiveBannerTimer);
+                objectiveBannerTimer = null;
+            }
+            if (objectiveBannerFadeTimer) {
+                clearTimeout(objectiveBannerFadeTimer);
+                objectiveBannerFadeTimer = null;
+            }
+        }
+
+        function hideObjectiveBanner(immediate = false) {
+            const banner = document.getElementById('objectiveBanner');
+            clearObjectiveBannerTimers();
+            if (!banner) return;
+
+            if (immediate) {
+                banner.classList.remove('is-hiding');
+                banner.style.display = 'none';
+                return;
+            }
+
+            banner.classList.add('is-hiding');
+            objectiveBannerFadeTimer = setTimeout(() => {
+                banner.style.display = 'none';
+                banner.classList.remove('is-hiding');
+                objectiveBannerFadeTimer = null;
+            }, 260);
+        }
+
+        function showObjectiveBannerFor(duration = OBJECTIVE_BANNER_DURATION_MS) {
+            const banner = document.getElementById('objectiveBanner');
+            if (!banner) return;
+
+            clearObjectiveBannerTimers();
+            banner.classList.remove('is-hiding');
+            banner.style.display = 'block';
+
+            if (duration > 0) {
+                objectiveBannerTimer = setTimeout(() => hideObjectiveBanner(), duration);
+            }
+        }
+
+        // 目標バナーを現在の storyFlags から更新し、一定時間だけ表示
+        function refreshObjective(options = {}) {
             const banner = document.getElementById('objectiveBanner');
             if (!banner || !questSystem) return;
             const chapterEl = document.getElementById('objChapter');
             const titleEl = document.getElementById('objTitle');
             const whereEl = document.getElementById('objWhere');
+            const duration = options.duration ?? OBJECTIVE_BANNER_DURATION_MS;
             const cur = questSystem.getCurrent(storyFlags);
             if (!cur) {
                 // 全クリア
@@ -4520,7 +4596,10 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 chapterEl.textContent = 'COMPLETE';
                 titleEl.textContent = '🎉 ' + ending.title;
                 whereEl.textContent = '';
-                banner.style.display = 'block';
+                showObjectiveBannerFor(duration);
+                if (document.getElementById('questMenuOverlay')?.classList.contains('active')) {
+                    renderQuestLog();
+                }
                 return;
             }
             banner.classList.remove('cleared');
@@ -4528,9 +4607,13 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             chapterEl.textContent = `${questSystem.getChapterTitle(cur)}　(${prog.done}/${prog.total})`;
             titleEl.textContent = cur.title;
             whereEl.textContent = cur.where ? '→ ' + cur.where : '';
-            banner.style.display = 'block';
+            showObjectiveBannerFor(duration);
+            if (document.getElementById('questMenuOverlay')?.classList.contains('active')) {
+                renderQuestLog();
+            }
         }
         window.refreshObjective = refreshObjective;
+        window.hideObjectiveBanner = hideObjectiveBanner;
 
         // 仲間加入（リク/ヤミ）
         function recruitMember(memberId, npc) {
@@ -5033,6 +5116,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             closeMenu();
             const ov = document.getElementById('questMenuOverlay');
             if (!ov) return;
+            hideObjectiveBanner(true);
             renderQuestLog();
             ov.classList.add('active');
         }
@@ -5044,9 +5128,26 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         function renderQuestLog() {
             const list = document.getElementById('questLogList');
             if (!list || !questSystem) return;
+            const cur = questSystem.getCurrent(storyFlags);
+            const prog = questSystem.getProgress(storyFlags);
             const groups = questSystem.getLog(storyFlags);
             const allDone = questSystem.isAllComplete(storyFlags);
             let html = '';
+
+            if (cur) {
+                html += `<div class="quest-current-card">`
+                    + `<div class="quest-current-label">現在の目的　${questSystem.getChapterTitle(cur)} (${prog.done}/${prog.total})</div>`
+                    + `<div class="quest-current-title">🎯 ${cur.title}</div>`
+                    + (cur.where ? `<div class="quest-current-where">→ ${cur.where}</div>` : '')
+                    + `</div>`;
+            } else {
+                const ending = window.QUEST_ENDING || { title: 'クリア！' };
+                html += `<div class="quest-current-card">`
+                    + `<div class="quest-current-label">現在の目的</div>`
+                    + `<div class="quest-current-title">🎉 ${ending.title}</div>`
+                    + `</div>`;
+            }
+
             groups.forEach(g => {
                 html += `<div style="color:#7fb8d8;font-size:12px;margin:10px 0 4px;letter-spacing:.06em;">${g.chapterTitle}</div>`;
                 g.items.forEach(it => {
