@@ -491,13 +491,18 @@ class StoryEventSystem {
     updateSpeaker(characterName) {
         if (!this.vnPortraits) return;
         const key = this.PORTRAIT_KEYS[characterName] || null;
-        if (this.vnLeft) this.vnLeft.classList.toggle('speaking', !!key && key === this.vnLeftKey);
-        if (this.vnRight) this.vnRight.classList.toggle('speaking', !!key && key === this.vnRightKey);
+        // 「ステージ上の誰かが話しているか」を基準にする。
+        // ナレーション・立ち絵なし話者・未ステージ話者（3人目以降）の行は
+        // vn-narration を付け、両ポートレートが非発話の暗さ(0.7)まで落ちないようにする
+        const staged = !!key && (key === this.vnLeftKey || key === this.vnRightKey);
+        this.vnPortraits.classList.toggle('vn-narration', !staged);
+        if (this.vnLeft) this.vnLeft.classList.toggle('speaking', staged && key === this.vnLeftKey);
+        if (this.vnRight) this.vnRight.classList.toggle('speaking', staged && key === this.vnRightKey);
     }
 
     hidePortraits() {
         if (!this.vnPortraits) return;
-        this.vnPortraits.classList.remove('active');
+        this.vnPortraits.classList.remove('active', 'vn-narration');
         if (this.vnLeft) this.vnLeft.classList.remove('shown', 'speaking');
         if (this.vnRight) this.vnRight.classList.remove('shown', 'speaking');
         this.vnLeftKey = this.vnRightKey = null;

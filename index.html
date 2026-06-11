@@ -52,6 +52,10 @@
             display: flex;
             flex-direction: column;
             width: min(800px, 100vw);
+            /* 固定ゲームフレーム: 875px = viewport(447) + パネル(228) + コントローラー(194) + 枠(6)。
+               タイトル/オープニング/フィールド/バトルでゲーム枠の外形が伸縮しないことを保証する */
+            height: min(100vh, 875px);
+            height: min(100dvh, 875px);
             max-height: 100vh;
             max-height: 100dvh; /* dvh で URLバー伸縮に対応 */
             /* テキスト選択・ドラッグを禁止（ゲーム操作中の誤動作防止） */
@@ -96,9 +100,6 @@
             background: transparent;
         }
 
-        /* opening-mode は message-panel にテキスト表示するため、
-           viewport の寸法を変えない（820px 固定レイアウト維持） */
-
         .game-viewport {
             position: relative;
             width: 100%;
@@ -106,6 +107,36 @@
             overflow: hidden;
             background: #1a1a2e;
             flex-shrink: 0;
+        }
+
+        /* タイトル/オープニングは不透明オーバーレイ（#titleScreen/#openingScreen）が
+           canvas を完全に覆うため、viewport をフレーム全体へ伸ばしても歪みは見えない。
+           これで「タイトル＝枠いっぱい / フィールド＝上だけ」のサイズ落差を無くす */
+        .game-container.title-mode .game-viewport,
+        .game-container.opening-mode .game-viewport {
+            aspect-ratio: auto;
+            flex: 1 1 auto;
+            min-height: 0;
+            width: 100%;
+            margin-inline: 0;
+        }
+
+        /* gameplay: フレーム高が足りない環境（低背ウィンドウ等）では、canvas の
+           800:450 を保ったまま viewport の幅側を縮めて全UI（パネル・操作系）を枠内に収める。
+           428px = 枠線6 + パネル領域228 + コントローラー194 */
+        .game-container.gameplay-mode .game-viewport {
+            width: min(100%, calc((min(100vh, 875px) - 428px) * 800 / 450));
+            width: min(100%, calc((min(100dvh, 875px) - 428px) * 800 / 450));
+            margin-inline: auto;
+        }
+
+        /* gameplay 中のフレーム余白（viewport外）はフラットな黒ではなく
+           サイバー調の微細グリッドで「意図したベゼル」に見せる */
+        .game-container.gameplay-mode {
+            background:
+                repeating-linear-gradient(0deg, rgba(34, 211, 238, 0.03) 0 1px, transparent 1px 26px),
+                repeating-linear-gradient(90deg, rgba(34, 211, 238, 0.03) 0 1px, transparent 1px 26px),
+                radial-gradient(ellipse 120% 70% at 50% 0%, #101a30 0%, #070b16 55%, #05080f 100%);
         }
 
         #gameCanvas {
@@ -355,7 +386,8 @@
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
-            filter: drop-shadow(0 16px 22px rgba(0, 0, 0, 0.58)) drop-shadow(0 0 22px rgba(255, 80, 80, 0.36));
+            /* 赤グローは 0.36 だと輪郭が滲んで敵が半透明に見えるため減衰 */
+            filter: drop-shadow(0 16px 22px rgba(0, 0, 0, 0.58)) drop-shadow(0 0 22px rgba(255, 80, 80, 0.22));
         }
 
         .enemy-sprite.is-hit::after,
@@ -667,6 +699,12 @@
         }
 
         /* メッセージパネルがバトルモードのときのスタイル */
+        /* battle-mode ではコントロール行(display:none)の固定トラック(28-34px)が
+           高さ予算を食い潰すため、行を内容追従(auto)にして本文に予算を返す */
+        .game-message-panel.battle-mode {
+            grid-template-rows: auto minmax(0, 1fr) auto auto;
+        }
+
         .game-message-panel.battle-mode .game-msg-header {
             min-height: 0;
             padding: 6px 16px 4px;
@@ -682,7 +720,7 @@
             line-height: 1.4;
             min-height: 0;
             max-height: none;
-            overflow: hidden;
+            overflow-y: auto;
             flex: 1;
         }
 
@@ -695,14 +733,34 @@
             padding: 2px 14px 4px;
         }
 
-        /* バトル中のコマンドリスト（パネル内に縦並び・5項目を高さ220pxに収める） */
+        /* バトル中のコマンドリスト。あふれた場合はクリップせずスクロール
+           （選択追従は BattlePanel.setSelectedIndex の scrollIntoView が担う） */
         .game-message-panel.battle-mode .game-msg-body.battle-cmd-mode {
             display: flex;
             flex-direction: column;
             gap: 2px;
             padding: 4px 14px 4px;
             white-space: normal;
+            overflow-y: auto;
+        }
+
+        /* コマンド4件以上はJSが .battle-cmd-grid を付与し、2列でパネル内に全件可視化する
+           （メイン5コマンドは3行≈90pxとなり、モバイルのパネル予算にも収まる） */
+        .game-message-panel.battle-mode .game-msg-body.battle-cmd-mode.battle-cmd-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 3px 8px;
+            align-content: start;
+        }
+
+        .game-msg-body.battle-cmd-mode.battle-cmd-grid .battle-cmd-title {
+            grid-column: 1 / -1;
+        }
+
+        .game-msg-body.battle-cmd-mode .command-item {
+            white-space: nowrap;
             overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .game-message-panel.battle-mode .game-msg-body.battle-cmd-mode .battle-cmd-title {
@@ -918,10 +976,13 @@
             justify-content: center;
         }
 
-        /* VN会話ポートレート（話者を左右に立てる） */
+        /* VN会話ポートレート（話者を左右に立てる）
+           メッセージパネルは viewport の外（下）にあるため避ける必要はない。
+           旧 inset-bottom:150px はパネルが viewport 内にあった時代の遺産で、
+           モバイル(viewport高 約219px)では立ち絵の表示帯を約69pxまで潰していた */
         .vn-portraits {
             position: absolute;
-            inset: 0 0 150px 0;            /* 下のメッセージパネル(約170px)を避ける */
+            inset: 0;
             pointer-events: none;
             z-index: 46;
             opacity: 0;
@@ -934,18 +995,24 @@
             height: 78%;
             max-height: 360px;
             opacity: 0;
-            filter: brightness(0.42) saturate(0.65) blur(0.3px);
+            /* 非発話側: 旧 brightness(0.42) は暗すぎて「透けている」ように見えた */
+            filter: brightness(0.7) saturate(0.85) drop-shadow(0 8px 24px rgba(0, 0, 0, 0.6));
             transition: opacity .3s ease, filter .25s ease, transform .25s ease;
             transform: translateY(10px) scale(0.95);
             will-change: filter, transform;
             -webkit-user-drag: none; user-select: none;
-            drop-shadow: 0 8px 24px rgba(0,0,0,0.6);
         }
         .vn-portrait.shown { opacity: 1; }
         .vn-portrait.speaking {
-            filter: brightness(1.06) saturate(1);
+            filter: brightness(1.06) saturate(1) drop-shadow(0 8px 24px rgba(0, 0, 0, 0.6));
             transform: translateY(0) scale(1);
             z-index: 2;
+        }
+        /* ナレーション・立ち絵を持たない話者の行では、両者を中間明度に保つ
+           （旧実装は両方 0.42 に暗転し「全員透けている」状態が頻発していた） */
+        .vn-portraits.vn-narration .vn-portrait.shown {
+            filter: brightness(0.88) saturate(0.95) drop-shadow(0 8px 24px rgba(0, 0, 0, 0.6));
+            transform: translateY(4px) scale(0.97);
         }
         .vn-left  { left: -2%; }
         .vn-right { right: -2%; }
@@ -2141,8 +2208,12 @@
                 border-radius: 0;
             }
 
+            /* 全モード共通で枠を画面いっぱいに固定する。
+               旧実装は title/opening のみ 100dvh で、gameplay はコンテンツ高（約367px）に
+               縮んで上部に張り付き、画面の半分以上が空白になっていた */
             .game-container.title-mode,
-            .game-container.opening-mode {
+            .game-container.opening-mode,
+            .game-container.gameplay-mode {
                 height: 100vh;
                 height: 100dvh;
                 max-height: 100vh;
@@ -2154,6 +2225,20 @@
                 aspect-ratio: auto;
                 flex: 1 1 auto;
                 min-height: 0;
+            }
+
+            /* gameplay viewport: モバイルの実チェーン（パネル162 + コントローラー142 + 枠6 + 余裕20 = 330px）
+               基準で再計算。縦持ちでは実質 width:100% になり、低背の横長ウィンドウでだけ縮む */
+            .game-container.gameplay-mode .game-viewport {
+                width: min(100%, calc((100vh - 330px) * 800 / 450));
+                width: min(100%, calc((100dvh - 330px) * 800 / 450));
+                margin-inline: auto;
+            }
+
+            /* パネル＋コントローラーを画面下端（親指圏）へ固定し、
+               余白は viewport との間に集める（携帯ゲーム機レイアウト） */
+            .game-container.gameplay-mode .game-message-panel {
+                margin-top: auto;
             }
 
             #titleScreen {
@@ -2228,7 +2313,8 @@
             .game-container.gameplay-mode .game-message-panel:not(.active) {
                 height: 0;
                 min-height: 0;
-                margin: 0;
+                /* margin-top:auto を維持（margin:0 にするとコントローラーの下部固定が外れる） */
+                margin: auto 0 0;
                 border-width: 0;
                 visibility: hidden;
                 opacity: 0;
@@ -2718,6 +2804,53 @@
                 max-width: 100vw;
             }
 
+            /* 横持ち: 高さ起点で viewport 幅を決め、アスペクト維持のまま
+               パネル(94px)＋コントローラー(120px)＋枠(2px) を必ず画面内に収める。
+               実機ではホームインジケータ分コントローラーが伸びるため
+               env(safe-area-inset-bottom) の超過分（基準4px）も予算に算入する。
+               旧実装は viewport が画面高を食い潰し、操作系が丸ごとクリップされていた */
+            .game-container.gameplay-mode .game-viewport {
+                width: min(100%, calc((100vh - 216px) * 800 / 450));
+                width: min(100%, calc((100dvh - 216px - max(0px, env(safe-area-inset-bottom) - 4px)) * 800 / 450));
+                margin-inline: auto;
+            }
+
+            /* 横持ちバトル: 90px固定ではコマンド5件が入らないため、
+               バトル中のパネルだけ内容に応じて拡張を許可する */
+            .game-message-panel.battle-mode {
+                height: auto;
+                min-height: 90px;
+                max-height: 45vh;
+                max-height: 45dvh;
+            }
+
+            /* 横持ちバトル: 高さ104px固定のパーティカードが約170pxの戦闘画面で
+               敵を覆い隠すため、低背版カードに縮めて敵の視界を確保する */
+            #battlePartyStatus {
+                height: min(78px, 46%);
+                padding: 6px 10px 8px;
+                gap: 6px;
+            }
+
+            .battle-party-card {
+                height: 64px;
+                grid-template-columns: 36px minmax(0, 1fr);
+                gap: 6px;
+                padding: 5px 6px;
+                border-radius: 10px;
+            }
+
+            .battle-party-portrait {
+                width: 36px;
+                height: 52px;
+                border-radius: 8px;
+            }
+
+            .enemy-area {
+                top: 2%;
+                height: 54%;
+            }
+
             .game-message-panel {
                 height: 90px;
                 grid-template-rows: 28px minmax(0, 1fr) auto 24px;
@@ -2775,6 +2908,19 @@
             /* スペース確保のためポートフォリオボタンを非表示 */
             .back-button {
                 display: none;
+            }
+        }
+
+        /* バトル中はDOMベースの #battleScreen が canvas を完全に覆うため、
+           viewport を縦に開放して戦闘画面を大きく使う（canvas の歪みは不可視）。
+           landscape MQ より後に置き、gameplay 用の幅計算をバトル時だけ上書きする */
+        @media (max-width: 800px), (orientation: landscape) and (max-height: 500px) {
+            .game-container.gameplay-mode.battle-active .game-viewport {
+                aspect-ratio: auto;
+                flex: 1 1 auto;
+                min-height: 0;
+                width: 100%;
+                margin-inline: 0;
             }
         }
 
@@ -3169,7 +3315,7 @@
     <script src="item-system.js?v=47"></script>
     <script src="equipment-system.js?v=50"></script>
     <script src="magic-system.js?v=47"></script>
-    <script src="battle-system.js?v=54"></script>
+    <script src="battle-system.js?v=55"></script>
     <script src="map-walkability-data.js?v=12"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=16"></script>
@@ -3179,7 +3325,7 @@
     <script src="bgm-system.js?v=36"></script>
     <script src="party-system.js?v=47"></script>
     <script src="quest-system.js?v=1"></script>
-    <script src="story-events.js?v=47"></script>
+    <script src="story-events.js?v=48"></script>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -5516,24 +5662,28 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             const numItems = items.length;
             if (numItems === 0) return;
 
+            // 2列グリッド表示中（.battle-cmd-grid）は 上下=±2 / 左右=±1 で格子状に移動する
+            const cmdBody = document.getElementById('gameMessageBody');
+            const gridCols = (cmdBody && cmdBody.classList.contains('battle-cmd-grid')) ? 2 : 1;
+            const moveSelection = (delta) => {
+                battleSystem.selectedCommand = (battleSystem.selectedCommand + delta + numItems) % numItems;
+                if (showingBattleItems) {
+                    updateBattleItemSelection();
+                } else if (phase === 'skill' || phase === 'target') {
+                    battleSystem.refreshCurrentPhaseSelection();
+                } else {
+                    setupBattleCommands();
+                }
+            };
+
             if (key === 'ArrowUp' || key === 'w' || key === 'W') {
-                battleSystem.selectedCommand = (battleSystem.selectedCommand - 1 + numItems) % numItems;
-                if (showingBattleItems) {
-                    updateBattleItemSelection();
-                } else if (phase === 'skill' || phase === 'target') {
-                    battleSystem.refreshCurrentPhaseSelection();
-                } else {
-                    setupBattleCommands();
-                }
+                moveSelection(-gridCols);
             } else if (key === 'ArrowDown' || key === 's' || key === 'S') {
-                battleSystem.selectedCommand = (battleSystem.selectedCommand + 1) % numItems;
-                if (showingBattleItems) {
-                    updateBattleItemSelection();
-                } else if (phase === 'skill' || phase === 'target') {
-                    battleSystem.refreshCurrentPhaseSelection();
-                } else {
-                    setupBattleCommands();
-                }
+                moveSelection(gridCols);
+            } else if (gridCols > 1 && (key === 'ArrowLeft' || key === 'a' || key === 'A')) {
+                moveSelection(-1);
+            } else if (gridCols > 1 && (key === 'ArrowRight' || key === 'd' || key === 'D')) {
+                moveSelection(1);
             } else if (key === 'Enter' || key === ' ' || key === 'z' || key === 'Z') {
                 // 決定: 選択中の item の onclick を呼ぶ（command/skill/target 全フェーズ共通）
                 const item = items[battleSystem.selectedCommand];
@@ -5573,6 +5723,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 cmd.classList.remove('selected');
                 if (index === battleSystem.selectedCommand) {
                     cmd.classList.add('selected');
+                    if (typeof cmd.scrollIntoView === 'function') cmd.scrollIntoView({ block: 'nearest' });
                 }
             });
         }
@@ -5583,6 +5734,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 cmd.classList.remove('selected');
                 if (index === battleSystem.selectedCommand) {
                     cmd.classList.add('selected');
+                    if (typeof cmd.scrollIntoView === 'function') cmd.scrollIntoView({ block: 'nearest' });
                 }
 
                 // 標準コマンド（command フェーズ）にのみ onclick を再バインド。
@@ -5602,7 +5754,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         // ログ書き込みでコマンドが上書きされるようにする
         function leavePanelCommandMode() {
             const body = document.getElementById('gameMessageBody');
-            if (body) body.classList.remove('battle-cmd-mode');
+            if (body) body.classList.remove('battle-cmd-mode', 'battle-cmd-grid');
             // 旧コマンド領域も互換のため非表示
             const commands = document.getElementById('battleCommands');
             if (commands) commands.style.display = 'none';

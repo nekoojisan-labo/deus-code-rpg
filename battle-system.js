@@ -58,6 +58,10 @@ const BattlePanel = (() => {
         els.panel.classList.add('active', 'battle-mode');
         els.panel.classList.remove('battle-log-mode');
         els.body.classList.add('battle-cmd-mode');
+        // メインコマンド（短いラベル5件）のみ2列グリッドで全件可視化する。
+        // スキル/アイテムは名前+MP/個数が長く、2列化するとスマホ縦で
+        // 意思決定情報（MPコスト等）が切れるため1列+スクロール追従を維持する
+        els.body.classList.toggle('battle-cmd-grid', !!opts.grid);
         els.body.innerHTML = '';
 
         if (opts.title) {
@@ -93,6 +97,11 @@ const BattlePanel = (() => {
             if (i === index) el.classList.add('selected');
             else el.classList.remove('selected');
         });
+        // 長いリスト（スキル/アイテム）で選択枠が可視領域から出ないよう追従スクロール
+        const sel = items[index];
+        if (sel && typeof sel.scrollIntoView === 'function') {
+            sel.scrollIntoView({ block: 'nearest' });
+        }
     }
 
     // Mode B: バトルログを描画（直近 maxLines 行）
@@ -103,7 +112,7 @@ const BattlePanel = (() => {
 
         els.panel.classList.add('active', 'battle-mode');
         els.panel.classList.add('battle-log-mode');
-        els.body.classList.remove('battle-cmd-mode');
+        els.body.classList.remove('battle-cmd-mode', 'battle-cmd-grid');
         // 直近2行のみ表示（今・誰が・何をしたかを明確にし、行動が雑然と流れないように）
         const max = opts.maxLines || 2;
         const recent = (lines || []).slice(-max);
@@ -127,7 +136,7 @@ const BattlePanel = (() => {
             els.character.classList.remove('battle-mode-label');
         }
         if (els.body) {
-            els.body.classList.remove('battle-cmd-mode');
+            els.body.classList.remove('battle-cmd-mode', 'battle-cmd-grid');
             els.body.innerHTML = '';
         }
     }
@@ -1057,7 +1066,7 @@ class BattleSystem {
 
         // パネルをログモードに戻して直近のメッセージを表示できるようにする
         const body = document.getElementById('gameMessageBody');
-        if (body) body.classList.remove('battle-cmd-mode');
+        if (body) body.classList.remove('battle-cmd-mode', 'battle-cmd-grid');
 
         this.currentMemberIndex++;
         setTimeout(() => this.showNextMemberCommand(), 200);
@@ -1231,6 +1240,9 @@ class BattleSystem {
         const battleScreen = document.getElementById('battleScreen');
         if (battleScreen) {
             battleScreen.classList.add('active');
+            // モバイルでは viewport を縦に開放して戦闘画面を大きく使う（CSS .battle-active 参照）
+            const gc = document.querySelector('.game-container');
+            if (gc) gc.classList.add('battle-active');
             document.getElementById('gameUI').style.display = 'none';
             battleScreen.classList.remove('is-shaking');
 
@@ -1604,7 +1616,7 @@ class BattleSystem {
         }
         // パネルをログモードに切り替え
         const body = document.getElementById('gameMessageBody');
-        if (body) body.classList.remove('battle-cmd-mode');
+        if (body) body.classList.remove('battle-cmd-mode', 'battle-cmd-grid');
 
         // 勝利メッセージ
         this.addBattleLog(`${this.currentEnemy.name}を たおした！`);
@@ -1875,6 +1887,8 @@ class BattleSystem {
             battleScreen.classList.remove('active');
             document.getElementById('gameUI').style.display = 'block';
         }
+        const gcEnd = document.querySelector('.game-container');
+        if (gcEnd) gcEnd.classList.remove('battle-active');
 
         // メッセージパネルをバトルモードから解除
         BattlePanel.deactivate();
@@ -1938,6 +1952,8 @@ class BattleSystem {
                 const ui = document.getElementById('gameUI');
                 if (ui) ui.style.display = 'block';
             }
+            const gcOver = document.querySelector('.game-container');
+            if (gcOver) gcOver.classList.remove('battle-active');
             if (typeof BattlePanel !== 'undefined' && BattlePanel.deactivate) BattlePanel.deactivate();
             if (typeof window.resetBattleUIState === 'function') window.resetBattleUIState();
         };
@@ -2235,7 +2251,8 @@ class BattleSystem {
 
         BattlePanel.renderCommands(standard, {
             headerLabel,
-            selectedIndex: 0
+            selectedIndex: 0,
+            grid: true
         });
 
         // index.html 側で onclick / 選択ハイライトを設定（互換）
