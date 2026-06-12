@@ -42,8 +42,8 @@ window.MAP_OBJECTS = {
         "height": 146,
         "to": "tokyo_gov_approach",
         "direction": "east",
-        "spawnX": 50,
-        "spawnY": 220
+        "spawnX": 135,
+        "spawnY": 260
       },
       {
         "x": 0,
@@ -52,8 +52,8 @@ window.MAP_OBJECTS = {
         "height": 146,
         "to": "shinjuku_station_gate",
         "direction": "west",
-        "spawnX": 715,
-        "spawnY": 235
+        "spawnX": 620,
+        "spawnY": 240
       }
     ],
     "objects": [
@@ -865,17 +865,27 @@ window.MAP_OBJECTS = {
         "spawnY": 235
       },
       {
-        "x": 577,
-        "y": 330,
-        "width": 103,
-        "height": 120,
+        "x": 595,
+        "y": 404,
+        "width": 75,
+        "height": 46,
         "to": "subway_concourse_a",
         "direction": "south",
-        "spawnX": 670,
-        "spawnY": 130
+        "spawnX": 360,
+        "spawnY": 115
       }
     ],
     "objects": [
+      {
+        "kind": "solid_wall",
+        "x": 624.5,
+        "y": 404,
+        "footprint": {
+          "w": 95,
+          "h": 128
+        }
+      },
+      
       {
         "kind": "solid_wall",
         "x": 400,
@@ -951,10 +961,10 @@ window.MAP_OBJECTS = {
       {
         "kind": "solid_wall",
         "x": 438,
-        "y": 450,
+        "y": 404,
         "footprint": {
           "w": 20,
-          "h": 112
+          "h": 66
         }
       },
       {
@@ -1005,10 +1015,10 @@ window.MAP_OBJECTS = {
       {
         "kind": "solid_wall",
         "x": 712,
-        "y": 236,
+        "y": 210,
         "footprint": {
           "w": 112,
-          "h": 166
+          "h": 140
         }
       },
       {
@@ -1075,8 +1085,8 @@ window.MAP_OBJECTS = {
         "height": 50,
         "to": "shinjuku_station_gate",
         "direction": "north",
-        "spawnX": 550,
-        "spawnY": 380
+        "spawnX": 540,
+        "spawnY": 428
       },
       {
         "x": 172,
@@ -1476,10 +1486,10 @@ window.MAP_OBJECTS = {
         "visible": false
       },
       {
-        "x": 189,
-        "y": 366,
-        "width": 27,
-        "height": 48,
+        "x": 380,
+        "y": 388,
+        "width": 38,
+        "height": 36,
         "to": "shop_bank",
         "direction": "north",
         "spawnX": 400,
@@ -1726,10 +1736,10 @@ window.MAP_OBJECTS = {
       {
         "kind": "solid_wall",
         "x": 272,
-        "y": 376,
+        "y": 368,
         "footprint": {
           "w": 80,
-          "h": 110
+          "h": 94
         }
       },
       {
@@ -1744,10 +1754,10 @@ window.MAP_OBJECTS = {
       {
         "kind": "solid_wall",
         "x": 394,
-        "y": 450,
+        "y": 399,
         "footprint": {
           "w": 192,
-          "h": 154
+          "h": 52
         }
       },
       {
@@ -2786,8 +2796,8 @@ window.MAP_OBJECTS = {
         "height": 116,
         "to": "biodome_gate",
         "direction": "east",
-        "spawnX": 85,
-        "spawnY": 235
+        "spawnX": 140,
+        "spawnY": 350
       },
       {
         "x": 356,
@@ -3040,7 +3050,7 @@ window.MAP_OBJECTS = {
         "to": "shrine_south_gate",
         "direction": "west",
         "spawnX": 700,
-        "spawnY": 195
+        "spawnY": 260
       }
     ],
     "objects": [
