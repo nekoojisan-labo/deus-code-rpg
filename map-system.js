@@ -3827,11 +3827,14 @@ class MapSystem {
         // フェードアウト効果
         const canvas = document.getElementById('gameCanvas');
         if (canvas) {
+            // 暗転カーテン演出（index.html 側 API・無ければ canvas フェードのみ）
+            if (window.mapTransitionFX) window.mapTransitionFX.begin();
             canvas.style.opacity = '0';
-            
+
             setTimeout(() => {
                 this.currentMap = mapId;
                 canvas.style.opacity = '1';
+                if (window.mapTransitionFX) window.mapTransitionFX.end();
                 this.transitioning = false;
                 this.startTransitionCooldown();
 
@@ -3865,7 +3868,14 @@ class MapSystem {
     showMapName() {
         const map = this.maps[this.currentMap];
         if (!map) return;
-        
+
+        // 場所名バナー（index.html 側 API・約1.9秒表示）
+        if (window.mapTransitionFX) {
+            window.mapTransitionFX.showLocation(map.name);
+            return;
+        }
+
+        // フォールバック: 従来の messageBox 表示
         const messageBox = document.getElementById('messageBox');
         if (messageBox) {
             messageBox.textContent = `${map.name}に 入った`;
@@ -4245,10 +4255,10 @@ class ShopSystem {
         this.shopkeeper = shopkeeper;
         this.selectedItemIndex = 0;
 
-        // viewport にオーバーレイを追加
-        const viewport = document.querySelector('.game-viewport');
+        // 全画面UIレイヤーにオーバーレイを追加（uiLayer 未実装環境では viewport にフォールバック）
+        const viewport = document.getElementById('uiLayer') || document.querySelector('.game-viewport');
         if (!viewport) {
-            console.error('[ShopSystem] .game-viewport not found');
+            console.error('[ShopSystem] #uiLayer / .game-viewport not found');
             return;
         }
 
@@ -4371,6 +4381,13 @@ class ShopSystem {
     handleKeyboardInput(e) {
         if (!this.isShopOpen) return;
 
+        // 実際に処理するキーのみブロック（F5/F12/Tab 等のブラウザ操作は通す）
+        const handledKeys = [
+            'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+            'Enter', 'z', 'Z', 'x', 'X', ' ', 'Escape'
+        ];
+        if (!handledKeys.includes(e.key)) return;
+
         e.preventDefault();
         if (typeof e.stopImmediatePropagation === 'function') {
             e.stopImmediatePropagation();
@@ -4437,9 +4454,9 @@ class ShopSystem {
         const existing = document.getElementById('shopUI');
         if (existing) existing.remove();
 
-        const viewport = document.querySelector('.game-viewport');
+        const viewport = document.getElementById('uiLayer') || document.querySelector('.game-viewport');
         if (!viewport) {
-            console.error('[ShopSystem] .game-viewport not found');
+            console.error('[ShopSystem] #uiLayer / .game-viewport not found');
             return;
         }
 
@@ -4580,6 +4597,8 @@ class ShopSystem {
                 .replace(/>/g, '&gt;')
                 .replace(/\n/g, '<br>');
             window.GameMessagePanel.showDescription(safe);
+            // 既存タイマーを破棄（連続購入時の多重発火防止）
+            if (this.shopNoticeAutoCloseTimer) clearTimeout(this.shopNoticeAutoCloseTimer);
             // 1.6 秒後に自動で閉じる（ショップのキー入力と競合しないように）
             this.shopNoticeAutoCloseTimer = setTimeout(() => {
                 if (window.GameMessagePanel && typeof window.GameMessagePanel.hide === 'function') {

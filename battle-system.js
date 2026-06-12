@@ -113,8 +113,8 @@ const BattlePanel = (() => {
         els.panel.classList.add('active', 'battle-mode');
         els.panel.classList.add('battle-log-mode');
         els.body.classList.remove('battle-cmd-mode', 'battle-cmd-grid');
-        // 直近2行のみ表示（今・誰が・何をしたかを明確にし、行動が雑然と流れないように）
-        const max = opts.maxLines || 2;
+        // 直近6行を表示（行動の流れを追いやすくする。スクロールは末尾追従）
+        const max = opts.maxLines || 6;
         const recent = (lines || []).slice(-max);
         const safe = recent.map(l => String(l == null ? '' : l)
             .replace(/&/g, '&amp;')
@@ -512,6 +512,28 @@ class BattleSystem {
         this.battleLog = [];
         this.turnCount = 1;
         this.waitingForCommand = false; // 初期状態では待機しない
+
+        // 戦闘画像のプリロード（背景・敵画像をブラウザキャッシュへウォームアップ。await不要・失敗は無視）
+        try {
+            const mapSystem = window.mapSystem;
+            const mapId = mapSystem?.currentMap || '';
+            const currentMap = mapId && mapSystem?.maps ? mapSystem.maps[mapId] : null;
+            let area = currentMap?.area || '';
+            if (!area && typeof mapSystem?.getCurrentArea === 'function') {
+                area = mapSystem.getCurrentArea() || '';
+            }
+            const bgWarm = new Image();
+            bgWarm.onerror = () => {};
+            bgWarm.src = this.getBattleBackground(area, mapId);
+            const enemyImagePath = this.getEnemyImagePath(this.currentEnemy);
+            if (enemyImagePath) {
+                const enemyWarm = new Image();
+                enemyWarm.onerror = () => {};
+                enemyWarm.src = enemyImagePath;
+            }
+        } catch (e) {
+            // プリロード失敗は無視（表示時に通常ロードされる）
+        }
 
         // 戦闘画面表示
         this.showBattleScreen();
@@ -1291,7 +1313,8 @@ class BattleSystem {
             key = 'bg_biodome';
         }
 
-        return `assets/battle/${key}.webp`;
+        // ?v=2: 旧キャッシュ画像対策（onerror の .webp→.png 置換でも ?v=2 は引き継がれる）
+        return `assets/battle/${key}.webp?v=2`;
     }
 
     setBattleBackground() {
@@ -1500,7 +1523,7 @@ class BattleSystem {
         target.hp = Math.max(0, target.hp - damage);
         this.addBattleLog(`${target.name}に ${Math.floor(damage)}の ダメージ！`);
 
-        this.showDamageEffect(damage, false);
+        this.showDamageEffect(damage, false, false, allMembers.indexOf(target));
         this.updateBattleUI();
 
         // パーティ全滅チェック
@@ -1550,7 +1573,7 @@ class BattleSystem {
         target.hp = Math.max(0, target.hp - damage);
         this.addBattleLog(`${target.name}に ${Math.floor(damage)}の ダメージ！`);
 
-        this.showDamageEffect(damage, false, true);
+        this.showDamageEffect(damage, false, true, allMembers.indexOf(target));
 
         // ステータス異常付与判定（30%確率）
         if (Math.random() < 0.3) {
@@ -2034,7 +2057,9 @@ class BattleSystem {
     }
     
     // ダメージエフェクト表示
-    showDamageEffect(damage, isEnemy, isCritical = false) {
+    // targetIndex: 味方側のダメージ表示先（getPartyMembers() のインデックス）。
+    //              null の場合は従来通り currentMemberIndex のカードに表示する。
+    showDamageEffect(damage, isEnemy, isCritical = false, targetIndex = null) {
         const battleScreen = document.getElementById('battleScreen');
         if (!battleScreen) return;
 
@@ -2067,7 +2092,9 @@ class BattleSystem {
         } else {
             const partyContainer = document.getElementById('battlePartyStatus');
             const partyPanels = partyContainer ? Array.from(partyContainer.children) : [];
-            const panelIndex = Math.min(Math.max(this.currentMemberIndex || 0, 0), Math.max(partyPanels.length - 1, 0));
+            // 敵攻撃のターゲットが指定されていればそのカードへ、未指定なら従来通り行動中メンバーのカードへ
+            const baseIndex = (targetIndex !== null && targetIndex >= 0) ? targetIndex : (this.currentMemberIndex || 0);
+            const panelIndex = Math.min(Math.max(baseIndex, 0), Math.max(partyPanels.length - 1, 0));
             const targetPanel = partyPanels[panelIndex];
 
             if (targetPanel) {
@@ -2187,12 +2214,14 @@ class BattleSystem {
             initial.textContent = Array.from(name)[0] || '?';
 
             const portraitImg = document.createElement('img');
-            portraitImg.src = `assets/characters/${characterId}_portrait.webp`;
+            // ?v=2: 旧キャッシュ画像の取り違え対策（キャッシュバスター）
+            portraitImg.src = `assets/characters/${characterId}_portrait.webp?v=2`;
             portraitImg.alt = name;
             portraitImg.decoding = 'async';
             portraitImg.onerror = function() {
                 if (!this.dataset.fallbackTried && this.src.includes('.webp')) {
                     this.dataset.fallbackTried = '1';
+                    // 拡張子のみ置換するため ?v=2 はそのまま png 側にも引き継がれる
                     this.src = this.src.replace('.webp', '.png');
                     return;
                 }

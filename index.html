@@ -19,6 +19,22 @@
             box-sizing: border-box;
         }
 
+        /* ============================================================
+           UIデザイントークン: 全メニュー/パネル系で共有する寸法・色・フォント。
+           「画面ごとに枠サイズ/フォントがバラバラ」問題の再発防止のため、
+           パネル系の幅・枠・角丸は必ずこの変数を参照すること */
+        :root {
+            --ui-font: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', system-ui, sans-serif;
+            --panel-w: min(560px, calc(100% - 24px));
+            --panel-radius: 12px;
+            --accent: #00e5ff;
+            --accent-soft: rgba(0, 229, 255, 0.35);
+            --panel-line: rgba(0, 229, 255, 0.55);
+            --panel-glow: 0 0 26px rgba(0, 229, 255, 0.28), 0 18px 44px rgba(0, 0, 0, 0.6);
+            --text-main: #eaf6ff;
+            --text-sub: #9fc0cf;
+        }
+
         html, body {
             /* iOS Safari の dvh 単位対応 */
             height: 100%;
@@ -125,8 +141,10 @@
            800:450 を保ったまま viewport の幅側を縮めて全UI（パネル・操作系）を枠内に収める。
            428px = 枠線6 + パネル領域228 + コントローラー194 */
         .game-container.gameplay-mode .game-viewport {
-            width: min(100%, calc((min(100vh, 875px) - 428px) * 800 / 450));
-            width: min(100%, calc((min(100dvh, 875px) - 428px) * 800 / 450));
+            /* max() の下限フロア: 低背ウィンドウで calc が極端に縮む/負になり
+               ゲーム画面が消滅するのを防ぐ（最低280px幅を保証） */
+            width: min(100%, max(280px, calc((min(100vh, 875px) - 428px) * 800 / 450)));
+            width: min(100%, max(280px, calc((min(100dvh, 875px) - 428px) * 800 / 450)));
             margin-inline: auto;
         }
 
@@ -162,6 +180,53 @@
             -webkit-tap-highlight-color: transparent;
             touch-action: none;
             pointer-events: auto;
+        }
+
+        /* ============================================================
+           マップ遷移演出: 黒幕カーテン＋場所名バナー
+           map-system.js の transitionToMap が window.mapTransitionFX 経由で操作する */
+        .transition-curtain {
+            position: absolute;
+            inset: 0;
+            background: #04060c;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.28s ease;
+            z-index: 540;
+        }
+
+        .transition-curtain.active {
+            opacity: 1;
+        }
+
+        .location-banner {
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translate(-50%, -10px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: 545;
+            font-family: var(--ui-font);
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.22em;
+            color: var(--text-main);
+            background: rgba(4, 10, 20, 0.82);
+            border: 1px solid var(--accent-soft);
+            border-radius: 999px;
+            padding: 7px 22px 7px 24px; /* letter-spacing の右余白ぶん左右非対称 */
+            box-shadow: 0 0 18px rgba(0, 229, 255, 0.18), 0 6px 16px rgba(0, 0, 0, 0.5);
+            white-space: nowrap;
+            max-width: calc(100% - 32px);
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .location-banner.show {
+            opacity: 1;
+            transform: translate(-50%, 0);
         }
 
         .ui-overlay {
@@ -355,6 +420,33 @@
             justify-content: center;
         }
 
+        /* 敵の背後の暗化スポット: どの戦闘背景でも敵の輪郭が立つように
+           常時敷く視覚分離レイヤー（bg_gov の縞ビル重畳問題の恒久対策） */
+        .enemy-stage::before {
+            content: "";
+            position: absolute;
+            inset: -8% -18%;
+            z-index: 0;
+            pointer-events: none;
+            background: radial-gradient(ellipse 58% 54% at 50% 52%,
+                rgba(2, 8, 23, 0.62), rgba(2, 8, 23, 0.28) 55%, transparent 76%);
+        }
+
+        /* 足元の薄いシアングロー: 接地感＋敵と床の分離 */
+        .enemy-stage::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: -2%;
+            width: 64%;
+            height: 26%;
+            transform: translateX(-50%);
+            z-index: 1;
+            pointer-events: none;
+            background: radial-gradient(ellipse 50% 42% at 50% 78%,
+                rgba(34, 211, 238, 0.16), transparent 72%);
+        }
+
         .enemy-shadow {
             position: absolute;
             left: 50%;
@@ -366,6 +458,9 @@
             background: rgba(0, 0, 0, 0.46);
             filter: blur(6px);
             opacity: 0.86;
+            z-index: 1;
+            /* 浮遊アニメと同周期の逆位相で伸縮（浮いた時に影が薄く小さく） */
+            animation: shadowPulse 2.8s ease-in-out infinite;
         }
 
         .enemy-sprite {
@@ -386,11 +481,27 @@
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
+            /* 横長の敵でも足元が接地影の近くに来るよう下寄せ */
+            object-position: center bottom;
             /* 赤グローは 0.36 だと輪郭が滲んで敵が半透明に見えるため減衰 */
             filter: drop-shadow(0 16px 22px rgba(0, 0, 0, 0.58)) drop-shadow(0 0 22px rgba(255, 80, 80, 0.22));
         }
 
-        .enemy-sprite.is-hit::after,
+        /* 被弾フラッシュ: 敵はスプライト自体を明滅（矩形の白フラッシュは廃止）。
+           filter は上書きのため、ベースの drop-shadow と合成して記述する */
+        .enemy-sprite.is-hit img {
+            animation: enemyHitBright 0.28s ease-out;
+        }
+
+        @keyframes enemyHitBright {
+            0%, 100% {
+                filter: drop-shadow(0 16px 22px rgba(0, 0, 0, 0.58)) drop-shadow(0 0 22px rgba(255, 80, 80, 0.22)) brightness(1);
+            }
+            25% {
+                filter: drop-shadow(0 16px 22px rgba(0, 0, 0, 0.58)) drop-shadow(0 0 30px rgba(255, 120, 120, 0.5)) brightness(2.4) saturate(0.4);
+            }
+        }
+
         .battle-party-card.is-hit::after {
             content: "";
             position: absolute;
@@ -405,6 +516,18 @@
         @keyframes enemyFloat {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-9px); }
+        }
+
+        @keyframes shadowPulse {
+            0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 0.86; }
+            50% { transform: translateX(-50%) scaleX(0.86); opacity: 0.6; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .enemy-sprite,
+            .enemy-shadow {
+                animation: none;
+            }
         }
 
         .enemy-area.is-hit {
@@ -820,7 +943,7 @@
             left: 50%;
             top: 30%;
             transform: translate(-50%, 0);
-            font-size: 32px;
+            font-size: clamp(20px, 5.5vmin, 32px);
             font-weight: bold;
             line-height: 1;
             color: #fb7185;
@@ -836,7 +959,7 @@
         }
 
         .damage-number.critical {
-            font-size: 46px;
+            font-size: clamp(28px, 8vmin, 46px);
             color: #facc15;
             text-shadow: 0 0 16px rgba(250, 204, 21, 0.85), 0 0 8px rgba(239, 68, 68, 0.72), 2px 2px 4px rgba(0, 0, 0, 0.9);
         }
@@ -1207,53 +1330,108 @@
         }
         
         /* Menu System */
+        /* ============================================================
+           UIレイヤー: メニュー/モーダル/ショップを game-viewport から切り離し、
+           ゲームフレーム(.game-container)全体を基準に配置するための層。
+           - viewport の伸縮（ウィンドウ高さ連動）にメニューサイズが影響されない
+           - モバイルでも画面全高を使ってメニューを表示できる
+           - pointer-events:none の暗幕により、下のオンスクリーンコントローラーは
+             メニュー表示中もタップ可能（パネル本体のみ pointer-events:auto） */
+        .ui-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 600;
+            pointer-events: none;
+        }
+
+        /* uiLayer 配下の動的オーバーレイ（ショップ/モーダル）:
+           暗幕はタップ透過（下のコントローラーを生かす）、パネル本体のみ操作可 */
+        .ui-layer .shop-overlay,
+        .ui-layer .game-modal-overlay {
+            pointer-events: none;
+        }
+
+        .ui-layer .shop-container,
+        .ui-layer .game-modal-container {
+            pointer-events: auto;
+        }
+
         .menu-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(2, 5, 12, 0.78);
             display: none;
             z-index: 600;
             box-sizing: border-box;
-            padding: 10px;
+            padding: 12px;
             overflow: hidden;
+            pointer-events: none;
+            font-family: var(--ui-font);
         }
-        
+
         .menu-overlay.active {
             display: flex;
             justify-content: center;
             align-items: center;
             animation: fadeIn 0.3s ease;
         }
-        
+
         .menu-container {
-            background: linear-gradient(135deg, #1a1a2e, #0a0a0a);
-            border: 3px solid #00ffff;
-            border-radius: 10px;
-            padding: 10px 14px;
-            width: min(520px, calc(100% - 20px));
+            position: relative;
+            background: #0a1220;
+            border: 2px solid var(--panel-line);
+            border-radius: var(--panel-radius);
+            padding: 14px 18px;
+            width: var(--panel-w);
             max-width: calc(100% - 20px);
-            max-height: calc(100% - 20px);
+            max-height: calc(100% - 24px);
             overflow: hidden;
             box-sizing: border-box;
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            box-shadow: var(--panel-glow);
             display: flex;
             flex-direction: column;
+            pointer-events: auto;
+            color: var(--text-main);
         }
 
+        /* メニュー背景画像（タイトルアート由来の暗化ブラー版）＋可読性オーバーレイ */
+        .menu-container::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(180deg, rgba(5, 10, 20, 0.42) 0%, rgba(4, 8, 18, 0.66) 100%),
+                url('assets/ui/menu_bg.webp?v=1') center / cover no-repeat,
+                linear-gradient(135deg, #131a2e, #080c16);
+        }
+
+        .menu-container > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* メインメニューは固定高さ: キャラ切替や項目数で外形が変わらない */
         .main-menu-panel {
-            height: min(394px, calc(100% - 20px));
+            height: min(470px, calc(100% - 24px));
         }
 
         .menu-title {
             font-size: 18px;
-            color: #00ffff;
+            font-weight: 700;
+            letter-spacing: 0.3em;
+            text-indent: 0.3em; /* letter-spacing の右余白ぶん中央補正 */
+            color: var(--accent);
             text-align: center;
-            margin-bottom: 8px;
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
             flex-shrink: 0;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.25);
         }
 
         .party-tabs-row {
@@ -1330,11 +1508,14 @@
             width: 88px;
             height: 112px;
             max-width: 100%;
-            object-fit: contain;
-            border: 2px solid #0f3460;
+            /* 立ち絵は背景込みのフルアートなので cover でフチなし表示 */
+            object-fit: cover;
+            object-position: center 20%;
+            border: 1px solid var(--accent-soft);
             border-radius: 8px;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(2, 8, 18, 0.6);
             box-sizing: border-box;
+            box-shadow: 0 0 12px rgba(0, 229, 255, 0.15);
         }
 
         .character-portrait-fallback {
@@ -1345,15 +1526,16 @@
         }
 
         .menu-stats {
-            background: rgba(0, 0, 0, 0.5);
-            border: 2px solid #0f3460;
-            border-radius: 5px;
-            padding: 7px 9px;
+            background: rgba(2, 8, 18, 0.62);
+            border: 1px solid rgba(0, 229, 255, 0.22);
+            border-radius: 8px;
+            padding: 8px 10px;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 4px 10px;
+            gap: 4px 12px;
             box-sizing: border-box;
             min-width: 0;
+            align-content: center;
         }
 
         .menu-stat-row > span {
@@ -1372,55 +1554,77 @@
 
         .menu-options {
             display: grid;
-            grid-template-columns: 1fr;
-            gap: 6px;
+            /* 2列×3行: 6項目（クエスト/アイテム/装備/神威/セーブ/閉じる）が
+               スクロールなしで必ず全部見える */
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
             width: 100%;
             max-width: 100%;
             margin: 0 auto;
             box-sizing: border-box;
+            flex-shrink: 0;
         }
 
         .menu-option {
-            background: rgba(0, 255, 255, 0.1);
-            border: 2px solid #00ffff;
-            border-radius: 5px;
-            min-height: 40px;
+            background: rgba(0, 229, 255, 0.08);
+            border: 1px solid rgba(0, 229, 255, 0.45);
+            border-radius: 8px;
+            min-height: 44px;
             padding: 8px 10px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
             text-align: center;
             font-size: 14px;
-            font-weight: bold;
-            color: #e0eef5;
+            font-weight: 700;
+            font-family: var(--ui-font);
+            letter-spacing: 0.12em;
+            color: var(--text-main);
             box-sizing: border-box;
         }
-        
+
         .menu-option:hover {
-            background: rgba(0, 255, 255, 0.3);
-            transform: translateX(5px);
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+            background: rgba(0, 229, 255, 0.22);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
         }
-        
+
         .menu-option.selected {
-            background: rgba(0, 255, 255, 0.3);
-            border-color: #ffff00;
+            background: rgba(0, 229, 255, 0.26);
+            border-color: #facc15;
+            box-shadow: 0 0 16px rgba(250, 204, 21, 0.35);
         }
-        
+
         .menu-close {
-            margin-top: 8px;
+            margin-top: auto;
+            padding-top: 8px;
             text-align: center;
             font-size: 11px;
-            color: #aaa;
+            color: var(--text-sub);
             flex-shrink: 0;
+        }
+
+        /* 戦闘中の神威スキル選択モーダル: .menu-container の意匠を共有しつつ
+           パネル単体で中央配置（JSが display を直接 toggle する） */
+        .kamui-skill-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10000;
+            max-height: min(480px, calc(100% - 24px));
+            overflow-y: auto;
+            pointer-events: auto;
         }
 
         /* Item Menu Styles */
         .item-list {
-            max-height: 240px;
+            /* 固定 max-height をやめ、パネルの残り高さに追従してスクロール */
+            flex: 1 1 auto;
+            min-height: 80px;
+            max-height: 360px;
             overflow-y: auto;
-            background: rgba(0, 0, 0, 0.5);
-            border: 2px solid #0f3460;
-            border-radius: 5px;
+            background: rgba(2, 8, 18, 0.62);
+            border: 1px solid rgba(0, 229, 255, 0.22);
+            border-radius: 8px;
             padding: 8px;
             width: 100%;
             max-width: 100%;
@@ -2453,6 +2657,10 @@
             .game-message-panel.battle-mode .game-msg-body.battle-cmd-mode .command-item {
                 font-size: 13px;
                 padding: 4px 8px 4px 22px;
+                /* タッチターゲット確保（44px推奨に近づける） */
+                min-height: 40px;
+                display: flex;
+                align-items: center;
             }
 
             /* マップ情報を見やすく最適化 */
@@ -2477,10 +2685,6 @@
                 width: min(500px, calc(100% - 20px));
                 max-width: calc(100% - 20px);
                 padding: 10px 12px;
-            }
-
-            .main-menu-panel {
-                height: min(388px, calc(100% - 20px));
             }
 
             .menu-title {
@@ -2725,10 +2929,6 @@
                 padding: 9px 10px;
             }
 
-            .main-menu-panel {
-                height: min(382px, calc(100% - 16px));
-            }
-
             .menu-title {
                 font-size: 16px;
             }
@@ -2767,7 +2967,7 @@
             }
 
             .menu-option {
-                min-height: 36px;
+                min-height: 44px; /* タッチターゲット44px確保 */
                 font-size: 13px;
             }
 
@@ -3063,10 +3263,10 @@
                 <div class="menu-content-wrapper">
                     <!-- キャラクター立ち絵 -->
                     <div class="character-portrait">
-                        <img id="menuCharacterPortrait" src="assets/characters/kaito_portrait.webp"
+                        <img id="menuCharacterPortrait" src="assets/characters/kaito_portrait.webp?v=2"
                              alt="カイト"
                              decoding="async"
-                             data-fallback-src="assets/characters/kaito_portrait.png"
+                             data-fallback-src="assets/characters/kaito_portrait.png?v=2"
                              onerror="if (this.dataset.fallbackSrc) { this.src = this.dataset.fallbackSrc; this.dataset.fallbackSrc = ''; } else { this.style.display='none'; this.nextElementSibling.style.display='flex'; }">
                         <div id="menuCharacterEmoji" class="character-portrait-fallback">🧑‍💼</div>
                     </div>
@@ -3110,11 +3310,12 @@
                     </div>
                 </div>
                 <div class="menu-options" id="menuOptions">
-                    <button class="menu-option" type="button" data-menu="quest">クエスト</button>
-                    <button class="menu-option" type="button" data-menu="items">アイテム</button>
-                    <button class="menu-option" type="button" data-menu="equipment">装備</button>
-                    <button class="menu-option" type="button" data-menu="kamui">神威</button>
-                    <button class="menu-option" type="button" data-menu="close">閉じる</button>
+                    <button class="menu-option" type="button" data-menu="quest">📜 クエスト</button>
+                    <button class="menu-option" type="button" data-menu="items">🎒 アイテム</button>
+                    <button class="menu-option" type="button" data-menu="equipment">🛡️ 装備</button>
+                    <button class="menu-option" type="button" data-menu="kamui">✨ 神威</button>
+                    <button class="menu-option" type="button" data-menu="save">💾 セーブ</button>
+                    <button class="menu-option" type="button" data-menu="close">✖ 閉じる</button>
                 </div>
                 <div class="menu-close">←→/Q/E キャラ切替 / ↑↓ 選択 / Z 決定 / X 閉じる</div>
             </div>
@@ -3133,7 +3334,7 @@
 
         <!-- Quest Log -->
         <div class="menu-overlay" id="questMenuOverlay">
-            <div class="menu-container" style="width: min(520px, 92%);">
+            <div class="menu-container">
                 <div class="menu-title">クエスト</div>
                 <div class="item-list" id="questLogList" style="text-align:left;"></div>
                 <div class="menu-close">X / Z で戻る</div>
@@ -3142,7 +3343,7 @@
         
         <!-- Equipment Menu -->
         <div class="menu-overlay" id="equipmentMenuOverlay">
-            <div class="menu-container" style="width: min(560px, 92%);">
+            <div class="menu-container">
                 <div class="menu-title">
                     <span id="equipmentCharacterName">カイト</span> の装備
                 </div>
@@ -3177,7 +3378,7 @@
                 <!-- 所持装備リスト -->
                 <div style="min-height: 0;">
                     <div style="font-size: 14px; color: #ffff00; margin-bottom: 4px;">▼ 所持装備</div>
-                    <div class="item-list" id="equipmentList" style="max-height: 180px;">
+                    <div class="item-list" id="equipmentList" style="max-height: 240px;">
                         <div class="empty-inventory">装備を持っていません</div>
                     </div>
                 </div>
@@ -3188,7 +3389,7 @@
 
         <!-- Kamui Menu (Field) -->
         <div class="menu-overlay" id="kamuiMenuOverlay">
-            <div class="menu-container" style="width: min(620px, 92%);">
+            <div class="menu-container">
                 <div class="menu-title">
                     <span id="kamuiCharacterName">カイト</span> の神威スキル
                 </div>
@@ -3238,16 +3439,12 @@
         </div>
 
         <!-- Kamui Skill Selection Menu -->
-        <div id="kamuiSkillMenu" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10000; background: rgba(0, 0, 0, 0.95); border: 3px solid #00ffff; border-radius: 10px; padding: 16px; width: min(560px, 92%); max-width: 92%; max-height: 92%; overflow-y: auto; box-sizing: border-box; box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);">
-            <div style="text-align: center; font-size: 24px; color: #00ffff; margin-bottom: 20px; text-shadow: 0 0 10px #00ffff;">
-                ⚡ 神威スキル ⚡
-            </div>
-            <div class="kamui-skill-list" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; max-height: 400px; overflow-y: auto;">
+        <div id="kamuiSkillMenu" class="menu-container kamui-skill-panel" style="display: none;">
+            <div class="menu-title">⚡ 神威スキル ⚡</div>
+            <div class="kamui-skill-list" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; max-height: 400px; overflow-y: auto;">
                 <!-- JavaScriptで動的生成 -->
             </div>
-            <div style="text-align: center; margin-top: 15px; font-size: 14px; color: #888;">
-                ↑↓←→で選択 / ENTERで決定 / Xで戻る
-            </div>
+            <div class="menu-close">↑↓←→で選択 / ENTERで決定 / Xで戻る</div>
         </div>
 
         <div class="controls">
@@ -3258,6 +3455,10 @@
             <div>X: メニュー</div>
             <div>S: セーブ（セーブポイント）</div>
         </div>
+
+        <!-- マップ遷移演出: 黒幕カーテン＋場所名バナー（window.mapTransitionFX が操作） -->
+        <div id="transitionCurtain" class="transition-curtain" aria-hidden="true"></div>
+        <div id="locationBanner" class="location-banner" aria-hidden="true"></div>
         </div><!-- /.game-viewport -->
 
         <!-- メッセージ表示パネル（ストーリー会話・バトルメッセージ・効果説明等） -->
@@ -3309,17 +3510,34 @@
                 </div>
             </div>
         </div>
+        <!-- UIレイヤー: メニュー/モーダル/ショップの配置基準（ゲームフレーム全体） -->
+        <div class="ui-layer" id="uiLayer"></div>
+        <script>
+            // メニュー系オーバーレイを game-viewport から ui-layer へ移設する。
+            // viewport はウィンドウ高さに連動して伸縮するため、その中に置くと
+            // メニューの見かけサイズが環境ごとに変わる／モバイルで帯状に潰れる。
+            // appendChild は要素を「移動」するためイベント・参照はそのまま生きる。
+            (() => {
+                const layer = document.getElementById('uiLayer');
+                if (!layer) return;
+                ['menuOverlay', 'itemMenuOverlay', 'questMenuOverlay',
+                 'equipmentMenuOverlay', 'kamuiMenuOverlay', 'kamuiSkillMenu'].forEach((id) => {
+                    const el = document.getElementById(id);
+                    if (el) layer.appendChild(el);
+                });
+            })();
+        </script>
     </div><!-- /.game-container -->
 
     <!-- 外部スクリプト読み込み -->
     <script src="item-system.js?v=47"></script>
     <script src="equipment-system.js?v=50"></script>
     <script src="magic-system.js?v=47"></script>
-    <script src="battle-system.js?v=55"></script>
+    <script src="battle-system.js?v=56"></script>
     <script src="map-walkability-data.js?v=12"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=16"></script>
-    <script src="map-system.js?v=66"></script>
+    <script src="map-system.js?v=67"></script>
     <script src="map-system-grid.js"></script>
     <script src="player-grid-movement.js"></script>
     <script src="bgm-system.js?v=36"></script>
@@ -4786,7 +5004,11 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             }
         }
 
-        // 目標バナーを現在の storyFlags から更新し、一定時間だけ表示
+        // 目標バナーを現在の storyFlags から更新し、一定時間だけ表示。
+        // 目標が前回表示時から変わっていなければ再表示しない（マップ出入りの
+        // たびに同じバナーが4.5秒出て場所名バナーと競合する問題の対策）
+        let lastObjectiveSignature = null;
+
         function refreshObjective(options = {}) {
             const banner = document.getElementById('objectiveBanner');
             if (!banner || !questSystem) return;
@@ -4802,7 +5024,10 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 chapterEl.textContent = 'COMPLETE';
                 titleEl.textContent = '🎉 ' + ending.title;
                 whereEl.textContent = '';
-                showObjectiveBannerFor(duration);
+                if (lastObjectiveSignature !== 'cleared' || options.force) {
+                    lastObjectiveSignature = 'cleared';
+                    showObjectiveBannerFor(duration);
+                }
                 if (document.getElementById('questMenuOverlay')?.classList.contains('active')) {
                     renderQuestLog();
                 }
@@ -4813,7 +5038,11 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             chapterEl.textContent = `${questSystem.getChapterTitle(cur)}　(${prog.done}/${prog.total})`;
             titleEl.textContent = cur.title;
             whereEl.textContent = cur.where ? '→ ' + cur.where : '';
-            showObjectiveBannerFor(duration);
+            const signature = `${cur.title}|${prog.done}/${prog.total}`;
+            if (lastObjectiveSignature !== signature || options.force) {
+                lastObjectiveSignature = signature;
+                showObjectiveBannerFor(duration);
+            }
             if (document.getElementById('questMenuOverlay')?.classList.contains('active')) {
                 renderQuestLog();
             }
@@ -5172,6 +5401,11 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                     // 神威メニューを開く
                     openKamuiMenu();
                     break;
+                case 'save':
+                    // どこでもセーブ（タッチ環境にはSキーが無いためメニューから提供）
+                    closeMenu();
+                    saveGame();
+                    break;
                 case 'close':
                     // メニューを閉じる
                     closeMenu();
@@ -5230,11 +5464,15 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             return path;
         }
 
+        // 立ち絵のキャッシュバスター（2026-06-12: 透過破損を修復した新版を確実に読ませる）
+        const PORTRAIT_ASSET_VER = '?v=2';
+
         function setMenuCharacterPortrait(portrait, emoji, imagePath, fallbackEmoji) {
             if (!portrait || !emoji) return;
 
-            const optimizedPath = getOptimizedCharacterImagePath(imagePath);
-            portrait.dataset.fallbackSrc = optimizedPath !== imagePath ? imagePath : '';
+            const optimizedBase = getOptimizedCharacterImagePath(imagePath);
+            const optimizedPath = optimizedBase + PORTRAIT_ASSET_VER;
+            portrait.dataset.fallbackSrc = optimizedBase !== imagePath ? imagePath + PORTRAIT_ASSET_VER : '';
             portrait.onerror = () => {
                 if (portrait.dataset.fallbackSrc) {
                     portrait.src = portrait.dataset.fallbackSrc;
@@ -5295,13 +5533,10 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             document.getElementById('menuExp').textContent = currentExp;
             document.getElementById('menuExpNeeded').textContent = expNeeded;
 
-            // ゴールドはプレイヤーのみ表示
-            if (member === player) {
-                goldRow.style.display = 'flex';
-                document.getElementById('menuGold').textContent = player.gold || 0;
-            } else {
-                goldRow.style.display = 'none';
-            }
+            // ゴールドはパーティ共有なので常時表示
+            // （キャラ切替で行数が増減するとメニューの高さが変わって見えるため固定）
+            goldRow.style.display = 'flex';
+            document.getElementById('menuGold').textContent = player.gold || 0;
 
             // キャラクター立ち絵の更新
             const portrait = document.getElementById('menuCharacterPortrait');
@@ -5502,7 +5737,8 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         // browser-native confirm/alert の置き換え。 .game-viewport の中に出す。
         // options: [{label, value}], onSelect: (value) => void
         function showGameModal({ title = '', body = '', options = [{ label: 'OK', value: 'ok' }], onSelect = null, defaultIndex = 0 } = {}) {
-            const viewport = document.querySelector('.game-viewport');
+            // モーダルはUIレイヤー（ゲームフレーム全体基準）に出す。無ければviewportへフォールバック
+            const viewport = document.getElementById('uiLayer') || document.querySelector('.game-viewport');
             if (!viewport) return;
 
             // 既存モーダルは閉じる
@@ -5587,6 +5823,31 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         window.showGameModal = showGameModal;
 
         // グローバルに公開
+        // ===== マップ遷移演出（黒幕カーテン＋場所名バナー） =====
+        // map-system.js の transitionToMap / showMapName から呼ばれる
+        window.mapTransitionFX = {
+            _locationTimer: null,
+            begin() {
+                const curtain = document.getElementById('transitionCurtain');
+                if (curtain) curtain.classList.add('active');
+            },
+            end() {
+                const curtain = document.getElementById('transitionCurtain');
+                if (curtain) curtain.classList.remove('active');
+            },
+            showLocation(name) {
+                const banner = document.getElementById('locationBanner');
+                if (!banner || !name) return;
+                banner.textContent = name;
+                banner.classList.add('show');
+                if (this._locationTimer) clearTimeout(this._locationTimer);
+                this._locationTimer = setTimeout(() => {
+                    banner.classList.remove('show');
+                    this._locationTimer = null;
+                }, 1900);
+            }
+        };
+
         window.openMenu = openMenu;
         window.closeMenu = closeMenu;
 
