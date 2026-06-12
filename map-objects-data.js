@@ -1459,8 +1459,8 @@ window.MAP_OBJECTS = {
       {
         "x": 76,
         "y": 302,
-        "width": 30,
-        "height": 32,
+        "width": 40,
+        "height": 44,
         "to": "black_market_entrance",
         "direction": "west",
         "spawnX": 705,
