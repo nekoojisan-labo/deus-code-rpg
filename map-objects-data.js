@@ -16,19 +16,19 @@ window.MAP_OBJECTS = {
     "image": "assets/maps/shinjuku_center_plaza_clean_v1.png",
     "exits": [
       {
-        "x": 350,
-        "y": 0,
-        "width": 102,
-        "height": 100,
+        "x": 370,
+        "y": 60,
+        "width": 64,
+        "height": 40,
         "to": "shrine_south_gate",
         "direction": "north",
         "spawnX": 400,
         "spawnY": 365
       },
       {
-        "x": 328,
+        "x": 372,
         "y": 400,
-        "width": 144,
+        "width": 62,
         "height": 50,
         "to": "shopping_street_north",
         "direction": "south",
@@ -37,9 +37,9 @@ window.MAP_OBJECTS = {
       },
       {
         "x": 750,
-        "y": 176,
+        "y": 215,
         "width": 50,
-        "height": 146,
+        "height": 28,
         "to": "tokyo_gov_approach",
         "direction": "east",
         "spawnX": 135,
@@ -47,9 +47,9 @@ window.MAP_OBJECTS = {
       },
       {
         "x": 0,
-        "y": 176,
+        "y": 208,
         "width": 50,
-        "height": 146,
+        "height": 60,
         "to": "shinjuku_station_gate",
         "direction": "west",
         "spawnX": 620,
@@ -782,9 +782,9 @@ window.MAP_OBJECTS = {
     ],
     "exits": [
       {
-        "x": 322,
+        "x": 361,
         "y": 0,
-        "width": 156,
+        "width": 78,
         "height": 50,
         "to": "shinjuku_center_plaza",
         "direction": "north",
@@ -792,9 +792,9 @@ window.MAP_OBJECTS = {
         "spawnY": 365
       },
       {
-        "x": 291,
+        "x": 357,
         "y": 400,
-        "width": 218,
+        "width": 88,
         "height": 50,
         "to": "shopping_street_south",
         "direction": "south",
@@ -814,9 +814,9 @@ window.MAP_OBJECTS = {
         "visible": false
       },
       {
-        "x": 660,
+        "x": 634,
         "y": 149,
-        "width": 35,
+        "width": 34,
         "height": 41,
         "to": "shop_magic",
         "direction": "north",
@@ -857,8 +857,8 @@ window.MAP_OBJECTS = {
       {
         "x": 680,
         "y": 211,
-        "width": 120,
-        "height": 122,
+        "width": 65,
+        "height": 64,
         "to": "shinjuku_center_plaza",
         "direction": "east",
         "spawnX": 85,
@@ -872,7 +872,7 @@ window.MAP_OBJECTS = {
         "to": "subway_concourse_a",
         "direction": "south",
         "spawnX": 360,
-        "spawnY": 115
+        "spawnY": 145
       }
     ],
     "objects": [
@@ -885,7 +885,6 @@ window.MAP_OBJECTS = {
           "h": 128
         }
       },
-      
       {
         "kind": "solid_wall",
         "x": 400,
@@ -996,19 +995,19 @@ window.MAP_OBJECTS = {
       },
       {
         "kind": "solid_wall",
-        "x": 742,
+        "x": 714.5,
         "y": 332,
         "footprint": {
-          "w": 30,
+          "w": 85,
           "h": 56
         }
       },
       {
         "kind": "solid_wall",
-        "x": 719,
+        "x": 714.5,
         "y": 450,
         "footprint": {
-          "w": 76,
+          "w": 85,
           "h": 118
         }
       },
@@ -1430,9 +1429,9 @@ window.MAP_OBJECTS = {
     "image": "assets/maps/shopping_street_south_clean_v1.png",
     "exits": [
       {
-        "x": 321,
+        "x": 352,
         "y": 0,
-        "width": 168,
+        "width": 90,
         "height": 50,
         "to": "shopping_street_north",
         "direction": "north",
@@ -1441,23 +1440,23 @@ window.MAP_OBJECTS = {
       },
       {
         "x": 728,
-        "y": 191,
+        "y": 230,
         "width": 72,
-        "height": 240,
+        "height": 24,
         "to": "residential_street",
         "direction": "east",
         "spawnX": 85,
         "spawnY": 235
       },
       {
-        "x": 24,
-        "y": 296,
-        "width": 48,
-        "height": 96,
+        "x": 76,
+        "y": 302,
+        "width": 30,
+        "height": 32,
         "to": "black_market_entrance",
         "direction": "west",
-        "spawnX": 700,
-        "spawnY": 200,
+        "spawnX": 705,
+        "spawnY": 212,
         "autoEnter": true,
         "visible": false
       },
@@ -1474,9 +1473,9 @@ window.MAP_OBJECTS = {
         "visible": false
       },
       {
-        "x": 594,
+        "x": 554,
         "y": 145,
-        "width": 43,
+        "width": 32,
         "height": 48,
         "to": "shop_guild",
         "direction": "north",
@@ -1712,7 +1711,7 @@ window.MAP_OBJECTS = {
         "y": 268,
         "footprint": {
           "w": 38,
-          "h": 36
+          "h": 15
         }
       },
       {
@@ -1967,19 +1966,19 @@ window.MAP_OBJECTS = {
     "exits": [
       {
         "x": 0,
-        "y": 155,
+        "y": 188,
         "width": 50,
-        "height": 136,
+        "height": 75,
         "to": "shopping_street_south",
         "direction": "west",
-        "spawnX": 685,
-        "spawnY": 290
+        "spawnX": 714,
+        "spawnY": 240
       },
       {
-        "x": 468,
-        "y": 108,
-        "width": 64,
-        "height": 62,
+        "x": 454,
+        "y": 158,
+        "width": 26,
+        "height": 30,
         "to": "house_1",
         "direction": "north",
         "spawnX": 400,
@@ -2374,19 +2373,19 @@ window.MAP_OBJECTS = {
     "exits": [
       {
         "x": 732,
-        "y": 78,
+        "y": 196,
         "width": 68,
-        "height": 240,
+        "height": 58,
         "to": "shopping_street_south",
         "direction": "east",
-        "spawnX": 85,
-        "spawnY": 340
+        "spawnX": 120,
+        "spawnY": 322
       },
       {
-        "x": 432,
-        "y": 234,
-        "width": 56,
-        "height": 54,
+        "x": 448,
+        "y": 292,
+        "width": 50,
+        "height": 40,
         "to": "shop_black_market",
         "direction": "north",
         "spawnX": 400,
@@ -2790,14 +2789,14 @@ window.MAP_OBJECTS = {
         "spawnY": 130
       },
       {
-        "x": 680,
-        "y": 133,
-        "width": 120,
-        "height": 116,
+        "x": 685,
+        "y": 195,
+        "width": 75,
+        "height": 53,
         "to": "biodome_gate",
         "direction": "east",
-        "spawnX": 140,
-        "spawnY": 350
+        "spawnX": 80,
+        "spawnY": 258
       },
       {
         "x": 356,
@@ -3036,6 +3035,33 @@ window.MAP_OBJECTS = {
           "w": 200,
           "h": 155
         }
+      },
+      {
+        "kind": "solid_wall",
+        "x": 778.5,
+        "y": 240,
+        "footprint": {
+          "w": 43,
+          "h": 108
+        }
+      },
+      {
+        "kind": "solid_wall",
+        "x": 723.5,
+        "y": 195,
+        "footprint": {
+          "w": 67,
+          "h": 63
+        }
+      },
+      {
+        "kind": "solid_wall",
+        "x": 674,
+        "y": 230,
+        "footprint": {
+          "w": 22,
+          "h": 42
+        }
       }
     ]
   },
@@ -3044,13 +3070,13 @@ window.MAP_OBJECTS = {
     "exits": [
       {
         "x": 0,
-        "y": 131,
-        "width": 120,
-        "height": 164,
+        "y": 234,
+        "width": 52,
+        "height": 48,
         "to": "shrine_south_gate",
         "direction": "west",
-        "spawnX": 700,
-        "spawnY": 260
+        "spawnX": 676,
+        "spawnY": 250
       }
     ],
     "objects": [
@@ -3245,7 +3271,7 @@ window.MAP_OBJECTS = {
       },
       {
         "kind": "solid_wall",
-        "x": 541,
+        "x": 519,
         "y": 440,
         "footprint": {
           "w": 22,
