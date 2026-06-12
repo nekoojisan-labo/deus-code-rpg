@@ -17,7 +17,7 @@ const QUEST_STEPS = [
   {
     id: 'go_subway', chapter: 1,
     title: '地下鉄で暴走の原因を調べる',
-    where: '広場の西 → 新宿駅 → 改札の先（南）の地下コンコース',
+    where: '広場の北 → 新宿駅 → 改札の先（南）の地下コンコース',
     detail: '機械兵が暴走しているという地下鉄へ向かおう。',
     target: 'subway_concourse_a',
     done: f => !!f.exploredSubway
