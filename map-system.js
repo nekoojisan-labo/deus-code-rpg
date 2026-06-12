@@ -935,10 +935,10 @@ class MapSystem {
                 ],
                 exits: [
                     // 出口は walkable と十分にオーバーラップさせて 3px歩幅でも確実にトリガーする
-                    { x: 370, y: 40,  width: 51, height: 60, to: 'shrine_south_gate',     direction: 'north', spawnX: 400, spawnY: 365 },
+                    { x: 370, y: 40,  width: 51, height: 60, to: 'shinjuku_station_gate', direction: 'north', spawnX: 715, spawnY: 235 },
                     { x: 360, y: 395, width: 80, height: 55, to: 'shopping_street_north', direction: 'south', spawnX: 400, spawnY: 85  },
                     { x: 740, y: 215, width: 55, height: 50, to: 'tokyo_gov_approach',    direction: 'east',  spawnX: 50,  spawnY: 220 },
-                    { x: 6,   y: 210, width: 30, height: 60, to: 'shinjuku_station_gate', direction: 'west',  spawnX: 715, spawnY: 235 }
+                    { x: 6,   y: 210, width: 30, height: 60, to: 'shrine_south_gate',     direction: 'west',  spawnX: 400, spawnY: 365 }
                 ],
                 npcs: [
                     { x: 360, y: 250, emoji: '👤', name: '感情を失った市民', dialogue: '...。' },
@@ -1063,7 +1063,7 @@ class MapSystem {
                 exits: [
                     // 東 → 新宿中央広場、南 → 地下コンコース
                     // ※ 西側 (72, 231) は隣接マップ未定義のため一旦保留
-                    { x: 761, y: 207, width: 38, height: 104, to: 'shinjuku_center_plaza', direction: 'east',  spawnX: 85,  spawnY: 235 },
+                    { x: 761, y: 207, width: 38, height: 104, to: 'shinjuku_center_plaza', direction: 'east',  spawnX: 400, spawnY: 130 },
                     { x: 516, y: 396, width: 82, height: 48,  to: 'subway_concourse_a',    direction: 'south', spawnX: 670, spawnY: 130 }
                 ],
                 npcs: [
@@ -1674,7 +1674,7 @@ class MapSystem {
                 ],
                 exits: [
                     // 南 → 新宿中央広場、東 → バイオドーム
-                    { x: 372, y: 384, width: 64, height: 40, to: 'shinjuku_center_plaza', direction: 'south', spawnX: 400, spawnY: 130 },
+                    { x: 372, y: 384, width: 64, height: 40, to: 'shinjuku_center_plaza', direction: 'south', spawnX: 85,  spawnY: 249 },
                     { x: 763, y: 177, width: 34, height: 43, to: 'biodome_gate',          direction: 'east',  spawnX: 85,  spawnY: 235 }
                     // ※ 北 (374, 38) は神宮の奥（shrine_path）として未実装のため保留
                 ],

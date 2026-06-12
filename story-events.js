@@ -480,8 +480,9 @@ class StoryEventSystem {
     _applyPortrait(imgEl, key) {
         if (!imgEl) return;
         if (!key) { imgEl.classList.remove('shown', 'speaking'); imgEl.removeAttribute('src'); return; }
-        const webp = `assets/characters/${key}_portrait.webp`;
-        imgEl.onerror = () => { imgEl.onerror = null; imgEl.src = `assets/characters/${key}_portrait.png`; };
+        // 会話シーンは切り抜き(透過)版を使う。メニュー/戦闘カードの額装版とはファイルを分けている
+        const webp = `assets/characters/${key}_portrait_vn.webp`;
+        imgEl.onerror = () => { imgEl.onerror = null; imgEl.src = `assets/characters/${key}_portrait_vn.png`; };
         imgEl.src = webp;
         imgEl.classList.add('shown');
         imgEl.classList.remove('speaking');

@@ -33,7 +33,7 @@ const QUEST_STEPS = [
   {
     id: 'go_shrine', chapter: 1,
     title: '明治神宮で神託を聞く',
-    where: '広場の北 → 明治神宮 南参道',
+    where: '広場の西 → 明治神宮 南参道',
     detail: '謎の声に導かれ、神宮の老神主を訪ねよう。',
     target: 'shrine_south_gate',
     done: f => !!f.metPriest
