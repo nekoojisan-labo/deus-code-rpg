@@ -493,6 +493,7 @@ class BattleSystem {
     
     // 戦闘開始
     startBattle(enemy, isBossBattle = false, onBossDefeat = null) {
+        if (window.playSE) window.playSE('encounter');
         this.inBattle = true;
         this.isBossBattle = isBossBattle || enemy.boss || false;
         this.onBossDefeat = onBossDefeat;
@@ -1210,6 +1211,11 @@ class BattleSystem {
 
     // カムイスキルを実行（決定キー / クリックから呼ばれる）
     executeKamuiSkill(magicId) {
+        if (window.playSE) {
+            const m = window.magicSystem && window.magicSystem.magicData && window.magicSystem.magicData[magicId];
+            const isHeal = m && (m.type === 'heal' || /heal/i.test(magicId));
+            window.playSE(isHeal ? 'heal' : 'magic');
+        }
         if (this.kamuiSkillExecuting) return; // 連打による多重実行を防止
         this.kamuiSkillExecuting = true;
         try {
@@ -1630,6 +1636,7 @@ class BattleSystem {
     
     // 戦闘勝利
     battleVictory(player) {
+        if (window.playSE) window.playSE('victory');
         this.waitingForCommand = false;
 
         // コマンドを非表示に（旧UI互換）
@@ -1747,6 +1754,7 @@ class BattleSystem {
 
     // キャラクターのレベルアップ処理
     levelUpCharacter(character) {
+        if (window.playSE) window.playSE('level_up');
         const characterId = character.characterId || 'kaito';
         const oldLevel = character.level;
         // このレベルに必要だったexpを消費（消費しないとprocessLevelUpsが同レベルで無限/多段暴発する）
@@ -1852,6 +1860,7 @@ class BattleSystem {
         const escapeChance = Math.random();
 
         if (escapeChance > 0.4) { // 60%の確率で逃走成功
+            if (window.playSE) window.playSE('escape');
             this.addBattleLog('うまく にげきれた！');
             setTimeout(() => this.endBattle(false), 1000);
         } else {
@@ -2060,6 +2069,7 @@ class BattleSystem {
     // targetIndex: 味方側のダメージ表示先（getPartyMembers() のインデックス）。
     //              null の場合は従来通り currentMemberIndex のカードに表示する。
     showDamageEffect(damage, isEnemy, isCritical = false, targetIndex = null) {
+        if (window.playSE) window.playSE(isEnemy ? 'hit' : 'damage');
         const battleScreen = document.getElementById('battleScreen');
         if (!battleScreen) return;
 

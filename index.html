@@ -3533,6 +3533,7 @@
     <script src="item-system.js?v=47"></script>
     <script src="equipment-system.js?v=50"></script>
     <script src="magic-system.js?v=47"></script>
+    <script src="se-system.js?v=1"></script>
     <script src="battle-system.js?v=56"></script>
     <script src="map-walkability-data.js?v=12"></script>
     <script src="object-catalog.js?v=2"></script>
@@ -5240,6 +5241,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         function saveGame() {
             try {
                 localStorage.setItem(SAVE_KEY, JSON.stringify(serializeGameState()));
+                if (window.playSE) window.playSE('save');
                 showMessage('ゲームを セーブしました');
             } catch (e) {
                 console.error('[Save] failed:', e);
@@ -5329,6 +5331,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                     clearMessage();
                 }
                 menuOverlay.classList.add('active');
+                if (window.playSE) window.playSE('menu_open');
                 menuSelectedIndex = 0;
                 updatePartyTabs();
                 updateMenuStats();
@@ -5830,6 +5833,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             begin() {
                 const curtain = document.getElementById('transitionCurtain');
                 if (curtain) curtain.classList.add('active');
+                if (window.playSE) window.playSE('transition');
             },
             end() {
                 const curtain = document.getElementById('transitionCurtain');
@@ -5847,6 +5851,34 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 }, 1900);
             }
         };
+
+        // ===== SE: メニュー/ショップ/バトルコマンド操作の共通効果音 =====
+        // 個別ハンドラに手を入れず、UI文脈がアクティブな時のキー/クリックで鳴らす
+        (function setupMenuSE() {
+            const NAV_KEYS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D', 'q', 'e', 'Q', 'E'];
+            const OK_KEYS = ['z', 'Z', 'Enter', ' '];
+            const NG_KEYS = ['x', 'X', 'Escape'];
+            function seContextActive() {
+                if (document.querySelector('.menu-overlay.active')) return true;
+                const ksm = document.getElementById('kamuiSkillMenu');
+                if (ksm && ksm.style.display !== 'none' && ksm.style.display !== '') return true;
+                if (document.getElementById('shopUI')) return true;
+                if (document.getElementById('gameModalOverlay')) return true;
+                if (document.querySelector('.game-msg-body.battle-cmd-mode')) return true;
+                return false;
+            }
+            document.addEventListener('keydown', (e) => {
+                if (!window.playSE || !seContextActive()) return;
+                if (NAV_KEYS.includes(e.key)) window.playSE('cursor');
+                else if (OK_KEYS.includes(e.key)) window.playSE('confirm');
+                else if (NG_KEYS.includes(e.key)) window.playSE('cancel');
+            }, true);
+            document.addEventListener('click', (e) => {
+                if (!window.playSE || !e.target || !e.target.closest) return;
+                const t = e.target.closest('.menu-option, .command-item, .item-entry, .kamui-skill-item, .shop-entry, .shop-inn-option, .game-modal-option, .party-tab, .party-switch');
+                if (t) window.playSE('confirm');
+            }, true);
+        })();
 
         window.openMenu = openMenu;
         window.closeMenu = closeMenu;
