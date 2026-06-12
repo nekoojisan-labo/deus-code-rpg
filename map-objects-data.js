@@ -811,7 +811,8 @@ window.MAP_OBJECTS = {
         "spawnX": 400,
         "spawnY": 380,
         "autoEnter": true,
-        "visible": false
+        "visible": false,
+        "requireFacing": "up"
       },
       {
         "x": 634,
@@ -823,7 +824,8 @@ window.MAP_OBJECTS = {
         "spawnX": 400,
         "spawnY": 380,
         "autoEnter": true,
-        "visible": false
+        "visible": false,
+        "requireFacing": "up"
       },
       {
         "x": 104,
@@ -835,7 +837,8 @@ window.MAP_OBJECTS = {
         "spawnX": 400,
         "spawnY": 380,
         "autoEnter": true,
-        "visible": false
+        "visible": false,
+        "requireFacing": "up"
       },
       {
         "x": 656,
@@ -847,7 +850,8 @@ window.MAP_OBJECTS = {
         "spawnX": 400,
         "spawnY": 380,
         "autoEnter": true,
-        "visible": false
+        "visible": false,
+        "requireFacing": "up"
       }
     ]
   },
@@ -872,7 +876,10 @@ window.MAP_OBJECTS = {
         "to": "subway_concourse_a",
         "direction": "south",
         "spawnX": 360,
-        "spawnY": 145
+        "spawnY": 145,
+        "autoEnter": true,
+        "visible": false,
+        "requireFacing": "up"
       }
     ],
     "objects": [
@@ -1097,7 +1104,8 @@ window.MAP_OBJECTS = {
         "spawnX": 715,
         "spawnY": 300,
         "autoEnter": true,
-        "visible": false
+        "visible": false,
+        "requireFacing": "up"
       }
     ],
     "objects": [
@@ -1458,7 +1466,8 @@ window.MAP_OBJECTS = {
         "spawnX": 705,
         "spawnY": 212,
         "autoEnter": true,
-        "visible": false
+        "visible": false,
+        "requireFacing": "left"
       },
       {
         "x": 163,
@@ -1470,7 +1479,8 @@ window.MAP_OBJECTS = {
         "spawnX": 400,
         "spawnY": 380,
         "autoEnter": true,
-        "visible": false
+        "visible": false,
+        "requireFacing": "up"
       },
       {
         "x": 554,
@@ -1482,7 +1492,8 @@ window.MAP_OBJECTS = {
         "spawnX": 400,
         "spawnY": 380,
         "autoEnter": true,
-        "visible": false
+        "visible": false,
+        "requireFacing": "up"
       },
       {
         "x": 380,
@@ -1494,7 +1505,8 @@ window.MAP_OBJECTS = {
         "spawnX": 400,
         "spawnY": 380,
         "autoEnter": true,
-        "visible": false
+        "visible": false,
+        "requireFacing": "up"
       }
     ],
     "objects": [
@@ -1984,7 +1996,8 @@ window.MAP_OBJECTS = {
         "spawnX": 400,
         "spawnY": 370,
         "autoEnter": true,
-        "visible": false
+        "visible": false,
+        "requireFacing": "up"
       }
     ],
     "objects": [
@@ -2391,7 +2404,8 @@ window.MAP_OBJECTS = {
         "spawnX": 400,
         "spawnY": 380,
         "autoEnter": true,
-        "visible": false
+        "visible": false,
+        "requireFacing": "down"
       }
     ],
     "objects": [

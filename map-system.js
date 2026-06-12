@@ -3726,7 +3726,10 @@ class MapSystem {
         if (!map || this.transitioning || this.isTransitionCoolingDown()) return null;
 
         for (const exit of (map.exits || [])) {
-            if (exit.visible === false && !exit.autoEnter) continue;
+            // autoEnterドアは接触では発火させない（checkAutoEnterAheadの「向きを合わせて
+            // 歩き込んだ時」のみ）。退店スポーンがドア余白に掛かっても再入店ループしない
+            if (exit.autoEnter) continue;
+            if (exit.visible === false) continue;
 
             // 方向制限付きの出口（建物入口など）はプレイヤーの向きが一致する時だけ反応
             if (exit.requireFacing && playerFacing && exit.requireFacing !== playerFacing) continue;
