@@ -20,10 +20,10 @@ window.MAP_OBJECTS = {
         "y": 0,
         "width": 102,
         "height": 100,
-        "to": "shinjuku_station_gate",
+        "to": "shrine_south_gate",
         "direction": "north",
-        "spawnX": 715,
-        "spawnY": 235
+        "spawnX": 400,
+        "spawnY": 365
       },
       {
         "x": 328,
@@ -50,10 +50,10 @@ window.MAP_OBJECTS = {
         "y": 176,
         "width": 50,
         "height": 146,
-        "to": "shrine_south_gate",
+        "to": "shinjuku_station_gate",
         "direction": "west",
-        "spawnX": 400,
-        "spawnY": 365
+        "spawnX": 715,
+        "spawnY": 235
       }
     ],
     "objects": [
@@ -861,8 +861,8 @@ window.MAP_OBJECTS = {
         "height": 122,
         "to": "shinjuku_center_plaza",
         "direction": "east",
-        "spawnX": 400,
-        "spawnY": 130
+        "spawnX": 85,
+        "spawnY": 235
       },
       {
         "x": 577,
@@ -2776,8 +2776,8 @@ window.MAP_OBJECTS = {
         "height": 50,
         "to": "shinjuku_center_plaza",
         "direction": "south",
-        "spawnX": 85,
-        "spawnY": 249
+        "spawnX": 400,
+        "spawnY": 130
       },
       {
         "x": 680,
