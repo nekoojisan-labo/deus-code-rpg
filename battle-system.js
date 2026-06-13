@@ -401,14 +401,20 @@ class BattleSystem {
             }
         };
         
-        // エリア別エンカウントテーブル
+        // エリア別エンカウントテーブル（出現する敵"種"。強さは下記 tier 倍率でスケール）
         this.encounterTables = {
             city: ['watcher', 'watcher', 'deusMachina', 'cerberus'],
             subway: ['dustGolem', 'cerberus', 'watcher', 'dustGolem'],
             garden: ['alraune', 'alraune', 'watcher', 'dustGolem'],
             market: ['deusMachina', 'cerberus', 'watcher', 'deusMachina'],
-            shrine: ['alraune', 'dustGolem', 'cerberus', 'deusMachina']
+            shrine: ['alraune', 'dustGolem', 'cerberus', 'deusMachina'],
+            // 後半エリア（都庁・深層トンネル）専用テーブル。種は強敵寄り＋下記 tier 倍率で更にスケール
+            gov: ['cerberus', 'deusMachina', 'dustGolem', 'cerberus'],
+            dungeon: ['deusMachina', 'cerberus', 'dustGolem', 'deusMachina']
         };
+        // tier→ステータス倍率。物語の章進行（quest）に対応する難易度帯。
+        // 1=序盤(広場) 2=地下鉄/神社 3=植物園/闇市 4=都庁 5=深層ダンジョン
+        this.tierMultiplier = { 1: 1.0, 2: 1.5, 3: 2.2, 4: 3.0, 5: 4.2 };
     }
     
     // ランダムエンカウント歩数を決定
@@ -416,6 +422,7 @@ class BattleSystem {
     //     1 タイル ≈ 10〜12 フレームの感覚で値を設定する
     getRandomEncounterSteps(encounterRate = 'medium') {
         const rateSettings = {
+            extreme:   { min: 60,  max: 100 },  // 最危険（深層ダンジョン）
             very_high: { min: 90,  max: 140 },  // 危険エリア（都庁など）
             high:      { min: 160, max: 240 },  // 地下鉄など
             medium:    { min: 260, max: 400 },  // 通常エリア
@@ -453,6 +460,7 @@ class BattleSystem {
 
             // 閾値超え後にもう一段の発生確率（低めに設定）
             const encounterChance = {
+                extreme:   0.8,
                 very_high: 0.7,
                 high:      0.55,
                 medium:    0.4,
@@ -470,25 +478,42 @@ class BattleSystem {
     }
     
     // ランダムエンカウント発生
+    // エリア（敵"種"テーブル）に加え、現在マップの zone（tier/levelRange）で
+    // ステータスをスケールし「ダンジョンごとに敵の強さが違う」を成立させる。
     triggerRandomEncounter(area) {
-        const encounterTable = this.encounterTables[area] || this.encounterTables.city;
+        // 現在マップの難易度帯を取得（quest章進行に対応）。未定義なら tier1/該当areaテーブル。
+        const zone = (typeof window !== 'undefined' && window.mapSystem && window.mapSystem.getEncounterZone)
+            ? window.mapSystem.getEncounterZone()
+            : null;
+        const tableKey = (zone && zone.table) || area;
+        const encounterTable = this.encounterTables[tableKey] || this.encounterTables.city;
         const enemyId = encounterTable[Math.floor(Math.random() * encounterTable.length)];
-        const enemyData = this.enemyDatabase[enemyId];
-        
-        if (enemyData) {
-            // 敵のステータスをコピーして戦闘開始
-            const enemy = {
-                ...enemyData,
-                currentHp: enemyData.hp,
-                currentMp: enemyData.mp || 0,
-                maxHp: enemyData.maxHp || enemyData.hp,
-                id: enemyId
-            };
-            
-            console.log('エンカウント:', enemy.name, 'HP:', enemy.currentHp, '/', enemy.maxHp, 'EXP:', enemy.exp, 'GOLD:', enemy.gold);
-            console.log('次回エンカウントまで:', this.encounterThreshold, '歩');
-            this.startBattle(enemy);
-        }
+        const base = this.enemyDatabase[enemyId];
+        if (!base) return;
+
+        const tier = (zone && zone.tier) || 1;
+        const mult = this.tierMultiplier[tier] || 1.0;
+        const range = (zone && zone.levelRange) || [1, 1];
+        const level = range[0] + Math.floor(Math.random() * (range[1] - range[0] + 1));
+        const sc = (v) => Math.max(1, Math.round((v || 0) * mult));
+
+        const hp = sc(base.hp);
+        const enemy = {
+            ...base,
+            hp,
+            maxHp: hp,
+            currentHp: hp,
+            currentMp: base.mp || 0,
+            attack: sc(base.attack),
+            defense: sc(base.defense),
+            exp: sc(base.exp),
+            gold: sc(base.gold),
+            level,
+            id: enemyId
+        };
+
+        console.log('エンカウント:', enemy.name, `Lv${level}(tier${tier}x${mult})`, 'HP:', enemy.currentHp, 'ATK:', enemy.attack, 'EXP:', enemy.exp);
+        this.startBattle(enemy);
     }
     
     // 戦闘開始

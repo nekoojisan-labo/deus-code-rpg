@@ -3179,7 +3179,8 @@ class MapSystem {
             case 'ヤミ': return !!storyFlags.yamiJoined;
             // 撃破したボスは消す
             case '暴走ドローン': return !!(storyFlags.bossDefeated || storyFlags.chapter1_complete);
-            case 'アーク・プライム': return !!storyFlags.arcDefeated;
+            // アーク・プライムは都庁入場(enteredGov=ヤミ加入後に解放)まで出現しない＋撃破後も消す
+            case 'アーク・プライム': return !storyFlags.enteredGov || !!storyFlags.arcDefeated;
             default: return false;
         }
     }
@@ -3738,12 +3739,11 @@ class MapSystem {
             const M = 8;
             if (playerX >= exit.x - M && playerX <= exit.x + exit.width + M &&
                 playerY >= exit.y - M && playerY <= exit.y + exit.height + M) {
-                
-                // ロックチェック
-                if (exit.locked) {
-                    return { locked: true, requirement: exit.requirement, message: `${exit.requirement}が必要です` };
-                }
-                
+
+                // ロック/章進行フラグゲートのチェック
+                const gate = this.evalExitGate(exit);
+                if (gate) return gate;
+
                 return { nextMap: this.normalizeMapId(exit.to), exit: exit };
             }
         }
@@ -3800,9 +3800,8 @@ class MapSystem {
             if (exit.requireFacing && exit.requireFacing !== facing) continue;
             if (px >= exit.x && px <= exit.x + exit.width &&
                 py >= exit.y && py <= exit.y + exit.height) {
-                if (exit.locked) {
-                    return { locked: true, requirement: exit.requirement, message: `${exit.requirement}が必要です` };
-                }
+                const gate = this.evalExitGate(exit);
+                if (gate) return gate;
                 return { nextMap: this.normalizeMapId(exit.to), exit };
             }
         }
@@ -3963,10 +3962,42 @@ class MapSystem {
     getCurrentArea() {
         const map = this.maps[this.currentMap];
         if (!map) return 'city';
-        
+
         return map.area || 'city';
     }
-    
+
+    // 現在マップの難易度帯（敵"種"テーブル・tier・推奨レベル帯）。
+    // 物語の章進行(quest-system)に対応する一貫した難易度カーブの正準定義。
+    // mapId 前方一致で判定（deep_tunnel_2 等の派生も拾う）。battle-system が参照。
+    getEncounterZone() {
+        const id = this.normalizeMapId(this.currentMap) || '';
+        // 順序重要: 長い接頭辞から判定
+        if (id.startsWith('tokyo_gov')) return { table: 'gov', tier: 4, levelRange: [10, 13] };
+        if (id.startsWith('deep_tunnel')) return { table: 'dungeon', tier: 5, levelRange: [13, 17] };
+        if (id.startsWith('subway')) return { table: 'subway', tier: 2, levelRange: [3, 5] };
+        if (id.startsWith('shrine')) return { table: 'shrine', tier: 2, levelRange: [5, 7] };
+        if (id.startsWith('biodome')) return { table: 'garden', tier: 3, levelRange: [7, 9] };
+        if (id.startsWith('black_market')) return { table: 'market', tier: 3, levelRange: [8, 10] };
+        // 広場・駅・商店街・住宅街など序盤の街
+        return { table: 'city', tier: 1, levelRange: [1, 3] };
+    }
+
+    // 出口のゲート評価（locked / requiredFlag）。施錠ならメッセージ付きで返す。
+    // requiredFlag は window.storyFlags を参照し、未達なら通さない（章進行ゲート）。
+    evalExitGate(exit) {
+        if (!exit) return null;
+        if (exit.locked) {
+            return { locked: true, requirement: exit.requirement, message: exit.lockedMsg || `${exit.requirement}が必要です` };
+        }
+        if (exit.requiredFlag) {
+            const flags = (typeof window !== 'undefined' && window.storyFlags) || {};
+            if (!flags[exit.requiredFlag]) {
+                return { locked: true, requirement: exit.requiredFlag, message: exit.lockedMsg || 'まだ ここから先へは 進めないようだ…' };
+            }
+        }
+        return null;
+    }
+
     // 衝突判定（建物）
     checkBuildingCollision(x, y, playerSize = 24) {
         const map = this.maps[this.currentMap];

@@ -23,7 +23,9 @@ window.MAP_OBJECTS = {
         "to": "shrine_south_gate",
         "direction": "north",
         "spawnX": 400,
-        "spawnY": 365
+        "spawnY": 365,
+        "requiredFlag": "chapter1_complete",
+        "lockedMsg": "参道の奥は霧が深い…まだ進む時ではないようだ。"
       },
       {
         "x": 372,
@@ -43,7 +45,9 @@ window.MAP_OBJECTS = {
         "to": "tokyo_gov_approach",
         "direction": "east",
         "spawnX": 135,
-        "spawnY": 260
+        "spawnY": 260,
+        "requiredFlag": "yamiJoined",
+        "lockedMsg": "都庁の封鎖は固い。仲間を集めてからでなければ近づけない。"
       },
       {
         "x": 0,
@@ -1467,7 +1471,9 @@ window.MAP_OBJECTS = {
         "spawnY": 212,
         "autoEnter": true,
         "visible": false,
-        "requireFacing": "left"
+        "requireFacing": "left",
+        "requiredFlag": "metPriest",
+        "lockedMsg": "今はまだ、ここに用は無さそうだ。"
       },
       {
         "x": 163,
@@ -2810,7 +2816,9 @@ window.MAP_OBJECTS = {
         "to": "biodome_gate",
         "direction": "east",
         "spawnX": 80,
-        "spawnY": 258
+        "spawnY": 258,
+        "requiredFlag": "metPriest",
+        "lockedMsg": "神主の導きを得てから向かうべき場所だ。"
       },
       {
         "x": 356,
