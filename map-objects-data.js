@@ -1462,9 +1462,9 @@ window.MAP_OBJECTS = {
       },
       {
         "x": 76,
-        "y": 302,
-        "width": 40,
-        "height": 44,
+        "y": 316,
+        "width": 30,
+        "height": 28,
         "to": "black_market_entrance",
         "direction": "west",
         "spawnX": 705,
@@ -2397,8 +2397,8 @@ window.MAP_OBJECTS = {
         "height": 58,
         "to": "shopping_street_south",
         "direction": "east",
-        "spawnX": 120,
-        "spawnY": 322
+        "spawnX": 140,
+        "spawnY": 320
       },
       {
         "x": 448,

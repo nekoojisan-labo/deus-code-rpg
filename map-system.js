@@ -3829,6 +3829,17 @@ class MapSystem {
         for (const exit of map.exits) {
             if (!exit.autoEnter) continue;          // 自動入口のみ対象（街の端の出口は対象外）
             if (exit.requireFacing && exit.requireFacing !== facing) continue;
+            // 「手前側から正面で歩き込む」時のみ発火。プレイヤーが入口の"前面"
+            // （侵入方向の反対側）に居ることを要求し、背後/通過/内側からの誤発火を防ぐ。
+            // 例: facing=left(西へ入る) → プレイヤーは入口の東端より東に居る時だけ。
+            const FRONT_MARGIN = 4;
+            const onFront = (
+                facing === 'left'  ? playerX >= exit.x + exit.width - FRONT_MARGIN :
+                facing === 'right' ? playerX <= exit.x + FRONT_MARGIN :
+                facing === 'up'    ? playerY >= exit.y + exit.height - FRONT_MARGIN :
+                facing === 'down'  ? playerY <= exit.y + FRONT_MARGIN : true
+            );
+            if (!onFront) continue;
             if (px >= exit.x && px <= exit.x + exit.width &&
                 py >= exit.y && py <= exit.y + exit.height) {
                 const gate = this.evalExitGate(exit);
