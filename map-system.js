@@ -2661,7 +2661,7 @@ class MapSystem {
                     const doorScale = map.worldScale && map.worldScale > 0 ? map.worldScale : 1;
                     const cx = back.x + back.width / 2;
                     const cy = back.y + back.height + Math.round(28 * doorScale);
-                    return this.findSafeSpawnPoint(map, cx, cy, 24);
+                    return this.findClearSpawnPoint(map, cx, cy, 24);
                 }
             }
 
@@ -3667,6 +3667,55 @@ class MapSystem {
 
     isSafeSpawnPoint(map, x, y, size = 24) {
         return this.isMapPositionWalkable(map, x, y, size) && !this.isPointInsideExit(map, x, y, true);
+    }
+
+    // ある地点が「壁/NPC/ドアに塞がれず実際に動ける」かを4方向で数える。
+    // 店から出た直後にドア直下の楔へ嵌まり込んで動けなくなる/再入店ループする
+    // 問題を防ぐため、findSafeSpawnPoint（最寄りの歩行可1px）より厳しい基準。
+    spawnFreeDirections(map, x, y, size = 24, probe = 16) {
+        if (!map) return 0;
+        const npcs = map.npcs || [];
+        const npcBlocked = (px, py) => npcs.some(n => {
+            if (this.isNPCHidden && this.isNPCHidden(n, (typeof window !== 'undefined') ? window.storyFlags : null)) return false;
+            return Math.hypot(px - n.x, py - n.y) < (size / 2 + 14);
+        });
+        const dirs = [[probe, 0], [-probe, 0], [0, probe], [0, -probe]];
+        let free = 0;
+        for (const [dx, dy] of dirs) {
+            const nx = x + dx, ny = y + dy;
+            // 歩行可能・出口(ドア)の中でない・NPCに塞がれていない＝そちらへ一歩出られる
+            if (this.isMapPositionWalkable(map, nx, ny, size) &&
+                !this.isPointInsideExit(map, nx, ny, true) &&
+                !npcBlocked(nx, ny)) {
+                free++;
+            }
+        }
+        return free;
+    }
+
+    // 店退出スポーン用：アンカー近傍で「3方向以上に動ける」開けた床を探す。
+    // 見つからなければ従来の findSafeSpawnPoint にフォールバック。
+    findClearSpawnPoint(map, x, y, size = 24, minFree = 3) {
+        if (!map) return { x: Math.round(x), y: Math.round(y) };
+        const ok = (px, py) => this.isSafeSpawnPoint(map, px, py, size) &&
+            this.spawnFreeDirections(map, px, py, size) >= minFree;
+        if (ok(x, y)) return { x: Math.round(x), y: Math.round(y) };
+        const candidates = [];
+        // 同心リングで外側へ探索（下＝街路側を優先しやすいよう全方位＋距離順）
+        for (let r = 12; r <= 220; r += 8) {
+            for (let a = 0; a < 360; a += 30) {
+                const rad = a * Math.PI / 180;
+                candidates.push({ x: x + Math.cos(rad) * r, y: y + Math.sin(rad) * r, d: r });
+            }
+        }
+        let best = null, bestD = Infinity;
+        for (const c of candidates) {
+            if (c.d >= bestD) continue;
+            if (ok(c.x, c.y)) { best = c; bestD = c.d; }
+        }
+        if (best) return { x: Math.round(best.x), y: Math.round(best.y) };
+        // クリアな点が無ければ従来挙動
+        return this.findSafeSpawnPoint(map, x, y, size);
     }
 
     findSafeSpawnPoint(map, x, y, size = 24) {
