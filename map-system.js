@@ -1363,7 +1363,8 @@ class MapSystem {
                 npcs: [
                     { x: 160, y: 240, image: 'assets/characters/sprites/innkeeper_walk.png', emoji: '🏠', name: '宿屋の案内人', dialogue: '宿泊は建物の中の受付でお願いします。', static: true },
                     { x: 400, y: 250, image: 'assets/characters/sprites/banker_walk.png', emoji: '💰', name: '銀行の案内人', dialogue: '銀行機能は店内の窓口で使えます。', static: true },
-                    { x: 645, y: 240, image: 'assets/characters/sprites/guildmaster_walk.png', emoji: '⚔️', name: 'ギルド案内人', dialogue: 'ギルドの依頼は中のギルドマスターに聞いてください。', static: true }
+                    { x: 645, y: 240, image: 'assets/characters/sprites/guildmaster_walk.png', emoji: '⚔️', name: 'ギルド案内人', dialogue: 'ギルドの依頼は中のギルドマスターに聞いてください。', static: true },
+                    { x: 150, y: 305, image: 'assets/characters/sprites/dark_merchant_walk.png', emoji: '🕵️', name: '路地裏の男', dialogue: '…探し物か？ この先、西の路地の奥に裏の市場がある。紫のネオン門に向かって進みな。', facing: 'left', static: true }
                 ]
             },
             black_market_entrance: {
@@ -2787,7 +2788,27 @@ class MapSystem {
     }
 
     getNPCSpritePath(npc) {
-        return npc.image || this.npcSpriteMap[npc.name] || null;
+        const explicit = npc.image || this.npcSpriteMap[npc.name];
+        if (explicit) return explicit;
+        // 名前/画像未登録の"人"NPCは静止絵文字で固まり「動かない」印象の主因。
+        // 人型の絵文字なら汎用市民スプライトを名前ハッシュで決定的に割り当て、
+        // 徘徊エンジンのコマ送りに乗せて街に動きを出す（敵・ロボ等の非人型は除外）。
+        if (npc.hostile) return null;
+        const personEmoji = ['👤','🧑','👨','👩','🧓','👴','👵','🧒','👦','👧','🧕','👲','💂','🕵','🧙','🧛','👮','👷','🤵','👸','🤴','🙍','🙎','🧝'];
+        const e = npc.emoji || '';
+        const isPerson = personEmoji.some(p => e.startsWith(p));
+        if (!isPerson) return null;
+        const pool = [
+            'assets/characters/sprites/npc_citizen_male_walk.png',
+            'assets/characters/sprites/npc_citizen_female_walk.png',
+            'assets/characters/sprites/npc_resident_walk.png',
+            'assets/characters/sprites/npc_worker_walk.png',
+            'assets/characters/sprites/npc_elder_walk.png'
+        ];
+        let h = 0;
+        const key = npc.name || e;
+        for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+        return pool[h % pool.length];
     }
 
     isShopStaffNPC(npc, spritePath = null) {
@@ -3288,25 +3309,33 @@ class MapSystem {
         ctx.ellipse(position.x, position.y + 4, shadowRadiusX, shadowRadiusY, 0, 0, Math.PI * 2);
         ctx.fill();
 
+        // 停止中の微小アイドルモーション（呼吸の上下）。移動中は歩行コマに任せる。
+        // 会話/イベント中(this._npcPaused)は完全静止させ、詰まり時のジッターを防ぐ。
+        let idleBob = 0;
+        if (!npc.isMoving && !this._npcPaused) {
+            const phase = (npc.wanderPhase || 0);
+            idleBob = Math.sin((this._npcClock || 0) * 0.0028 + phase) * 1.6;
+        }
+
         if (sprite && sprite.complete && sprite.naturalWidth > 0) {
             if (this.isWalkSpriteSheet(spritePath, sprite)) {
                 // フルフレーム再生(本物の歩行コマをそのまま送る・整数スナップ)
                 const f = this.computeWalkFrame(npc.facing, npc.isMoving, npc.animTime || 0);
                 const dw = npc.hostile ? 56 : 50, dh = npc.hostile ? 72 : 64;
                 const dx = Math.round(position.x - dw / 2);
-                const dy = Math.round(position.y - dh + 6);
+                const dy = Math.round(position.y - dh + 6 + idleBob);
                 const ps = ctx.imageSmoothingEnabled;
                 ctx.imageSmoothingEnabled = false;
                 ctx.drawImage(sprite, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
                 ctx.imageSmoothingEnabled = ps;
             } else {
                 const size = npc.hostile ? 50 : 44;
-                ctx.drawImage(sprite, position.x - size / 2, position.y - size, size, size * 1.25);
+                ctx.drawImage(sprite, position.x - size / 2, position.y - size + idleBob, size, size * 1.25);
             }
         } else {
             ctx.font = '32px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText(npc.emoji, position.x, position.y);
+            ctx.fillText(npc.emoji, position.x, position.y + idleBob);
         }
 
         // クエストマーカー表示（ストーリーNPC用）
@@ -3394,6 +3423,7 @@ class MapSystem {
         const now = performance.now();
         const dt = this._lastNpcUpdate ? (now - this._lastNpcUpdate) : 16;
         this._lastNpcUpdate = now;
+        this._npcClock = now; // 描画側のアイドルbobが参照する共通時計
         const map = this.maps[this.currentMap];
         if (!map || !map.npcs) return;
 
@@ -3405,6 +3435,7 @@ class MapSystem {
             (typeof window !== 'undefined' && window.isMessageShown === true) ||
             (typeof isMessageShown !== 'undefined' && isMessageShown === true)
         );
+        this._npcPaused = paused; // 描画側のアイドルbobを止めるフラグ
         if (paused) {
             map.npcs.forEach(npc => { npc.isMoving = false; });
             return;
