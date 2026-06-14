@@ -344,6 +344,71 @@ class BattleSystem {
                     skillChance: 0.3
                 }
             },
+            // --- フィールド別 追加敵（基礎は tier1 ベースライン。エリアの tier 倍率で自動スケール）---
+            patrol_drone: {
+                name: 'パトロールドローン', emoji: '🛰️',
+                hp: 20, maxHp: 20, mp: 8, attack: 7, defense: 4, exp: 12, gold: 15,
+                type: 'drone', skills: ['scan', 'tackle'],
+                description: '街路を巡回する小型監視機。弱いが素早い。',
+                dropTable: [ { id: 'heal_potion', rate: 0.3 }, { id: 'energy_core', rate: 0.12 } ],
+                aiPattern: { lowHpThreshold: 0.3, lowHpAction: 'attack', normalAction: 'attack', skillChance: 0.15 }
+            },
+            data_spider: {
+                name: 'データスパイダー', emoji: '🕷️',
+                hp: 30, maxHp: 30, mp: 12, attack: 10, defense: 6, exp: 20, gold: 24,
+                type: 'construct', skills: ['web_shot', 'bite'],
+                description: '地下網に巣食う電子の蜘蛛。手数で攻める。',
+                dropTable: [ { id: 'heal_potion', rate: 0.28 }, { id: 'energy_core', rate: 0.18 } ],
+                aiPattern: { lowHpThreshold: 0.3, lowHpAction: 'attack', normalAction: 'attack', skillChance: 0.35 }
+            },
+            phantom: {
+                name: 'ファントム', emoji: '👻',
+                hp: 32, maxHp: 32, mp: 30, attack: 9, defense: 6, exp: 30, gold: 38,
+                type: 'spirit', skills: ['drain', 'curse_touch'],
+                description: '社に漂う残留思念。捉えどころがなく魔を操る。',
+                dropTable: [ { id: 'mega_heal_potion', rate: 0.2 }, { id: 'mana_amulet', rate: 0.05 } ],
+                aiPattern: { lowHpThreshold: 0.35, lowHpAction: 'skill', normalAction: 'attack', skillChance: 0.4 }
+            },
+            security_drone: {
+                name: 'セキュリティドローン', emoji: '🚨',
+                hp: 52, maxHp: 52, mp: 14, attack: 13, defense: 15, exp: 42, gold: 48,
+                type: 'drone', skills: ['barrier', 'laser_scan', 'guard'],
+                description: '園内警備の重装機。装甲が厚い。',
+                dropTable: [ { id: 'iron_helmet', rate: 0.1 }, { id: 'leather_armor', rate: 0.08 } ],
+                aiPattern: { lowHpThreshold: 0.4, lowHpAction: 'defend', normalAction: 'attack', skillChance: 0.25 }
+            },
+            shadow_entity: {
+                name: 'シャドウエンティティ', emoji: '🌑',
+                hp: 44, maxHp: 44, mp: 38, attack: 12, defense: 9, exp: 50, gold: 60,
+                type: 'spirit', skills: ['shadow_bind', 'drain', 'curse'],
+                description: '闇市の影に巣食う存在。呪詛と魔法を操る。',
+                dropTable: [ { id: 'mega_heal_potion', rate: 0.22 }, { id: 'mana_amulet', rate: 0.08 } ],
+                aiPattern: { lowHpThreshold: 0.3, lowHpAction: 'skill', normalAction: 'attack', skillChance: 0.4 }
+            },
+            guard_robo: {
+                name: 'ガードロボ', emoji: '🤖',
+                hp: 75, maxHp: 75, mp: 12, attack: 17, defense: 22, exp: 65, gold: 75,
+                type: 'construct', skills: ['heavy_slam', 'guard', 'barrier'],
+                description: 'アーク中枢を守る重装甲兵。極めて硬い。',
+                dropTable: [ { id: 'iron_gauntlets', rate: 0.1 }, { id: 'chain_mail', rate: 0.06 } ],
+                aiPattern: { lowHpThreshold: 0.4, lowHpAction: 'defend', normalAction: 'attack', skillChance: 0.3 }
+            },
+            glitch_spirit: {
+                name: 'グリッチスピリット', emoji: '👾',
+                hp: 48, maxHp: 48, mp: 42, attack: 14, defense: 10, exp: 70, gold: 65,
+                type: 'spirit', skills: ['system_hack', 'glitch_pulse', 'analyze'],
+                description: '崩れたデータから生じた変則体。状態異常を撒く。',
+                dropTable: [ { id: 'mega_energy_core', rate: 0.2 }, { id: 'mana_amulet', rate: 0.08 } ],
+                aiPattern: { lowHpThreshold: 0.35, lowHpAction: 'skill', normalAction: 'skill', skillChance: 0.5 }
+            },
+            queen_spider: {
+                name: 'クイーンスパイダー', emoji: '🕸️',
+                hp: 85, maxHp: 85, mp: 22, attack: 19, defense: 15, exp: 95, gold: 110,
+                type: 'construct', skills: ['summon_brood', 'venom_fang', 'rush'],
+                description: '深層に君臨する母蜘蛛。深層トンネルの精鋭。',
+                dropTable: [ { id: 'full_heal_potion', rate: 0.15 }, { id: 'power_gloves', rate: 0.05 } ],
+                aiPattern: { lowHpThreshold: 0.3, lowHpAction: 'attack', normalAction: 'attack', skillChance: 0.4 }
+            },
             // ボスエネミー
             corrupted_drone_boss: {
                 name: '暴走監視ドローン・Ω',
@@ -402,15 +467,16 @@ class BattleSystem {
         };
         
         // エリア別エンカウントテーブル（出現する敵"種"。強さは下記 tier 倍率でスケール）
+        // フィールドごとに固有の顔ぶれ（先頭ほど高頻度）。強さは下記 tier 倍率でスケール。
         this.encounterTables = {
-            city: ['watcher', 'watcher', 'deusMachina', 'cerberus'],
-            subway: ['dustGolem', 'cerberus', 'watcher', 'dustGolem'],
-            garden: ['alraune', 'alraune', 'watcher', 'dustGolem'],
-            market: ['deusMachina', 'cerberus', 'watcher', 'deusMachina'],
-            shrine: ['alraune', 'dustGolem', 'cerberus', 'deusMachina'],
-            // 後半エリア（都庁・深層トンネル）専用テーブル。種は強敵寄り＋下記 tier 倍率で更にスケール
-            gov: ['cerberus', 'deusMachina', 'dustGolem', 'cerberus'],
-            dungeon: ['deusMachina', 'cerberus', 'dustGolem', 'deusMachina']
+            city:    ['watcher', 'patrol_drone', 'watcher', 'cerberus'],          // 街路: 弱い監視系
+            subway:  ['data_spider', 'dustGolem', 'data_spider', 'cerberus'],     // 地下鉄: 蜘蛛＋重量
+            shrine:  ['phantom', 'alraune', 'phantom', 'watcher'],                // 神社: 霊・植物
+            garden:  ['alraune', 'security_drone', 'data_spider', 'alraune'],     // 植物園: 植物＋警備
+            market:  ['shadow_entity', 'deusMachina', 'shadow_entity', 'cerberus'], // 闇市: 影・機械
+            // 後半エリア（都庁・深層トンネル）。種は強敵寄り＋tier 倍率で更にスケール
+            gov:     ['guard_robo', 'glitch_spirit', 'deusMachina', 'guard_robo'], // 都庁: 管理兵
+            dungeon: ['queen_spider', 'glitch_spirit', 'shadow_entity', 'dustGolem'] // 深層: 精鋭混成
         };
         // tier→ステータス倍率。物語の章進行（quest）に対応する難易度帯。
         // 1=序盤(広場) 2=地下鉄/神社 3=植物園/闇市 4=都庁 5=深層ダンジョン
