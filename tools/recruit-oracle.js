@@ -17,6 +17,7 @@ const sys = W.storyEventSystem || new W.StoryEventSystem();
 // テスト用スタブ
 W.joinMember = (id) => { calls.join.push(id); return true; };
 W.startRikuTrial = () => { calls.trial++; };
+W.startAkariTrial = () => { calls.trial++; };
 
 console.log('\n=== リク/ヤミ加入イベント オラクル ===\n');
 let pass = true;
@@ -56,4 +57,32 @@ const introOk = sf3.rikuTrialSeen === true && calls.timeouts >= 1;
 console.log(`リク前口上 onComplete → rikuTrialSeen＋戦闘予約: ${introOk ? '✅' : '❌'}`);
 pass = pass && introOk;
 
-console.log(`\n${pass ? '✅ 全PASS: リク=前口上→試練→勝利で加入 / ヤミ=選択肢説得→加入 が配線済み' : '❌ 不合格あり'}`);
+// ---- アカリ専用加入（オープニング自動加入の廃止＋フラグ移譲の検証）----
+console.log('\n--- アカリ専用加入 ---');
+for (const id of ['recruit_akari', 'recruit_akari_join']) {
+  const ok = sys.events.has(id);
+  console.log(`イベント登録 ${id}: ${ok ? '✅' : '❌'}`);
+  pass = pass && ok;
+}
+// chapter1_start がもう加入もchapter1_startedセットもしないこと（オープニング自動加入の廃止）
+const c1 = sys.events.get('chapter1_start');
+const sfC1 = {};
+const before = calls.join.slice();
+c1.onComplete(sfC1, {}, { addMember: () => {}, getMember: () => null });
+const c1NoJoin = calls.join.length === before.length && !sfC1.chapter1_started;
+console.log(`chapter1_start: アカリ非加入＆chapter1_started立てない（自動加入廃止）: ${c1NoJoin ? '✅' : '❌ まだ加入/フラグを立てている'}`);
+pass = pass && c1NoJoin;
+// recruit_akari onComplete → akariTrialSeen＋試練予約
+const sfA = {};
+sys.events.get('recruit_akari').onComplete(sfA);
+const akariIntroOk = sfA.akariTrialSeen === true && calls.timeouts >= 2;
+console.log(`recruit_akari onComplete → akariTrialSeen＋試練予約: ${akariIntroOk ? '✅' : '❌'}`);
+pass = pass && akariIntroOk;
+// recruit_akari_join onComplete → joinMember('akari')＋★chapter1_started＋metAkari（soft-lock防止の核心）
+const sfJ = {};
+sys.events.get('recruit_akari_join').onComplete(sfJ);
+const akariJoinOk = calls.join.includes('akari') && sfJ.chapter1_started === true && sfJ.metAkari === true;
+console.log(`recruit_akari_join onComplete → joinMember('akari')＋chapter1_started＋metAkari: ${akariJoinOk ? '✅ フラグ移譲OK(soft-lock回避)' : '❌ chapter1_started立て忘れ=進行不能リスク'}`);
+pass = pass && akariJoinOk;
+
+console.log(`\n${pass ? '✅ 全PASS: アカリ=専用イベント(前口上→試練→heal一幕→加入)／リク／ヤミ が配線済み。chapter1_started はrecruit_akari_joinへ移譲済み(進行不能回避)' : '❌ 不合格あり'}`);

@@ -189,45 +189,58 @@ class StoryEventSystem {
         this.registerEvent('chapter1_start', {
             trigger: 'auto',
             requiredFlags: {},
+            oneTime: true,
             scenes: [
-                { character: 'カイト', text: 'ここが新宿商店街…アカリはどこだ？' },
-                { character: 'アカリ', text: 'カイト！こっちよ！' },
-                { character: 'アカリ', text: '無事だったのね…よかった。ねえ、聞いて。地下鉄の奥で、アークの機械兵が暴走してるって噂があるの。' },
+                { character: 'カイト', text: 'ここが新宿商店街…。アカリからの連絡で来たが、街の様子がどこか、おかしい。' },
+                { character: 'カイト', text: '（地下鉄の奥で、アークの機械兵が暴走している——か。まずはアカリを探して、話を聞かないと）' },
+                { character: 'システム', text: '広場でアカリを探して、話しかけよう。' }
+            ],
+            onComplete: () => {
+                // ★アカリ加入と chapter1_started のセットは廃止。加入は専用イベント recruit_akari(_join) へ移譲。
+                console.log('✅ Chapter 1 intro shown (Akari not yet joined)');
+            }
+        });
+
+        // アカリ加入①: 広場で話しかけ→再会＋噂＋紋様→暴走ドローン乱入→onComplete で試練の戦闘へ
+        this.registerEvent('recruit_akari', {
+            trigger: 'manual',
+            oneTime: true,
+            scenes: [
+                { character: 'アカリ', text: 'カイト！無事だったのね…よかった。' },
+                { character: 'アカリ', text: 'ねえ、聞いて。地下鉄の奥で、アークの機械兵が暴走してるって噂があるの。' },
                 { character: 'カイト', text: '機械兵が暴走？でも、アークはすべてを完璧に管理しているはずじゃ…' },
-                { character: 'アカリ', text: 'そう。完璧なはずのものが、壊れ始めてる。だから怖いの。' },
                 { character: 'アカリ', text: '…カイト、あなたの手のその紋様。もしかして、神威の力…？' },
-                { character: 'カイト', text: '俺にも分からない。気づいたら、この力が宿っていた。…でも、何かが俺を呼んでいる気がする。' },
-                { character: 'カイト', text: '（だが、この先は危険だ。アカリを巻き込むわけには…）' },
-                {
-                    character: 'カイト',
-                    text: 'アカリ。ここから先は何が待ってるか分からない。お前は…',
-                    choices: [
-                        { text: '「一緒に来てくれ」', action: (ctx) => { const f = (ctx && ctx.storyFlags) || window.storyFlags; if (f) f.akariChoice = 'together'; } },
-                        { text: '「ここで待っててくれ」', action: (ctx) => { const f = (ctx && ctx.storyFlags) || window.storyFlags; if (f) f.akariChoice = 'wait'; } }
-                    ]
-                },
-                { character: 'アカリ', text: 'だめ。待つなんて無理よ。あなたが無茶する時、いつも私が隣にいたでしょ？' },
-                { character: 'アカリ', text: '今度も同じ。一人で抱え込まないで。一緒に行く——それだけは譲らないから。' },
-                { character: 'カイト', text: '…ああ。わかった。頼りにしてる、アカリ。' },
+                { character: 'カイト', text: '（俺にも分からない。だが——この先は危険だ。アカリを巻き込むわけには…）' },
+                { character: 'アカリ', text: 'きゃっ…！？な、何これ、急にこっちに——！' },
+                { character: 'カイト', text: '暴走した巡回ドローン…！下がってろ、アカリ！俺が止める！' },
+                { character: 'システム', text: '——巡回ドローンが暴走した！カイトが単身、アカリを庇って前に出る！' }
+            ],
+            onComplete: (storyFlags) => {
+                storyFlags.akariTrialSeen = true;
+                if (window.startAkariTrial) setTimeout(() => window.startAkariTrial(), 400);
+            }
+        });
+
+        // アカリ加入②: 試練に勝利（onAkariTrialWin から発火）→heal で市民を救う一幕→志願→加入
+        this.registerEvent('recruit_akari_join', {
+            trigger: 'manual',
+            oneTime: true,
+            scenes: [
+                { character: 'カイト', text: 'はぁ…っ、止めた。アカリ、無事か？' },
+                { character: '市民', text: 'うっ…足が…誰か…' },
+                { character: 'アカリ', text: '動かないで！――いま、癒やすから。' },
+                { character: 'システム', text: 'アカリが回復魔法を唱えた。淡い光が、市民の傷を包んでいく。' },
+                { character: '市民', text: '…もう、痛くない。ありがとう、お嬢さん…' },
+                { character: 'カイト', text: '（傷が…塞がっていく。これが、アカリの力か）' },
+                { character: 'アカリ', text: 'カイト。やっぱり、あなたを一人で行かせられない。回復魔法なら、私にもできる。' },
+                { character: 'アカリ', text: 'あなたが無茶する時、隣にいるって決めてるの。…連れて行って。' },
+                { character: 'カイト', text: '…ああ。頼りにしてる、アカリ。' },
                 { character: 'システム', text: 'アカリが仲間に加わった！\n回復魔法で、あなたを支えてくれる。' }
             ],
-            onComplete: (storyFlags, player, partySystem) => {
+            onComplete: (storyFlags) => {
+                if (window.joinMember) window.joinMember('akari');
                 storyFlags.metAkari = true;
-                storyFlags.chapter1_started = true;
-                // アカリをパーティに追加
-                if (partySystem && window.CHARACTER_DATA) {
-                    partySystem.addMember({ ...window.CHARACTER_DATA.akari });
-                    const akari = partySystem.getMember ? partySystem.getMember('akari') : null;
-                    // 初期習得スキル（CHARACTER_DATA 準拠）
-                    if (window.magicSystem && akari) {
-                        (window.CHARACTER_DATA.akari.skills || []).forEach(sk => {
-                            try { window.magicSystem.learnMagic(sk, akari); } catch (e) {}
-                        });
-                    }
-                    // 固定レベル＋初期装備を自動装備（丸腰防止）
-                    if (window.applyMemberLoadout && akari) window.applyMemberLoadout('akari', akari);
-                }
-                console.log('✅ Chapter 1 started - Akari joined (equipped)');
+                storyFlags.chapter1_started = true;  // ★第1章進行の最重要ゲート。加入完了時にここで立てる
             }
         });
 

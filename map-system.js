@@ -3202,7 +3202,7 @@ class MapSystem {
         if (!storyFlags) return false;
         switch (npc.name) {
             // 仲間になったキャラはマップから消す（パーティにいるのに立っている矛盾を防ぐ）
-            case 'アカリ': return !!(storyFlags.chapter1_started || storyFlags.metAkari);
+            case 'アカリ': return !!storyFlags.akariJoined;  // 加入(akariJoined)後のみ消す。chapter1_started/metAkariを加入前に立てる設計に変えたため分離(さもないと加入前にNPCが消えるsoft-lock)
             case 'リク': return !!storyFlags.rikuJoined;
             case 'ヤミ': return !!storyFlags.yamiJoined;
             // 撃破したボスは消す
