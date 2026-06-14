@@ -3700,18 +3700,22 @@ class MapSystem {
         const ok = (px, py) => this.isSafeSpawnPoint(map, px, py, size) &&
             this.spawnFreeDirections(map, px, py, size) >= minFree;
         if (ok(x, y)) return { x: Math.round(x), y: Math.round(y) };
-        const candidates = [];
-        // 同心リングで外側へ探索（下＝街路側を優先しやすいよう全方位＋距離順）
-        for (let r = 12; r <= 220; r += 8) {
-            for (let a = 0; a < 360; a += 30) {
+        // アンカー(x,y)=玄関マット(ドア正面・街路側)。距離のみで選ぶと cramped 店で
+        // ドア真下が什器/壁に塞がれ、最近傍の「横の角」や「ドア脇(上)」へ落ちて
+        // 横ズレ・ドア脇湧きになる。横ずれと「ドアへ戻る向き(上)」を強く嫌い、
+        // 街路側の真下軸へ寄せるコストで採点する。
+        const W_LAT = 3;   // 横ずれ1pxの重み（マット軸を強く優先）
+        const W_UP = 2.5;  // ドア側(上)へ戻る1pxの重み（街路側=下を優先）
+        let best = null, bestCost = Infinity;
+        for (let r = 8; r <= 240; r += 8) {
+            for (let a = 0; a < 360; a += 15) {
                 const rad = a * Math.PI / 180;
-                candidates.push({ x: x + Math.cos(rad) * r, y: y + Math.sin(rad) * r, d: r });
+                const px = x + Math.cos(rad) * r, py = y + Math.sin(rad) * r;
+                const dx = px - x, dy = py - y;
+                const cost = Math.abs(dx) * W_LAT + (dy >= 0 ? dy : -dy * W_UP);
+                if (cost >= bestCost) continue;
+                if (ok(px, py)) { best = { x: px, y: py }; bestCost = cost; }
             }
-        }
-        let best = null, bestD = Infinity;
-        for (const c of candidates) {
-            if (c.d >= bestD) continue;
-            if (ok(c.x, c.y)) { best = c; bestD = c.d; }
         }
         if (best) return { x: Math.round(best.x), y: Math.round(best.y) };
         // クリアな点が無ければ従来挙動
