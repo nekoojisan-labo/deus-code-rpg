@@ -2659,9 +2659,16 @@ class MapSystem {
                     this.normalizeMapId(e.to) === this.normalizeMapId(this.previousMap));
                 if (back) {
                     const doorScale = map.worldScale && map.worldScale > 0 ? map.worldScale : 1;
-                    const cx = back.x + back.width / 2;
-                    const cy = back.y + back.height + Math.round(28 * doorScale);
-                    return this.findClearSpawnPoint(map, cx, cy, 24);
+                    // 入店時の向き(requireFacing)から「街路側=プレイヤーが立つ側」の外向き法線を決める。
+                    // 大半の店は下から上向き入店(街路=下)だが、闇市ドアは上から下向き入店(街路=上)。
+                    // ここを下固定にすると建物基部の壁へアンカーしてドア脇に湧く。
+                    const out = ({ up: { ox: 0, oy: 1 }, down: { ox: 0, oy: -1 },
+                                  left: { ox: 1, oy: 0 }, right: { ox: -1, oy: 0 } })[back.requireFacing]
+                                || { ox: 0, oy: 1 };
+                    const off = Math.round(28 * doorScale);
+                    const cx = back.x + back.width / 2 + out.ox * (back.width / 2 + off);
+                    const cy = back.y + back.height / 2 + out.oy * (back.height / 2 + off);
+                    return this.findClearSpawnPoint(map, cx, cy, 24, 3, out);
                 }
             }
 
@@ -3694,25 +3701,29 @@ class MapSystem {
     }
 
     // 店退出スポーン用：アンカー近傍で「3方向以上に動ける」開けた床を探す。
+    // outward = 街路側(プレイヤーが立つ側)への単位法線 {ox,oy}。既定は下(0,1)。
     // 見つからなければ従来の findSafeSpawnPoint にフォールバック。
-    findClearSpawnPoint(map, x, y, size = 24, minFree = 3) {
+    findClearSpawnPoint(map, x, y, size = 24, minFree = 3, outward = { ox: 0, oy: 1 }) {
         if (!map) return { x: Math.round(x), y: Math.round(y) };
         const ok = (px, py) => this.isSafeSpawnPoint(map, px, py, size) &&
             this.spawnFreeDirections(map, px, py, size) >= minFree;
         if (ok(x, y)) return { x: Math.round(x), y: Math.round(y) };
         // アンカー(x,y)=玄関マット(ドア正面・街路側)。距離のみで選ぶと cramped 店で
-        // ドア真下が什器/壁に塞がれ、最近傍の「横の角」や「ドア脇(上)」へ落ちて
-        // 横ズレ・ドア脇湧きになる。横ずれと「ドアへ戻る向き(上)」を強く嫌い、
-        // 街路側の真下軸へ寄せるコストで採点する。
-        const W_LAT = 3;   // 横ずれ1pxの重み（マット軸を強く優先）
-        const W_UP = 2.5;  // ドア側(上)へ戻る1pxの重み（街路側=下を優先）
+        // ドア正面が什器/壁に塞がれ、最近傍の「横の角」や「ドア脇」へ落ちて横ズレ・
+        // ドア脇湧きになる。街路に直交する横ずれと「ドアへ戻る向き」を強く嫌い、
+        // outward 方向(街路側)の正面軸へ寄せるコストで採点する。
+        const { ox, oy } = outward;
+        const W_LAT = 3;     // 街路に直交する横ずれ1pxの重み（マット軸を強く優先）
+        const W_BACK = 2.5;  // ドア側へ戻る1pxの重み（街路側=outwardを優先）
         let best = null, bestCost = Infinity;
         for (let r = 8; r <= 240; r += 8) {
             for (let a = 0; a < 360; a += 15) {
                 const rad = a * Math.PI / 180;
                 const px = x + Math.cos(rad) * r, py = y + Math.sin(rad) * r;
                 const dx = px - x, dy = py - y;
-                const cost = Math.abs(dx) * W_LAT + (dy >= 0 ? dy : -dy * W_UP);
+                const fwd = dx * ox + dy * oy;        // 街路方向(+)=前進 / (-)=ドアへ戻る
+                const lat = dx * (-oy) + dy * ox;     // 街路に直交=横ずれ
+                const cost = Math.abs(lat) * W_LAT + (fwd >= 0 ? fwd : -fwd * W_BACK);
                 if (cost >= bestCost) continue;
                 if (ok(px, py)) { best = { x: px, y: py }; bestCost = cost; }
             }
