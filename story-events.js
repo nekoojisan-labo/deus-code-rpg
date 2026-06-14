@@ -190,55 +190,44 @@ class StoryEventSystem {
             trigger: 'auto',
             requiredFlags: {},
             scenes: [
+                { character: 'カイト', text: 'ここが新宿商店街…アカリはどこだ？' },
+                { character: 'アカリ', text: 'カイト！こっちよ！' },
+                { character: 'アカリ', text: '無事だったのね…よかった。ねえ、聞いて。地下鉄の奥で、アークの機械兵が暴走してるって噂があるの。' },
+                { character: 'カイト', text: '機械兵が暴走？でも、アークはすべてを完璧に管理しているはずじゃ…' },
+                { character: 'アカリ', text: 'そう。完璧なはずのものが、壊れ始めてる。だから怖いの。' },
+                { character: 'アカリ', text: '…カイト、あなたの手のその紋様。もしかして、神威の力…？' },
+                { character: 'カイト', text: '俺にも分からない。気づいたら、この力が宿っていた。…でも、何かが俺を呼んでいる気がする。' },
+                { character: 'カイト', text: '（だが、この先は危険だ。アカリを巻き込むわけには…）' },
                 {
                     character: 'カイト',
-                    text: 'ここが新宿商店街...アカリはどこだ？'
+                    text: 'アカリ。ここから先は何が待ってるか分からない。お前は…',
+                    choices: [
+                        { text: '「一緒に来てくれ」', action: (ctx) => { const f = (ctx && ctx.storyFlags) || window.storyFlags; if (f) f.akariChoice = 'together'; } },
+                        { text: '「ここで待っててくれ」', action: (ctx) => { const f = (ctx && ctx.storyFlags) || window.storyFlags; if (f) f.akariChoice = 'wait'; } }
+                    ]
                 },
-                {
-                    character: 'アカリ',
-                    text: 'カイト！こっちよ！'
-                },
-                {
-                    character: 'アカリ',
-                    text: '大変なの...地下鉄の奥で、アークの機械兵が暴走してるって噂があるの。'
-                },
-                {
-                    character: 'カイト',
-                    text: '機械兵が？でも、アークはすべてを完璧に管理しているはずじゃ...'
-                },
-                {
-                    character: 'アカリ',
-                    text: '私もよく分からないけど...カイト、あなたの手のその紋様...もしかして？'
-                },
-                {
-                    character: 'カイト',
-                    text: '神威の力...か。俺にも何が起きているのか分からない。'
-                },
-                {
-                    character: 'アカリ',
-                    text: '一人で行くのは危険よ。私も一緒に行く！昔から私たち、ずっと一緒だったでしょ？'
-                },
-                {
-                    character: 'システム',
-                    text: 'アカリが仲間に加わった！'
-                }
+                { character: 'アカリ', text: 'だめ。待つなんて無理よ。あなたが無茶する時、いつも私が隣にいたでしょ？' },
+                { character: 'アカリ', text: '今度も同じ。一人で抱え込まないで。一緒に行く——それだけは譲らないから。' },
+                { character: 'カイト', text: '…ああ。わかった。頼りにしてる、アカリ。' },
+                { character: 'システム', text: 'アカリが仲間に加わった！\n回復魔法で、あなたを支えてくれる。' }
             ],
             onComplete: (storyFlags, player, partySystem) => {
                 storyFlags.metAkari = true;
                 storyFlags.chapter1_started = true;
                 // アカリをパーティに追加
                 if (partySystem && window.CHARACTER_DATA) {
-                    const akari = { ...window.CHARACTER_DATA.akari };
-                    partySystem.addMember(akari);
-
-                    // アカリの初期習得スキル
-                    if (window.magicSystem) {
-                        window.magicSystem.learnMagic('heal', akari);
-                        window.magicSystem.learnMagic('mega_heal', akari);
-                        console.log('✅ アカリが初期スキルを習得: heal, mega_heal');
+                    partySystem.addMember({ ...window.CHARACTER_DATA.akari });
+                    const akari = partySystem.getMember ? partySystem.getMember('akari') : null;
+                    // 初期習得スキル（CHARACTER_DATA 準拠）
+                    if (window.magicSystem && akari) {
+                        (window.CHARACTER_DATA.akari.skills || []).forEach(sk => {
+                            try { window.magicSystem.learnMagic(sk, akari); } catch (e) {}
+                        });
                     }
+                    // 固定レベル＋初期装備を自動装備（丸腰防止）
+                    if (window.applyMemberLoadout && akari) window.applyMemberLoadout('akari', akari);
                 }
-                console.log('✅ Chapter 1 started - Akari joined the party');
+                console.log('✅ Chapter 1 started - Akari joined (equipped)');
             }
         });
 

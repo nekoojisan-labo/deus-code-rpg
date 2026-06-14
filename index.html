@@ -3544,7 +3544,7 @@
     <script src="bgm-system.js?v=36"></script>
     <script src="party-system.js?v=47"></script>
     <script src="quest-system.js?v=4"></script>
-    <script src="story-events.js?v=49"></script>
+    <script src="story-events.js?v=50"></script>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -5046,6 +5046,44 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         window.refreshObjective = refreshObjective;
         window.hideObjectiveBanner = hideObjectiveBanner;
 
+        // 仲間ごとの加入レベル（物語段階で固定）＋初期装備キット
+        const MEMBER_LOADOUT = {
+            akari: { level: 1, equip: ['wooden_sword', 'cloth_armor'] },
+            riku:  { level: 4, equip: ['iron_sword', 'leather_armor', 'iron_helmet'] },
+            yami:  { level: 4, equip: ['wooden_sword', 'cloth_armor', 'mana_amulet'] }
+        };
+        // 加入時に固定レベルへ底上げ＋初期装備を自動装備（共有インベントリに浮かせない＝丸腰防止）
+        function applyMemberLoadout(memberId, member) {
+            const lo = MEMBER_LOADOUT[memberId];
+            if (!lo || !member) return;
+            // 固定レベルまで成長を適用（バトル外なので SE/ログ無しで底上げ）
+            const g = (s, d) => (window.calculateStatGrowth ? window.calculateStatGrowth(memberId, s) : d);
+            while (member.level < lo.level) {
+                member.level++;
+                member.baseMaxHp = (member.baseMaxHp || member.maxHp) + g('hp', 18);
+                member.baseMaxMp = (member.baseMaxMp || member.maxMp) + g('mp', 8);
+                member.baseAttack = (member.baseAttack || member.attack) + g('attack', 3);
+                member.baseDefense = (member.baseDefense || member.defense) + g('defense', 2);
+                member.baseMagic = (member.baseMagic || member.magic || 0) + g('magic', 2);
+                member.baseSpeed = (member.baseSpeed || member.speed || 5) + g('speed', 1);
+            }
+            member.magic = member.baseMagic;
+            member.speed = member.baseSpeed;
+            // 初期装備を付与して自動装備（equipItem が base+装備で attack/defense/maxHp を再計算）
+            if (window.equipmentSystem) {
+                lo.equip.forEach(id => {
+                    window.equipmentSystem.addEquipment(id, 1);
+                    window.equipmentSystem.equipItem(id, member);
+                });
+            } else {
+                member.maxHp = member.baseMaxHp; member.maxMp = member.baseMaxMp;
+                member.attack = member.baseAttack; member.defense = member.baseDefense;
+            }
+            member.hp = member.maxHp; member.mp = member.maxMp;
+            if (window.updateUI) window.updateUI();
+        }
+        window.applyMemberLoadout = applyMemberLoadout;
+
         // 仲間加入（リク/ヤミ）
         function recruitMember(memberId, npc) {
             const joinedFlag = memberId + 'Joined';
@@ -5058,10 +5096,11 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 partySystem.addMember({ ...data });
                 // 初期習得スキル
                 const member = partySystem.getMember(memberId);
-                const growth = window.CHARACTER_GROWTH && window.CHARACTER_GROWTH[memberId];
                 if (window.magicSystem && member && data.skills) {
                     data.skills.forEach(sk => { try { window.magicSystem.learnMagic(sk, member); } catch (e) {} });
                 }
+                // 固定レベル＋初期装備を自動適用（丸腰防止）
+                if (member) applyMemberLoadout(memberId, member);
             }
             storyFlags[joinedFlag] = true;
             if (memberId === 'yami') storyFlags.metYami = true;
