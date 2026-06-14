@@ -46,8 +46,8 @@ window.MAP_OBJECTS = {
         "direction": "east",
         "spawnX": 135,
         "spawnY": 260,
-        "requiredFlag": "yamiJoined",
-        "lockedMsg": "都庁の封鎖は固い。仲間を集めてからでなければ近づけない。"
+        "requiredFlag": "yamiPactMade",
+        "lockedMsg": "都庁の封鎖は固い。まず闇市のヤミと話をつけてからでなければ近づけない。"
       },
       {
         "x": 0,
@@ -1472,8 +1472,8 @@ window.MAP_OBJECTS = {
         "autoEnter": true,
         "visible": false,
         "requireFacing": "left",
-        "requiredFlag": "metPriest",
-        "lockedMsg": "今はまだ、ここに用は無さそうだ。"
+        "requiredFlag": "rikuJoined",
+        "lockedMsg": "闇市は気が立っている。まず仲間を集めてからだ。"
       },
       {
         "x": 163,

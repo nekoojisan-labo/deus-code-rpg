@@ -3537,14 +3537,14 @@
     <script src="battle-system.js?v=58"></script>
     <script src="map-walkability-data.js?v=12"></script>
     <script src="object-catalog.js?v=2"></script>
-    <script src="map-objects-data.js?v=24"></script>
-    <script src="map-system.js?v=75"></script>
+    <script src="map-objects-data.js?v=25"></script>
+    <script src="map-system.js?v=76"></script>
     <script src="map-system-grid.js"></script>
     <script src="player-grid-movement.js"></script>
     <script src="bgm-system.js?v=36"></script>
     <script src="party-system.js?v=47"></script>
-    <script src="quest-system.js?v=4"></script>
-    <script src="story-events.js?v=52"></script>
+    <script src="quest-system.js?v=5"></script>
+    <script src="story-events.js?v=53"></script>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -3709,6 +3709,8 @@
             visitedShrine: false,
             metPriest: false,
             exploredBiodome: false,
+            stationVisited: false,   // 新宿駅 初入場（アカリ加入劇の解禁ゲート）
+            yamiPactMade: false,     // 闇市でヤミと仮契約（都庁入場時に本加入）
             chapter: 1  // 現在のチャプター
         };
 
@@ -4940,6 +4942,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         function onEnterMap(mapId) {
             if (!mapId) return;
             const LOCATION_FLAGS = {
+                shinjuku_station_gate: 'stationVisited',
                 subway_concourse_a: 'exploredSubway',
                 biodome_gate: 'exploredBiodome',
                 black_market_entrance: 'visitedBlackMarket',
@@ -4947,6 +4950,11 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             };
             const flag = LOCATION_FLAGS[mapId];
             if (flag) storyFlags[flag] = true;
+            // ★ヤミ本加入: 闇市で仮契約(yamiPactMade)済みなら、都庁突入直前で4人目として加入
+            if (mapId === 'tokyo_gov_approach' && storyFlags.yamiPactMade && !storyFlags.yamiJoined) {
+                joinMember('yami');
+                showMessage('ヤミ：「契約どおり、来てあげたわ。…さあ、最後の決着をつけましょう。」');
+            }
             if (storyEventSystem && storyEventSystem.checkLocationEvents) {
                 storyEventSystem.checkLocationEvents(mapId, { storyFlags, player, mapSystem, magicSystem, partySystem });
             }
@@ -5048,9 +5056,9 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
 
         // 仲間ごとの加入レベル（物語段階で固定）＋初期装備キット
         const MEMBER_LOADOUT = {
-            akari: { level: 1, equip: ['wooden_sword', 'cloth_armor'] },
+            akari: { level: 3, equip: ['wooden_sword', 'cloth_armor'] },  // 駅(subway t2/Lv3-5帯)で加入＝Lv3へ底上げ
             riku:  { level: 4, equip: ['iron_sword', 'leather_armor', 'iron_helmet'] },
-            yami:  { level: 4, equip: ['wooden_sword', 'cloth_armor', 'mana_amulet'] }
+            yami:  { level: 6, equip: ['wooden_sword', 'cloth_armor', 'mana_amulet'] }  // 都庁手前(t3-t4帯)で本加入＝Lv6へ
         };
         // 加入時に固定レベルへ底上げ＋初期装備を自動装備（共有インベントリに浮かせない＝丸腰防止）
         function applyMemberLoadout(memberId, member) {
@@ -5119,7 +5127,8 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         // リク＝戦闘の試練。話しかける→（神託後）前口上→試練の戦闘→勝利で加入。
         function engageRiku(npc) {
             if (storyFlags.rikuJoined) { showMessage('リク：「共に行こう。アークを止めるまでな。」'); return; }
-            if (!storyFlags.metPriest) { showMessage('リク：「…お前、ただ者ではないな。だが、今は語る時ではない。」'); return; }
+            // ★神託より前＝アカリ加入(chapter1_started)後に解禁。第1章ボス手前で前衛を迎える
+            if (!storyFlags.chapter1_started) { showMessage('リク：「…誰だ。今は構っている場合ではない。下がっていろ。」'); return; }
             if (storyFlags.rikuTrialSeen) { startRikuTrial(); return; }  // 敗北後の再挑戦は前口上を省略
             if (storyEventSystem) storyEventSystem.triggerEvent('recruit_riku', { storyFlags, player, partySystem, magicSystem });
             else startRikuTrial();
@@ -5144,9 +5153,12 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         window.startRikuTrial = startRikuTrial;
         window.onRikuTrialWin = onRikuTrialWin;
 
-        // アカリ＝最初の仲間（metPriestゲート無し）。広場で話しかけ→専用イベント→試練の戦闘→勝利で加入。
+        // アカリ＝最初の仲間。新宿駅で駆け寄り再会→専用イベント→試練の戦闘→勝利で加入。
         function engageAkari(npc) {
-            if (storyFlags.akariJoined) { showMessage('アカリ：「そばにいるよ。さあ、地下鉄へ行きましょう、カイト。」'); return; }
+            if (storyFlags.akariJoined) { showMessage('アカリ：「そばにいるよ。さあ、地下鉄の異変を確かめましょう、カイト。」'); return; }
+            // 駅に着く前は遠目の再会だけ（加入劇を始めない）。old-save互換: 既加入/chapter1_started なら真扱い
+            const reachedStation = storyFlags.stationVisited || storyFlags.akariJoined || storyFlags.chapter1_started;
+            if (!reachedStation) { showMessage('アカリ：「カイト…！無事だったの…？ ねえ、駅の方を確かめないと。」'); return; }
             if (storyFlags.akariTrialSeen) { startAkariTrial(); return; }  // 敗北後の再挑戦は前口上を省略
             if (storyEventSystem) storyEventSystem.triggerEvent('recruit_akari', { storyFlags, player, partySystem, magicSystem });
             else { joinMember('akari'); showMessage('アカリが仲間に加わった！'); }
@@ -5172,12 +5184,13 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         window.startAkariTrial = startAkariTrial;
         window.onAkariTrialWin = onAkariTrialWin;
 
-        // ヤミ＝説得。話しかける→（神託後）選択肢で動機を示す→加入。
+        // ヤミ＝説得。神託(metPriest)＋リク加入後に解禁。話しかけ→選択肢で動機を示す→仮契約(本加入は都庁直前)。
         function engageYami(npc) {
             if (storyFlags.yamiJoined) { showMessage('ヤミ：「契約は守るわ。アークを終わらせるまでね。」'); return; }
-            if (!storyFlags.metPriest) { showMessage('ヤミ：「神託に呼ばれた? …まだ、あんたと取引する理由がないわね。」'); return; }
+            if (storyFlags.yamiPactMade) { showMessage('ヤミ：「気が変わってない。都庁の前で合流するわ。先に行きなさい。」'); return; }
+            if (!(storyFlags.metPriest && storyFlags.rikuJoined)) { showMessage('ヤミ：「神託に呼ばれた? …まだ、あんたと取引する理由がないわね。仲間も揃っていないのに。」'); return; }
             if (storyEventSystem) storyEventSystem.triggerEvent('recruit_yami', { storyFlags, player, partySystem, magicSystem });
-            else { joinMember('yami'); showMessage('ヤミが仲間に加わった！'); }
+            else { storyFlags.yamiPactMade = true; showMessage('ヤミと仮契約を交わした。（都庁の前で合流する）'); }
         }
 
         // 神宮の老神主と会話（神託イベント発火）
@@ -5189,7 +5202,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                     storyFlags.metPriest = true; storyFlags.chapter2_started = true;
                 }
             } else {
-                showMessage(`老神主: 「リクとヤミを集め、都庁のアークを討つのじゃ。」`);
+                showMessage(`老神主: 「リクは既に汝と在る。残るは闇市のヤミ。彼女を仲間にし、都庁のアークを討つのじゃ。」`);
             }
             refreshObjective();
         }
@@ -5197,8 +5210,9 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         // 駆け寄り型NPCが到達した時の会話発火（リク/ヤミ=加入, 老神主=神託）
         function handleApproachConversation(npc) {
             if (!npc) return;
-            if (npc.name === 'リク') engageRiku(npc);          // 即加入をやめ、加入イベント（戦闘の試練）を開始
-            else if (npc.name === 'ヤミ') engageYami(npc);      // 即加入をやめ、説得イベントを開始
+            if (npc.name === 'アカリ') engageAkari(npc);        // 駅で駆け寄り再会→加入イベント
+            else if (npc.name === 'リク') engageRiku(npc);
+            else if (npc.name === 'ヤミ') engageYami(npc);
             else if (npc.name === '老神主') advancePriest(npc);
         }
 

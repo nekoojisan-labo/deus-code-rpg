@@ -941,16 +941,8 @@ class MapSystem {
                     { x: 6,   y: 210, width: 30, height: 60, to: 'shinjuku_station_gate', direction: 'west',  spawnX: 715, spawnY: 235 }
                 ],
                 npcs: [
-                    { x: 360, y: 250, emoji: '👤', name: '感情を失った市民', dialogue: '...。' },
-                    {
-                        x: 440,
-                        y: 320,
-                        emoji: '🧙‍♀️',
-                        name: 'アカリ',
-                        dialogue: 'カイト、この街の異常を感じる？AIの支配が強まっているわ。',
-                        questFlag: 'metAkari',
-                        questDialogue: 'カイト！神威の力に目覚めたのね。地下鉄の様子がおかしいの。一緒に調べに行きましょう！'
-                    }
+                    { x: 360, y: 250, emoji: '👤', name: '感情を失った市民', dialogue: '...。' }
+                    // ★アカリは shinjuku_station_gate へ移設（開幕至近の即加入を廃止し、駅で出会う設計）
                 ]
             },
             shinjuku_station_gate: {
@@ -1067,7 +1059,10 @@ class MapSystem {
                     { x: 516, y: 396, width: 82, height: 48,  to: 'subway_concourse_a',    direction: 'south', spawnX: 670, spawnY: 130 }
                 ],
                 npcs: [
-                    { x: 400, y: 240, emoji: '🤖', name: 'パトロールドローン', dialogue: 'スキャン中...異常なし。', hostile: true }
+                    // 街の異変の演出。非hostile（アカリ加入前にカイト単騎の強制戦を起こさない）
+                    { x: 400, y: 240, emoji: '🤖', name: 'パトロールドローン', dialogue: '警告…エラー…感情反応を…検知…システム…不安定…' },
+                    // アカリ（駆け寄り型）。駅の西寄りに居て、近づくとカイトへ走り寄る
+                    { x: 180, y: 300, emoji: '🧙‍♀️', name: 'アカリ', dialogue: 'カイト…無事だったのね。この子たち、様子がおかしいの。', questFlag: 'metAkari', questDialogue: 'カイト！来てくれたのね。地下鉄の異変、一緒に確かめましょう。' }
                 ]
             },
             subway_concourse_a: {
@@ -1167,7 +1162,10 @@ class MapSystem {
                     { x: 653, y: 34, width: 43, height: 59, to: 'shinjuku_station_gate', direction: 'north', spawnX: 550, spawnY: 380 }
                 ],
                 npcs: [
-                    { x: 400, y: 245, emoji: '🤖', name: '暴走ドローン', dialogue: '警告...感情反応を検知。', hostile: true }
+                    { x: 400, y: 245, emoji: '🤖', name: '暴走ドローン', dialogue: '警告...感情反応を検知。', hostile: true },
+                    // ★リクをバイオドームから前倒し配置。第1章ボス手前で加入（hp150ボスを壁役つき3人で迎える）。
+                    // 駆け寄り型。ボスNPCは isNPCHidden で rikuJoined まで非表示＝リク加入前にボスへ到達できない
+                    { x: 400, y: 360, emoji: '🛡️', name: 'リク', dialogue: '…この奥で、暴走したドローンが暴れている。お前、戦えるのか？' }
                 ]
             },
             shopping_street_north: {
@@ -1898,7 +1896,7 @@ class MapSystem {
                     // ※ 北 (414, 54) と 東 (754, 207) と 南 (415, 384) は隣接マップ未定義のため保留
                 ],
                 npcs: [
-                    { x: 400, y: 250, emoji: '🧑‍🔧', name: 'リク', dialogue: '本物の植物を見たことがなかったんだ...これも作り物だけど、美しいね。' }
+                    // ★リクは subway_concourse_a へ前倒し移設（第1章ボス手前で加入）。バイオドームは無人に
                 ]
             }
         };
@@ -3206,7 +3204,7 @@ class MapSystem {
             case 'リク': return !!storyFlags.rikuJoined;
             case 'ヤミ': return !!storyFlags.yamiJoined;
             // 撃破したボスは消す
-            case '暴走ドローン': return !!(storyFlags.bossDefeated || storyFlags.chapter1_complete);
+            case '暴走ドローン': return !!(storyFlags.bossDefeated || storyFlags.chapter1_complete) || !storyFlags.rikuJoined;  // ★リク加入までボスを非表示=壁無しでhp150ボスに到達させない
             // アーク・プライムは都庁入場(enteredGov=ヤミ加入後に解放)まで出現しない＋撃破後も消す
             case 'アーク・プライム': return !storyFlags.enteredGov || !!storyFlags.arcDefeated;
             default: return false;
@@ -4016,7 +4014,7 @@ class MapSystem {
     updateApproachNPCs(playerX, playerY, storyFlags) {
         const map = this.maps[this.currentMap];
         if (!map || !map.npcs) return null;
-        const APPROACH = { 'リク': true, 'ヤミ': true, '老神主': true };
+        const APPROACH = { 'アカリ': true, 'リク': true, 'ヤミ': true, '老神主': true };
         const TRIGGER = 132, REACH = 40, GIVEUP = 240, SPEED = 2.4;
         for (const npc of map.npcs) {
             if (!APPROACH[npc.name]) continue;

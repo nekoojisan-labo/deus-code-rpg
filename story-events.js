@@ -191,9 +191,9 @@ class StoryEventSystem {
             requiredFlags: {},
             oneTime: true,
             scenes: [
-                { character: 'カイト', text: 'ここが新宿商店街…。アカリからの連絡で来たが、街の様子がどこか、おかしい。' },
-                { character: 'カイト', text: '（地下鉄の奥で、アークの機械兵が暴走している——か。まずはアカリを探して、話を聞かないと）' },
-                { character: 'システム', text: '広場でアカリを探して、話しかけよう。' }
+                { character: 'カイト', text: 'ここが新宿中央広場…。アカリからの連絡で来たが、街の様子がどこか、おかしい。' },
+                { character: 'カイト', text: '（行き交う人も、どこか虚ろだ。…地下鉄の奥で、アークの機械兵が暴走しているという噂。まず西の駅へ向かってみるか）' },
+                { character: 'システム', text: 'まず西の新宿駅へ向かい、地下鉄の異変を確かめよう。' }
             ],
             onComplete: () => {
                 // ★アカリ加入と chapter1_started のセットは廃止。加入は専用イベント recruit_akari(_join) へ移譲。
@@ -358,9 +358,10 @@ class StoryEventSystem {
                 { character: '老神主', text: 'アーク...あの機械仕掛けの神は、人から「心」を奪い、完全なる管理で世を凍りつかせた。' },
                 { character: 'カイト', text: '感情を失った市民たち...あれはアークの仕業だったのか。' },
                 { character: '老神主', text: 'アークの中枢は東京都庁にある。だが、お前一人の力では届かぬ。八百万の神々が遣わした同志を集めよ。' },
-                { character: '老神主', text: 'バイオドームに眠る守りの戦士「リク」、闇市に潜む魔を操る者「ヤミ」。二人を仲間にし、都庁へ挑むのじゃ。' },
-                { character: 'アカリ', text: 'リクとヤミ...その二人を探せばいいのね。' },
-                { character: 'システム', text: '目標が更新された：リクとヤミを仲間にする' }
+                { character: '老神主', text: '守りの戦士リクは、既に汝と在るな。…ならば残るは一人。闇市に潜む、魔を操る者「ヤミ」じゃ。' },
+                { character: '老神主', text: '彼女を仲間にし、都庁のアークへ挑むのじゃ。八百万の神々が、汝らを見守っておる。' },
+                { character: 'アカリ', text: 'ヤミ…闇市の魔法使い。その人を探せばいいのね。' },
+                { character: 'システム', text: '目標が更新された：闇市でヤミを仲間にする' }
             ],
             onComplete: (storyFlags) => {
                 storyFlags.metPriest = true;
@@ -418,10 +419,11 @@ class StoryEventSystem {
                 },
                 { character: 'ヤミ', text: '……ふっ。少なくとも、嘘じゃないみたいね。' },
                 { character: 'ヤミ', text: '私の事情は聞かないで。それでいいなら——その賭け、乗ってあげる。' },
-                { character: 'システム', text: 'ヤミが仲間に加わった！\n闇の魔法で、敵を討ち砕く。' }
+                { character: 'ヤミ', text: 'ただし、闇市はあたしが居ないと荒れる。都庁の前で合流するわ。先に行きなさい。' },
+                { character: 'システム', text: 'ヤミと契約を交わした。\n都庁へ乗り込む時、彼女が合流する。' }
             ],
             onComplete: (storyFlags) => {
-                if (window.joinMember) window.joinMember('yami');
+                storyFlags.yamiPactMade = true;  // ★本加入は都庁入場時 index.html onEnterMap('tokyo_gov_approach') で発火
             }
         });
 

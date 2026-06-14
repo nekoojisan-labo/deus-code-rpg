@@ -10,8 +10,9 @@ const QUEST_STEPS = [
   {
     id: 'meet_akari', chapter: 1, chapterTitle: '第1章 覚醒',
     title: 'アカリと合流する',
-    where: '新宿 中央広場',
-    detail: '広場でアカリを探して話を聞こう。',
+    where: '新宿 中央広場 → 西の新宿駅',
+    detail: '街を抜けて西の新宿駅へ。地下鉄の異変を確かめ、アカリと合流しよう。',
+    target: 'shinjuku_station_gate',
     done: f => !!f.chapter1_started
   },
   {
@@ -21,6 +22,14 @@ const QUEST_STEPS = [
     detail: '機械兵が暴走しているという地下鉄へ向かおう。',
     target: 'subway_concourse_a',
     done: f => !!f.exploredSubway
+  },
+  {
+    id: 'recruit_riku', chapter: 1,
+    title: '地下に潜むリクを仲間にする',
+    where: '地下コンコースA',
+    detail: '暴走ドローンの手前に、元警備隊員リクがいる。話しかけ、力を示して仲間に加えよう。',
+    target: 'subway_concourse_a',
+    done: f => !!f.rikuJoined
   },
   {
     id: 'defeat_drone', chapter: 1,
@@ -41,20 +50,12 @@ const QUEST_STEPS = [
 
   // --- 第2章 神託と仲間 ---
   {
-    id: 'recruit_riku', chapter: 2, chapterTitle: '第2章 神託と仲間',
-    title: 'バイオドームのリクを仲間にする',
-    where: '神宮の東 → バイオドーム',
-    detail: '元警備隊員リクに話しかけ、仲間に加えよう。',
-    target: 'biodome_gate',
-    done: f => !!f.rikuJoined
-  },
-  {
-    id: 'recruit_yami', chapter: 2,
+    id: 'recruit_yami', chapter: 2, chapterTitle: '第2章 神託と仲間',
     title: '闇市のヤミを仲間にする',
-    where: '広場の南 → 商業街 → さらに南→西の闇市',
-    detail: '闇魔法使いヤミに話しかけ、仲間に加えよう。',
+    where: '広場の南 → 商業街 → さらに南西の闇市',
+    detail: 'リクを仲間にすると闇市が開く。闇魔法使いヤミに話しかけ、契約を交わそう（都庁の前で合流する）。',
     target: 'black_market_entrance',
-    done: f => !!f.yamiJoined
+    done: f => !!f.yamiPactMade || !!f.yamiJoined
   },
 
   // --- 第3章 対決 ---

@@ -43,9 +43,12 @@ pass = pass && sf.yamiAnswer === 'hearts';
 
 // onComplete の加入処理
 const sf2 = {};
-sys.events.get('recruit_yami').onComplete(sf2);
-console.log(`\nヤミ onComplete → joinMember('yami'): ${calls.join.includes('yami') ? '✅' : '❌'}`);
-pass = pass && calls.join.includes('yami');
+// ヤミは「仮契約」: recruit_yami.onComplete は yamiPactMade を立てるだけ（即joinMemberしない＝本加入は都庁入場時）
+const sfY = {};
+sys.events.get('recruit_yami').onComplete(sfY);
+const yamiPact = sfY.yamiPactMade === true && !calls.join.includes('yami');
+console.log(`\nヤミ onComplete → 仮契約 yamiPactMade（即加入しない）: ${yamiPact ? '✅' : '❌'}`);
+pass = pass && yamiPact;
 
 sys.events.get('recruit_riku_join').onComplete(sf2);
 console.log(`リク勝利 onComplete → joinMember('riku'): ${calls.join.includes('riku') ? '✅' : '❌'}`);
