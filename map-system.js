@@ -3876,40 +3876,34 @@ class MapSystem {
         return null;
     }
     
-    // 前方の自動入口チェック（向いている方向の少し先に autoEnter 出口があれば返す）
-    // 建物コリジョンで入口ボックス手前が塞がれていても、ドアに向かって歩けば入れるようにする。
-    // 方向ベースなので、入口の脇を素通りしても誤発火しない。
-    checkAutoEnterAhead(playerX, playerY, facing, reach = 22) {
+    // 前方の自動入口チェック（ドアへ向かって歩けば Z 無しで入店）。
+    // 「ドアの正面・手前 reach 内に、横位置も重なって、requireFacing の向きで歩いている」時だけ発火。
+    // 向き(requireFacing)ゲートで素通り誤発火を防ぎつつ、到達したら入店できるよう前面帯を広く取る。
+    // reach/横許容は worldScale 連動（退出スポーン位置=28*scale 下までを覆い、歩き込みで確実に入店）。
+    checkAutoEnterAhead(playerX, playerY, facing, reach = null) {
         const map = this.maps[this.currentMap];
         if (!map || !map.exits || this.transitioning || this.isTransitionCoolingDown()) return null;
+        if (!facing) return null;
 
-        const dirs = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
-        const d = dirs[facing];
-        if (!d) return null;
-
-        const px = playerX + d[0] * reach;
-        const py = playerY + d[1] * reach;
+        const scale = (map.worldScale && map.worldScale > 0) ? map.worldScale : 1;
+        const R = reach != null ? reach : Math.round(28 * scale);   // ドア正面手前この距離まで＝到達帯
+        const LAT = Math.round(14 * scale);                         // ドア軸からの横許容（体幅＋余白）
 
         for (const exit of map.exits) {
             if (!exit.autoEnter) continue;          // 自動入口のみ対象（街の端の出口は対象外）
-            if (exit.requireFacing && exit.requireFacing !== facing) continue;
-            // 「手前側から正面で歩き込む」時のみ発火。プレイヤーが入口の"前面"
-            // （侵入方向の反対側）に居ることを要求し、背後/通過/内側からの誤発火を防ぐ。
-            // 例: facing=left(西へ入る) → プレイヤーは入口の東端より東に居る時だけ。
-            const FRONT_MARGIN = 4;
-            const onFront = (
-                facing === 'left'  ? playerX >= exit.x + exit.width - FRONT_MARGIN :
-                facing === 'right' ? playerX <= exit.x + FRONT_MARGIN :
-                facing === 'up'    ? playerY >= exit.y + exit.height - FRONT_MARGIN :
-                facing === 'down'  ? playerY <= exit.y + FRONT_MARGIN : true
-            );
-            if (!onFront) continue;
-            if (px >= exit.x && px <= exit.x + exit.width &&
-                py >= exit.y && py <= exit.y + exit.height) {
-                const gate = this.evalExitGate(exit);
-                if (gate) return gate;
-                return { nextMap: this.normalizeMapId(exit.to), exit };
-            }
+            if (exit.requireFacing && exit.requireFacing !== facing) continue;  // 素通り誤発火の防止ゲート
+            const L = exit.x, Rt = exit.x + exit.width, T = exit.y, B = exit.y + exit.height;
+            // 侵入方向(requireFacing)の手前側＝街路側に居て、横方向にドアと重なる時のみ発火。
+            // 内側(箱の中)〜手前 reach までを許容し、ドアに歩き込むほど確実に入れる。
+            let hit = false;
+            if (facing === 'up')         hit = playerX >= L - LAT && playerX <= Rt + LAT && playerY >= T && playerY <= B + R;
+            else if (facing === 'down')  hit = playerX >= L - LAT && playerX <= Rt + LAT && playerY <= B && playerY >= T - R;
+            else if (facing === 'left')  hit = playerY >= T - LAT && playerY <= B + LAT && playerX >= L && playerX <= Rt + R;
+            else if (facing === 'right') hit = playerY >= T - LAT && playerY <= B + LAT && playerX <= Rt && playerX >= L - R;
+            if (!hit) continue;
+            const gate = this.evalExitGate(exit);
+            if (gate) return gate;
+            return { nextMap: this.normalizeMapId(exit.to), exit };
         }
 
         return null;
