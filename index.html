@@ -3544,7 +3544,7 @@
     <script src="bgm-system.js?v=36"></script>
     <script src="party-system.js?v=47"></script>
     <script src="quest-system.js?v=4"></script>
-    <script src="story-events.js?v=50"></script>
+    <script src="story-events.js?v=51"></script>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -5085,29 +5085,71 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         window.applyMemberLoadout = applyMemberLoadout;
 
         // 仲間加入（リク/ヤミ）
-        function recruitMember(memberId, npc) {
+        // 加入の中核（ナレーションは加入イベントが担当。装備キット＋固定Lvも付与）
+        function joinMember(memberId) {
             const joinedFlag = memberId + 'Joined';
-            if (storyFlags[joinedFlag]) {
-                showMessage(`${npc.name}: 「共に行こう。アークを止めるまでな。」`);
-                return;
-            }
+            if (storyFlags[joinedFlag]) return false;
             const data = window.CHARACTER_DATA && window.CHARACTER_DATA[memberId];
             if (partySystem && data) {
                 partySystem.addMember({ ...data });
-                // 初期習得スキル
                 const member = partySystem.getMember(memberId);
                 if (window.magicSystem && member && data.skills) {
                     data.skills.forEach(sk => { try { window.magicSystem.learnMagic(sk, member); } catch (e) {} });
                 }
-                // 固定レベル＋初期装備を自動適用（丸腰防止）
-                if (member) applyMemberLoadout(memberId, member);
+                if (member) applyMemberLoadout(memberId, member);  // 固定Lv＋初期装備（丸腰防止）
             }
             storyFlags[joinedFlag] = true;
             if (memberId === 'yami') storyFlags.metYami = true;
-            showMessage(`${npc.name}が仲間に加わった！\n「${npc.dialogue || 'よろしく頼む。'}」`);
-            console.log(`Recruited: ${memberId}`);
             updateUI();
             refreshObjective();
+            return true;
+        }
+        window.joinMember = joinMember;
+
+        // 後方互換: 即時加入＋一行メッセージ（通常はイベント経由の engage を使う）
+        function recruitMember(memberId, npc) {
+            if (storyFlags[memberId + 'Joined']) {
+                showMessage(`${npc.name}: 「共に行こう。アークを止めるまでな。」`);
+                return;
+            }
+            joinMember(memberId);
+            showMessage(`${npc.name}が仲間に加わった！\n「${npc.dialogue || 'よろしく頼む。'}」`);
+        }
+
+        // リク＝戦闘の試練。話しかける→（神託後）前口上→試練の戦闘→勝利で加入。
+        function engageRiku(npc) {
+            if (storyFlags.rikuJoined) { showMessage('リク：「共に行こう。アークを止めるまでな。」'); return; }
+            if (!storyFlags.metPriest) { showMessage('リク：「…お前、ただ者ではないな。だが、今は語る時ではない。」'); return; }
+            if (storyFlags.rikuTrialSeen) { startRikuTrial(); return; }  // 敗北後の再挑戦は前口上を省略
+            if (storyEventSystem) storyEventSystem.triggerEvent('recruit_riku', { storyFlags, player, partySystem, magicSystem });
+            else startRikuTrial();
+        }
+        function startRikuTrial() {
+            if (!battleSystem || battleSystem.inBattle) return;
+            const base = battleSystem.enemyDatabase.security_drone;
+            const hp = Math.round(base.hp * 1.7);
+            const trial = {
+                ...base, name: '守護の試練機',
+                hp: hp, maxHp: hp, currentHp: hp,
+                attack: Math.round(base.attack * 1.25), defense: Math.round(base.defense * 1.1),
+                exp: 0, gold: 0, dropTable: []
+            };
+            storyFlags.rikuTrialStarted = true;
+            battleSystem.startBattle(trial, true, () => onRikuTrialWin());  // 勝利時のみコールバック（敗北=通常GO）
+        }
+        function onRikuTrialWin() {
+            if (storyEventSystem) storyEventSystem.triggerEvent('recruit_riku_join', { storyFlags, player, partySystem, magicSystem });
+            else { joinMember('riku'); showMessage('リクが仲間に加わった！'); }
+        }
+        window.startRikuTrial = startRikuTrial;
+        window.onRikuTrialWin = onRikuTrialWin;
+
+        // ヤミ＝説得。話しかける→（神託後）選択肢で動機を示す→加入。
+        function engageYami(npc) {
+            if (storyFlags.yamiJoined) { showMessage('ヤミ：「契約は守るわ。アークを終わらせるまでね。」'); return; }
+            if (!storyFlags.metPriest) { showMessage('ヤミ：「神託に呼ばれた? …まだ、あんたと取引する理由がないわね。」'); return; }
+            if (storyEventSystem) storyEventSystem.triggerEvent('recruit_yami', { storyFlags, player, partySystem, magicSystem });
+            else { joinMember('yami'); showMessage('ヤミが仲間に加わった！'); }
         }
 
         // 神宮の老神主と会話（神託イベント発火）
@@ -5127,8 +5169,8 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         // 駆け寄り型NPCが到達した時の会話発火（リク/ヤミ=加入, 老神主=神託）
         function handleApproachConversation(npc) {
             if (!npc) return;
-            if (npc.name === 'リク') recruitMember('riku', npc);
-            else if (npc.name === 'ヤミ') recruitMember('yami', npc);
+            if (npc.name === 'リク') engageRiku(npc);          // 即加入をやめ、加入イベント（戦闘の試練）を開始
+            else if (npc.name === 'ヤミ') engageYami(npc);      // 即加入をやめ、説得イベントを開始
             else if (npc.name === '老神主') advancePriest(npc);
         }
 
@@ -5202,9 +5244,9 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                     // ショップを開く
                     window.gameShop.openShop(npc.shopType, npc);
                 } else if (npc.name === 'リク') {
-                    recruitMember('riku', npc);
+                    engageRiku(npc);
                 } else if (npc.name === 'ヤミ') {
-                    recruitMember('yami', npc);
+                    engageYami(npc);
                 } else if (npc.name === '老神主') {
                     advancePriest(npc);
                 } else {

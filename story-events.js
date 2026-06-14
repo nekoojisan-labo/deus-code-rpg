@@ -356,6 +356,62 @@ class StoryEventSystem {
             }
         });
 
+        // リク加入①: 前口上（話しかけ→onComplete で「守護の試練」戦闘へ）
+        this.registerEvent('recruit_riku', {
+            trigger: 'manual',
+            oneTime: true,
+            scenes: [
+                { character: 'リク', text: 'お前がカイトか。その手の紋様…神威の力、か。噂は本当だったらしいな。' },
+                { character: 'リク', text: '俺は元・警備隊。守るべきものを守れなかった男だ。だからこそ、次は間違えたくない。' },
+                { character: 'リク', text: '力ある者なら誰でも背中を預けるに値する——とは思わん。お前の覚悟、この身で確かめさせてもらう。' },
+                { character: 'リク', text: '構えろ。手加減はしない。' },
+                { character: 'システム', text: '——リクが「守護の試練機」を起動した！' }
+            ],
+            onComplete: (storyFlags) => {
+                storyFlags.rikuTrialSeen = true;
+                if (window.startRikuTrial) setTimeout(() => window.startRikuTrial(), 400);
+            }
+        });
+
+        // リク加入②: 試練に勝利（onRikuTrialWin から発火）
+        this.registerEvent('recruit_riku_join', {
+            trigger: 'manual',
+            oneTime: true,
+            scenes: [
+                { character: 'リク', text: '…いい目だ。力に振り回されず、仲間を守ろうとする目をしている。' },
+                { character: 'リク', text: 'カイト。お前になら、背中を預けられる。この盾、お前のために振るおう。' },
+                { character: 'システム', text: 'リクが仲間に加わった！\n鉄壁の守りで、前線を支えてくれる。' }
+            ],
+            onComplete: (storyFlags) => {
+                if (window.joinMember) window.joinMember('riku');
+            }
+        });
+
+        // ヤミ加入: 説得（選択肢で動機を示す→加入。戦闘なし）
+        this.registerEvent('recruit_yami', {
+            trigger: 'manual',
+            oneTime: true,
+            scenes: [
+                { character: 'ヤミ', text: '神託に遣わされた…ね。くだらない。八百万の神も、ずいぶん人手不足みたい。' },
+                { character: 'ヤミ', text: 'いいわ、一つだけ聞かせて。その力で——あんたは、何をするつもり?' },
+                {
+                    character: 'ヤミ',
+                    text: '正直に言いなさい。嘘は、匂いで分かるの。',
+                    choices: [
+                        { text: '「人の心を取り戻す」', action: (ctx) => { const f = (ctx && ctx.storyFlags) || window.storyFlags; if (f) f.yamiAnswer = 'hearts'; } },
+                        { text: '「アークを壊す」', action: (ctx) => { const f = (ctx && ctx.storyFlags) || window.storyFlags; if (f) f.yamiAnswer = 'destroy'; } },
+                        { text: '「まだ、分からない」', action: (ctx) => { const f = (ctx && ctx.storyFlags) || window.storyFlags; if (f) f.yamiAnswer = 'unknown'; } }
+                    ]
+                },
+                { character: 'ヤミ', text: '……ふっ。少なくとも、嘘じゃないみたいね。' },
+                { character: 'ヤミ', text: '私の事情は聞かないで。それでいいなら——その賭け、乗ってあげる。' },
+                { character: 'システム', text: 'ヤミが仲間に加わった！\n闇の魔法で、敵を討ち砕く。' }
+            ],
+            onComplete: (storyFlags) => {
+                if (window.joinMember) window.joinMember('yami');
+            }
+        });
+
         // アーク・プライム撃破エンディング（都庁最上階のボス撃破時に発火）
         this.registerEvent('arc_defeated_ending', {
             trigger: 'manual',
