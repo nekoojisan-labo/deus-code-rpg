@@ -4638,10 +4638,8 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
 
             // デバッグ用初期化（ロード時はスキップ＝セーブ内容で上書きされる二重化を防止）
             if (!loadOnStart) {
-            // デバッグ用: 初期アイテムを追加
+            // 初期アイテム: 回復ポーションのみ（質素な出発。強アイテムは店/拾得で入手）
             itemSystem.addItem('heal_potion', 3);
-            itemSystem.addItem('energy_core', 2);
-            itemSystem.addItem('elixir', 1);
             
             // 基本ステータスを設定
             player.baseAttack = 10;
@@ -4649,13 +4647,10 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             player.baseMaxHp = 100;
             player.baseMaxMp = 50;
             
-            // デバッグ用: 初期装備を追加
+            // 初期装備: 木刀＋布の服のみ（鉄の剣・革の鎧・指輪等は店/拾得で入手）
             equipmentSystem.addEquipment('wooden_sword', 1);
             equipmentSystem.addEquipment('cloth_armor', 1);
-            equipmentSystem.addEquipment('iron_sword', 1);
-            equipmentSystem.addEquipment('leather_armor', 1);
-            equipmentSystem.addEquipment('health_ring', 1);
-            
+
             // 初期装備を装備
             equipmentSystem.equipItem('wooden_sword', player);
             equipmentSystem.equipItem('cloth_armor', player);
