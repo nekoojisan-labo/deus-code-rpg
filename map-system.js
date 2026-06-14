@@ -4463,7 +4463,8 @@ class ShopSystem {
             if (details.hp > 0) statsText += ` HP+${details.hp}`;
             if (details.mp > 0) statsText += ` MP+${details.mp}`;
 
-            const levelReq = details.requiredLevel ? ` (Lv.${details.requiredLevel}〜)` : '';
+            // レベル表示は魔法のみ（武器/防具は購入レベル制限を撤廃＝所持金のみで購入可）
+            const levelReq = (details.isMagic && details.requiredLevel) ? ` (Lv.${details.requiredLevel}〜)` : '';
             const emoji = details.emoji || '';
             const name = details.name || '';
             const desc = (details.description || '') + statsText;
@@ -4474,7 +4475,7 @@ class ShopSystem {
             // 所持金不足/レベル不足は淡く
             const player = window.player;
             const cantAfford = player && player.gold < (details.price || 0);
-            const lvLocked = player && details.requiredLevel && player.level < details.requiredLevel;
+            const lvLocked = details.isMagic && player && details.requiredLevel && player.level < details.requiredLevel;
             const alreadyLearned = details.alreadyLearned;
             if (cantAfford || lvLocked || alreadyLearned) {
                 entry.classList.add('disabled');
@@ -4657,10 +4658,8 @@ class ShopSystem {
             return;
         }
 
-        if (itemDetails.requiredLevel && player.level < itemDetails.requiredLevel) {
-            this.showShopNotice(`レベル ${itemDetails.requiredLevel} 以上で購入可能です`);
-            return;
-        }
+        // 武器/防具/アイテムの購入レベル制限は撤廃（所持金が足りれば購入可）。
+        // 魔法のみ magicSystem.buyMagic 側で習得レベル要件を維持する。
 
         let success = false;
         let message = '';
