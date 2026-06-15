@@ -48,7 +48,7 @@ const BattlePanel = (() => {
         els.character.textContent = label || '戦闘';
     }
 
-    // Mode A: コマンドリストを描画
+    // Mode A: コマンドリストを描画（UIPanel.renderListへforward・DOM契約は従来と同一）
     function renderCommands(items, opts) {
         const els = getEls();
         if (!els || !els.body) return;
@@ -57,54 +57,29 @@ const BattlePanel = (() => {
 
         els.panel.classList.add('active', 'battle-mode');
         els.panel.classList.remove('battle-log-mode');
-        els.body.classList.add('battle-cmd-mode');
-        // メインコマンド（短いラベル5件）のみ2列グリッドで全件可視化する。
-        // スキル/アイテムは名前+MP/個数が長く、2列化するとスマホ縦で
-        // 意思決定情報（MPコスト等）が切れるため1列+スクロール追従を維持する
-        els.body.classList.toggle('battle-cmd-grid', !!opts.grid);
-        els.body.innerHTML = '';
 
-        if (opts.title) {
-            const titleEl = document.createElement('div');
-            titleEl.className = 'battle-cmd-title';
-            titleEl.textContent = opts.title;
-            els.body.appendChild(titleEl);
-        }
-
-        const selectedIndex = typeof opts.selectedIndex === 'number' ? opts.selectedIndex : 0;
-        items.forEach((it, index) => {
-            const div = document.createElement('div');
-            div.className = 'command-item' + (index === selectedIndex ? ' selected' : '');
-            if (it.command) div.dataset.command = it.command;
-            if (it.html != null) {
-                div.innerHTML = it.html;
-            } else {
-                div.textContent = it.label || '';
-            }
-            if (it.color) div.style.color = it.color;
-            if (typeof it.onClick === 'function') {
-                div.onclick = it.onClick;
-            }
-            els.body.appendChild(div);
+        // UIPanelが単一の描画経路。rowClass/selectedClass/titleClassを戦闘用に差し替え、
+        // .command-item + dataset.command + .selected という既存DOMを完全再現する
+        // （handleBattleInput/refreshCurrentPhaseSelection が読む契約を壊さない＝回帰ゼロ）。
+        UIPanel.renderList(els.body, items, {
+            rowClass: 'command-item',
+            selectedClass: 'selected',
+            selectedIndex: typeof opts.selectedIndex === 'number' ? opts.selectedIndex : 0,
+            title: opts.title,
+            titleClass: 'battle-cmd-title',
+            bodyAddClasses: ['battle-cmd-mode'],
+            bodyRemoveClasses: opts.grid ? [] : ['battle-cmd-grid']
         });
+        els.body.classList.toggle('battle-cmd-grid', !!opts.grid);
     }
 
     function setSelectedIndex(index) {
         const els = getEls();
         if (!els || !els.body) return;
-        const items = els.body.querySelectorAll('.command-item');
-        items.forEach((el, i) => {
-            if (i === index) el.classList.add('selected');
-            else el.classList.remove('selected');
-        });
-        // 長いリスト（スキル/アイテム）で選択枠が可視領域から出ないよう追従スクロール
-        const sel = items[index];
-        if (sel && typeof sel.scrollIntoView === 'function') {
-            sel.scrollIntoView({ block: 'nearest' });
-        }
+        UIPanel.setSelectedIndexIn(els.body, index, 'command-item', 'selected');
     }
 
-    // Mode B: バトルログを描画（直近 maxLines 行）
+    // Mode B: バトルログを描画（直近 maxLines 行・UIPanel.renderTextへforward）
     function renderLog(lines, opts) {
         const els = getEls();
         if (!els || !els.body) return;
@@ -112,16 +87,12 @@ const BattlePanel = (() => {
 
         els.panel.classList.add('active', 'battle-mode');
         els.panel.classList.add('battle-log-mode');
-        els.body.classList.remove('battle-cmd-mode', 'battle-cmd-grid');
-        // 直近6行を表示（行動の流れを追いやすくする。スクロールは末尾追従）
-        const max = opts.maxLines || 6;
-        const recent = (lines || []).slice(-max);
-        const safe = recent.map(l => String(l == null ? '' : l)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;'));
-        els.body.innerHTML = safe.join('<br>');
-        els.body.scrollTop = els.body.scrollHeight;
+        UIPanel.renderText(els.body, lines || [], {
+            maxLines: opts.maxLines || 6,
+            join: '<br>',
+            scrollBottom: true,
+            bodyRemoveClasses: ['battle-cmd-mode', 'battle-cmd-grid']
+        });
     }
 
     function deactivate() {

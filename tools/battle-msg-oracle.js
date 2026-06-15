@@ -27,6 +27,7 @@ const document = { getElementById: (id) => (els[id] = els[id] || fakeEl()), quer
 const sb = { console, window: {}, document, setTimeout: fakeSetTimeout, clearTimeout: noop,
   Math, JSON, Object, Array, Number, String, Boolean, Map, Set, Date: { now: () => 0 } };
 sb.window.location = { search: '' }; sb.globalThis = sb; vm.createContext(sb);
+vm.runInContext(read('ui-panel.js'), sb, { filename: 'ui-panel.js' }); // BattlePanelはUIPanelへforwardするので先にロード
 vm.runInContext(read('battle-system.js'), sb, { filename: 'battle-system.js' });
 
 const battle = new sb.window.BattleSystem();

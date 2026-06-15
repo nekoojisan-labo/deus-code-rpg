@@ -33,6 +33,111 @@
             --panel-glow: 0 0 26px rgba(0, 229, 255, 0.28), 0 18px 44px rgba(0, 0, 0, 0.6);
             --text-main: #eaf6ff;
             --text-sub: #9fc0cf;
+            /* UIPanel 統一トークン（全画面のサイズ/余白/選択色をここで一元管理） */
+            --panel-max-h: min(470px, calc(100% - 24px));
+            --panel-pad: 14px 18px;
+            --panel-bg: #0a1220;
+            --select-border: #facc15;                       /* 選択枠=黄（シアン地＋黄枠） */
+            --select-bg: rgba(0, 229, 255, 0.22);            /* 選択地=シアン */
+            --panel-glow-sel: 0 0 14px rgba(250, 204, 21, 0.35);
+            --row-h-fixed: 58px;
+        }
+
+        /* ============================================================
+           UIPanel — 全オーバーレイ画面の統一シェル（ui-panel.js が駆動）
+           1部品・1フォーマット・1トークンで全画面を揃える。host要素に付与。
+           ============================================================ */
+        .ui-panel {
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            width: var(--panel-w);
+            max-width: calc(100% - 20px);
+            max-height: var(--panel-max-h);
+            height: auto;
+            padding: var(--panel-pad);
+            border: 2px solid var(--panel-line);
+            border-radius: var(--panel-radius);
+            box-shadow: var(--panel-glow);
+            background: var(--panel-bg);
+            font-family: var(--ui-font);
+            color: var(--text-main);
+        }
+        .ui-panel__head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 8px;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--accent-soft);
+            flex: 0 0 auto;
+        }
+        .ui-panel__title {
+            color: var(--accent);
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.18em;
+        }
+        .ui-panel__header-extra {
+            color: var(--text-sub);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .ui-panel__text {
+            color: var(--text-main);
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 8px;
+            white-space: pre-wrap;
+            flex: 0 0 auto;
+        }
+        .ui-panel__list {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
+            gap: 6px;
+            align-content: start;
+        }
+        .ui-panel__list::-webkit-scrollbar { width: 6px; }
+        .ui-panel__list::-webkit-scrollbar-thumb { background: var(--accent-soft); border-radius: 3px; }
+        .ui-panel__row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 44px;
+            padding: 6px 12px;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            transition: background 0.12s, border-color 0.12s;
+        }
+        .ui-panel--fixed-rows .ui-panel__row { min-height: var(--row-h-fixed); }
+        .ui-panel__row:hover { background: rgba(0, 229, 255, 0.10); }
+        .ui-panel__row.is-selected {
+            background: var(--select-bg);
+            border-color: var(--select-border);
+            box-shadow: var(--panel-glow-sel);
+        }
+        .ui-panel__row.is-disabled { opacity: 0.55; cursor: default; }
+        .ui-panel__list--readonly .ui-panel__row { cursor: default; background: transparent; border-color: transparent; box-shadow: none; }
+        .ui-panel__list--readonly .ui-panel__row:hover { background: transparent; }
+        .ui-panel__icon { flex: 0 0 auto; font-size: 18px; line-height: 1; }
+        .ui-panel__text-col { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+        .ui-panel__label { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ui-panel__sub { font-size: 11px; color: var(--text-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ui-panel__right { flex: 0 0 auto; font-size: 12px; color: var(--text-sub); white-space: nowrap; }
+        .ui-panel__hint {
+            flex: 0 0 auto;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid var(--accent-soft);
+            font-size: 11px;
+            color: var(--text-sub);
+            text-align: center;
         }
 
         html, body {
@@ -3534,7 +3639,8 @@
     <script src="equipment-system.js?v=50"></script>
     <script src="magic-system.js?v=47"></script>
     <script src="se-system.js?v=1"></script>
-    <script src="battle-system.js?v=60"></script>
+    <script src="ui-panel.js?v=1"></script>
+    <script src="battle-system.js?v=61"></script>
     <script src="map-walkability-data.js?v=12"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=25"></script>
