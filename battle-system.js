@@ -2019,6 +2019,10 @@ class BattleSystem {
     
     // ゲームオーバー
     gameOver() {
+        // ★フィールドを凍結（gameLoopは!inBattleで回り続けるため、index側の updatePlayer/keydown
+        //   ガードが効くよう、ここで真っ先にフラグを立てる）。解除はロード/New Game時。
+        window.isGameOver = true;
+
         // 全滅の結果をビートで表示（個々の「○○は たおれた！」は直前の敵攻撃ビートで既出）
         this.presentBeat(['パーティは ぜんめつした…']);
         // 戦闘UI状態を解除
@@ -2029,9 +2033,9 @@ class BattleSystem {
         const kamuiMenu = document.getElementById('kamuiSkillMenu');
         if (kamuiMenu) kamuiMenu.style.display = 'none';
 
-        // ⚠️ 敗北経路は endBattle を通らないため、戦闘終了の後始末を必ずここで行う。
-        // 怠ると inBattle=true のまま固定＋戦闘BGMがループし続け、モーダルで
-        // 「閉じる」/Esc を選ぶとフィールドに戻れず永久ロックになる。
+        // ⚠️ 敗北経路は endBattle を通らないため、戦闘終了の後始末を必ずここで「同期的に」行う。
+        // 怠ると inBattle=true のまま固定＋戦闘BGMがループし続ける。ロード画面はフィールドの上に出すので
+        // 戦闘画面を閉じてからロード画面を開く（ロード成功時はこの後始末済みのフィールドが再開する）。
         const teardownToField = () => {
             this.inBattle = false;
             this.waitingForCommand = false;
@@ -2048,32 +2052,16 @@ class BattleSystem {
             if (typeof BattlePanel !== 'undefined' && BattlePanel.deactivate) BattlePanel.deactivate();
             if (typeof window.resetBattleUIState === 'function') window.resetBattleUIState();
         };
-
-        // 死亡ビートの表示完了後にゲームオーバーUIを開く（固定2sタイマーの競合を解消）。
-        // ※ SV3 で showGameModal をロード画面(openGameOverScreen)＋フィールド凍結に置換する。
+        // 死亡ビートの表示完了後に「戦闘を畳んでから」ゲームオーバー＝ロード画面を開く。
+        // teardownを先に同期実行すると BattlePanel.deactivate が死亡ビート表示前にパネルを消すため、
+        // ビート表示(afterBattleMessages)後に畳む。死亡ビート中は inBattle=true がフィールドを止める。
+        // ロード画面は閉じられない＝ロード or New Game までフィールドは凍結のまま。
         this.afterBattleMessages(() => {
-            if (typeof window.showGameModal === 'function') {
-                window.showGameModal({
-                    title: 'GAME OVER',
-                    body: 'パーティは 全滅した…\nタイトルに戻りますか？',
-                    options: [
-                        { label: 'タイトルへ', value: 'title' },
-                        { label: '閉じる', value: 'close' }
-                    ],
-                    defaultIndex: 0,
-                    onSelect: (value) => {
-                        if (value === 'title') {
-                            location.reload();
-                        } else {
-                            // 「閉じる」/Esc(null): 戦闘画面を閉じてフィールドへ復帰（ロック解除）
-                            teardownToField();
-                        }
-                    }
-                });
+            teardownToField(); // 戦闘画面/BGM/パネルを畳む（クリーンなフィールド上にロード画面を出す）
+            if (typeof window.openGameOverScreen === 'function') {
+                window.openGameOverScreen();
             } else if (confirm('ゲームオーバー。タイトルに戻りますか？')) {
                 location.reload();
-            } else {
-                teardownToField();
             }
         });
     }

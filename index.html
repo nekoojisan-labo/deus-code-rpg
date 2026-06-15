@@ -3442,7 +3442,15 @@
             <!-- UIPanel が描画するホスト（.menu-container＝.ui-panelと同枠・背景アート維持） -->
             <div class="menu-container" id="questPanelHost"></div>
         </div>
-        
+
+        <!-- セーブ（スロット選択）／ロード・ゲームオーバー（スロット一覧＋New Game）: UIPanelが描画 -->
+        <div class="menu-overlay" id="saveMenuOverlay">
+            <div class="menu-container" id="savePanelHost"></div>
+        </div>
+        <div class="menu-overlay" id="loadMenuOverlay">
+            <div class="menu-container" id="loadPanelHost"></div>
+        </div>
+
         <!-- Equipment Menu -->
         <div class="menu-overlay" id="equipmentMenuOverlay">
             <div class="menu-container">
@@ -3623,6 +3631,7 @@
                 const layer = document.getElementById('uiLayer');
                 if (!layer) return;
                 ['menuOverlay', 'itemMenuOverlay', 'questMenuOverlay',
+                 'saveMenuOverlay', 'loadMenuOverlay',
                  'equipmentMenuOverlay', 'kamuiMenuOverlay', 'kamuiSkillMenu'].forEach((id) => {
                     const el = document.getElementById(id);
                     if (el) layer.appendChild(el);
@@ -3638,7 +3647,7 @@
     <script src="se-system.js?v=1"></script>
     <script src="ui-panel.js?v=2"></script>
     <script src="save-system.js?v=1"></script>
-    <script src="battle-system.js?v=64"></script>
+    <script src="battle-system.js?v=65"></script>
     <script src="map-walkability-data.js?v=12"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=25"></script>
@@ -4052,11 +4061,21 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         let itemSelectedIndex = 0;
         let equipmentSelectedIndex = 0;
         let isMessageShown = false;
+        window.isGameOver = false;       // ゲームオーバー凍結フラグ（ロード/New Gameで解除）
+        window.pendingLoadSlot = null;   // ロードUIが選んだスロット番号
 
         document.addEventListener('keydown', (e) => {
             // 統一部品UIPanelが開いている画面は、全てここで一元処理（各画面は自前keydownを持たない）
             if (window.UIPanel && UIPanel.isOpen()) {
                 UIPanel.handleKey(e);
+                return;
+            }
+
+            // ★ゲームオーバー凍結ガードは UIPanel分岐の「後」に置く（前に置くとロード画面に入力が届かず
+            //   永久ソフトロック）。ロード画面は上の UIPanel.handleKey で操作する。
+            if (window.isGameOver) {
+                e.preventDefault();
+                Object.keys(keys).forEach(k => keys[k] = false);
                 return;
             }
 
@@ -4861,6 +4880,13 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         }
 
         function updatePlayer() {
+            // ★ゲームオーバー中はフィールドを完全凍結（gameLoopは!inBattleで回り続けるため、
+            //   この早期returnが唯一の歯止め。エンカウント/遷移/駆け寄り判定より必ず前に置く）
+            if (window.isGameOver) {
+                Object.keys(keys).forEach(k => keys[k] = false);
+                player.isMoving = false;
+                return;
+            }
             // ショップが開いているかチェック
             if (window.gameShop && window.gameShop.isShopOpen) {
                 player.isMoving = false;
@@ -5009,10 +5035,10 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 checkInteractions();
             }
 
-            // セーブポイント（Sキー）
+            // セーブポイント（Sキー）→ スロット選択UI（閉じるとフィールドへ戻る）
             if ((keys['s'] || keys['S']) && checkSavePoint()) {
                 keys['s'] = keys['S'] = false;
-                saveGame();
+                openSaveScreen(false);
             }
 
             // ※メニュー開閉は keydown ハンドラ側で M / Escape を直接処理
@@ -5676,9 +5702,9 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                     openKamuiMenu();
                     break;
                 case 'save':
-                    // どこでもセーブ（タッチ環境にはSキーが無いためメニューから提供）
+                    // どこでもセーブ（スロット選択UI。タッチ環境にはSキーが無いためメニューから提供）
                     closeMenu();
-                    saveGame();
+                    openSaveScreen(true);
                     break;
                 case 'close':
                     // メニューを閉じる
@@ -5826,6 +5852,111 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         }
         
         // アイテムメニュー
+        // ===== セーブ / ロード / ゲームオーバー（全てUIPanel・スロット一覧を共有） =====
+        function formatSaveTime(iso) {
+            if (!iso) return '';
+            try {
+                const d = new Date(iso);
+                const p = (n) => String(n).padStart(2, '0');
+                return `${d.getMonth() + 1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+            } catch (e) { return ''; }
+        }
+        // 3スロットを UIPanel の行に変換。forLoad=true なら空スロットは選択不可。
+        function buildSlotRows(opts) {
+            opts = opts || {};
+            return listSaveSlots().map((s, idx) => {
+                const i = idx + 1;
+                if (s) {
+                    const meta = s.meta;
+                    return {
+                        icon: '💾',
+                        label: `スロット${i}　${meta.location}`,
+                        sub: `Lv${meta.level}・${meta.partyCount}人${meta.chapter ? '・' + meta.chapter : ''}`,
+                        right: formatSaveTime(meta.timestamp),
+                        value: { slot: i, occupied: true }
+                    };
+                }
+                return {
+                    icon: '・',
+                    label: `スロット${i}　（空き）`,
+                    sub: opts.forLoad ? 'データなし' : '新規セーブ',
+                    right: '',
+                    value: { slot: i, occupied: false },
+                    disabled: !!opts.forLoad
+                };
+            });
+        }
+
+        // --- セーブ画面（メニュー or セーブポイントから） ---
+        function openSaveScreen(fromMenu) {
+            const host = document.getElementById('savePanelHost');
+            if (!host || !window.UIPanel) { saveGame(); return; } // フォールバック: 既定スロット
+            UIPanel.open({
+                host, overlay: 'saveMenuOverlay', selectable: true,
+                title: 'セーブ — スロットを選択',
+                items: buildSlotRows({ forLoad: false }),
+                hint: '↑↓ 選択 / Z 決定 / X 閉じる',
+                onSelect: (v) => {
+                    if (v.occupied) openOverwriteConfirm(v.slot, fromMenu);
+                    else doSaveToSlot(v.slot, fromMenu);
+                },
+                onCancel: () => closeSaveScreen(fromMenu)
+            });
+        }
+        function openOverwriteConfirm(slot, fromMenu) {
+            const host = document.getElementById('savePanelHost');
+            UIPanel.open({
+                host, overlay: 'saveMenuOverlay', selectable: true, columns: 2,
+                title: `スロット${slot} に 上書きしますか？`,
+                items: [{ label: 'はい', value: 'yes' }, { label: 'いいえ', value: 'no' }],
+                hint: '←→ 選択 / Z 決定',
+                onSelect: (v) => { if (v === 'yes') doSaveToSlot(slot, fromMenu); else openSaveScreen(fromMenu); },
+                onCancel: () => openSaveScreen(fromMenu)
+            });
+        }
+        function doSaveToSlot(slot, fromMenu) {
+            writeSaveSlot(slot);
+            closeSaveScreen(fromMenu);
+        }
+        function closeSaveScreen(fromMenu) {
+            if (window.UIPanel) UIPanel.close();
+            if (fromMenu) openMenu();
+        }
+
+        // --- ゲームオーバー時のロード画面（閉じられない＝必ずロードかNew Game） ---
+        function openGameOverScreen() {
+            const host = document.getElementById('loadPanelHost');
+            if (!host || !window.UIPanel) {
+                // フォールバック: 確認ダイアログ
+                if (confirm('ゲームオーバー。タイトルに戻りますか？')) location.reload();
+                return;
+            }
+            const rows = buildSlotRows({ forLoad: true });
+            rows.push({ icon: '✨', label: 'New Game（はじめから）', sub: 'タイトルから やりなおす', value: { newGame: true } });
+            UIPanel.open({
+                host, overlay: 'loadMenuOverlay', selectable: true,
+                title: 'GAME OVER',
+                bodyText: 'パーティは ぜんめつした… セーブからやり直すか New Game を選んでください',
+                items: rows,
+                hint: '↑↓ 選択 / Z 決定',
+                onSelect: (v) => {
+                    if (v.newGame) { window.isGameOver = false; if (window.UIPanel) UIPanel.close(); location.reload(); return; }
+                    if (v.occupied) {
+                        const ok = loadSaveSlot(v.slot);
+                        if (ok) {
+                            window.isGameOver = false;        // フィールド凍結解除
+                            if (window.UIPanel) UIPanel.close();
+                            // systems は構築済・gameLoop は回り続けているので再開のみ
+                        } else {
+                            showMessage('そのスロットは ロードできません');
+                        }
+                    }
+                }
+                // onCancel 省略 → X/Esc は no-op（閉じられない）
+            });
+        }
+        window.openGameOverScreen = openGameOverScreen;
+
         // ===== クエストログ（メニュー内） =====
         function openQuestLog() {
             closeMenu();

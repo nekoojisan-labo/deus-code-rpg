@@ -143,5 +143,42 @@ UIPanel.close();
 
 chk('close後は isOpen()=false', UIPanel.isOpen() === false);
 
+// ---------- ロード画面: 全スロット空→New Gameのみ選択可（SV3の核心不変条件） ----------
+let pickedNewGame = false, pickedSlot = null;
+const hostL = makeHost();
+UIPanel.open({
+  host: hostL, selectable: true,
+  items: [
+    { label: 'スロット1（空き）', value: { slot: 1, occupied: false }, disabled: true },
+    { label: 'スロット2（空き）', value: { slot: 2, occupied: false }, disabled: true },
+    { label: 'スロット3（空き）', value: { slot: 3, occupied: false }, disabled: true },
+    { label: 'New Game', value: { newGame: true } }
+  ],
+  onSelect: (v) => { if (v.newGame) pickedNewGame = true; else pickedSlot = v.slot; }
+});
+chk('ロード(全空): 初期選択は唯一の選択可能行=New Game(index3)', UIPanel.getSelectedIndex() === 3, `idx=${UIPanel.getSelectedIndex()}`);
+key('ArrowDown'); key('ArrowDown');
+chk('ロード(全空): 矢印移動しても空スロット(disabled)には乗らずNew Gameのまま', UIPanel.getSelectedIndex() === 3);
+key('z');
+chk('ロード(全空): 決定でNew Gameのみ発火（空スロットはロード不可）', pickedNewGame === true && pickedSlot === null);
+UIPanel.close();
+
+// 占有スロットありの場合は占有行が選べる
+let loadedSlot = null;
+const hostL2 = makeHost();
+UIPanel.open({
+  host: hostL2, selectable: true,
+  items: [
+    { label: 'スロット1', value: { slot: 1, occupied: true } },
+    { label: 'スロット2（空き）', value: { slot: 2, occupied: false }, disabled: true },
+    { label: 'New Game', value: { newGame: true } }
+  ],
+  onSelect: (v) => { if (!v.newGame) loadedSlot = v.slot; }
+});
+chk('ロード: 占有スロット1が初期選択(index0)', UIPanel.getSelectedIndex() === 0);
+key('z');
+chk('ロード: 占有スロット決定でそのスロットをロード', loadedSlot === 1);
+UIPanel.close();
+
 console.log(`\n${pass ? '✅ 全PASS: 戦闘DOM契約再現／テキスト結合・エスケープ／統一入力(矢印WS/disabled/2列/決定キャンセル/read-only) を実コードで確認' : '❌ 不合格あり'}`);
 process.exit(pass ? 0 : 1);
