@@ -4331,15 +4331,20 @@ class ShopSystem {
                 { id: 'iron_sword', equipmentId: 'iron_sword' },
                 { id: 'plasma_blade', equipmentId: 'plasma_blade' },
                 { id: 'cyber_gun', equipmentId: 'cyber_gun' },
-                { id: 'kamui_katana', equipmentId: 'kamui_katana' }
+                { id: 'kamui_katana', equipmentId: 'kamui_katana' },
+                { id: 'mage_staff', equipmentId: 'mage_staff' },
+                { id: 'healer_rod', equipmentId: 'healer_rod' },
+                { id: 'arch_staff', equipmentId: 'arch_staff' }
             ],
             armor: [
                 { id: 'cloth_armor', equipmentId: 'cloth_armor' },
                 { id: 'leather_armor', equipmentId: 'leather_armor' },
                 { id: 'chain_mail', equipmentId: 'chain_mail' },
+                { id: 'mystic_robe', equipmentId: 'mystic_robe' },
                 { id: 'cloth_hat', equipmentId: 'cloth_hat' },
                 { id: 'iron_helmet', equipmentId: 'iron_helmet' },
                 { id: 'cyber_helmet', equipmentId: 'cyber_helmet' },
+                { id: 'sage_circlet', equipmentId: 'sage_circlet' },
                 { id: 'cloth_gloves', equipmentId: 'cloth_gloves' },
                 { id: 'iron_gauntlets', equipmentId: 'iron_gauntlets' },
                 { id: 'power_gloves', equipmentId: 'power_gloves' },

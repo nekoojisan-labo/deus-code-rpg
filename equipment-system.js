@@ -284,13 +284,67 @@ class EquipmentSystem {
                 price: 1200,
                 sellPrice: 600,
                 requiredLevel: 7
+            },
+            // ===== 術士系(メイジ/ヒーラー)向け装備：魔力(magic)/MPを伸ばす＝戦士系との差別化 =====
+            mage_staff: {
+                id: 'mage_staff', name: '魔導の杖', emoji: '🪄', type: 'weapon', slot: 'weapon',
+                attack: 4, magic: 14, mp: 8, description: '魔力を増幅する杖（術士専用）', price: 350, sellPrice: 175, requiredLevel: 1
+            },
+            arch_staff: {
+                id: 'arch_staff', name: '大魔導の杖', emoji: '🔱', type: 'weapon', slot: 'weapon',
+                attack: 8, magic: 28, mp: 18, description: '高位術士の杖（術士専用）', price: 1400, sellPrice: 700, requiredLevel: 8
+            },
+            healer_rod: {
+                id: 'healer_rod', name: '癒しのロッド', emoji: '⚕️', type: 'weapon', slot: 'weapon',
+                attack: 3, magic: 12, mp: 12, description: '治癒の力を高めるロッド（ヒーラー向け）', price: 400, sellPrice: 200, requiredLevel: 1
+            },
+            mystic_robe: {
+                id: 'mystic_robe', name: '神秘のローブ', emoji: '👘', type: 'body', slot: 'body',
+                defense: 6, magic: 10, mp: 20, description: '魔力を宿す軽装（術士向け）', price: 600, sellPrice: 300, requiredLevel: 3
+            },
+            sage_circlet: {
+                id: 'sage_circlet', name: '賢者のサークレット', emoji: '🧿', type: 'head', slot: 'head',
+                defense: 3, magic: 8, mp: 12, description: '知性を高める頭飾り（術士向け）', price: 500, sellPrice: 250, requiredLevel: 3
             }
         };
-        
+
+        // 各装備に allowedRoles（装備できるクラス）を付与。戦士系=all-rounder/tank、術士系=mage/healer、共通=装飾品。
+        this._applyEquipmentRoles();
+
         // キャラクター別の装備スロット（charId -> {weapon,head,...}）
         this.equippedByCharacter = {};
         // 所持している装備（インベントリ）※全キャラ共有
         this.inventory = {};
+    }
+
+    // 各装備に allowedRoles を付与（明示テーブル＋既定ヒューリスティック）。
+    // 戦士系=['all-rounder','tank'] / 術士系=['mage','healer'] / 軽装・装飾品=全クラス。
+    _applyEquipmentRoles() {
+        const ALL = ['all-rounder', 'tank', 'healer', 'mage'];
+        const WARRIOR = ['all-rounder', 'tank'];
+        const CASTER = ['all-rounder', 'healer', 'mage'];
+        const table = {
+            // 物理武器=戦士系
+            wooden_sword: WARRIOR, iron_sword: WARRIOR, cyber_gun: WARRIOR, plasma_blade: WARRIOR, kamui_katana: WARRIOR,
+            // 術士武器=術士系
+            mage_staff: ['all-rounder', 'mage'], arch_staff: ['all-rounder', 'mage'], healer_rod: ['all-rounder', 'healer'],
+            // 重装=戦士系 / 軽装(cloth)=全員 / 術士ローブ=術士系
+            iron_helmet: WARRIOR, chain_mail: WARRIOR, cyber_suit: WARRIOR, iron_gauntlets: WARRIOR, power_gloves: WARRIOR,
+            cyber_helmet: WARRIOR, leather_armor: ['all-rounder', 'tank', 'healer'],
+            cloth_hat: ALL, cloth_armor: ALL, cloth_gloves: ALL,
+            mystic_robe: CASTER, sage_circlet: CASTER,
+            // 装飾品=全員（攻撃指輪のみ戦士寄り、魔力護符は術士寄りだが全員可）
+            health_ring: ALL, defense_ring: ALL, kamui_talisman: ALL, mana_amulet: ALL, power_ring: WARRIOR
+        };
+        Object.keys(this.equipmentDatabase).forEach(id => {
+            const e = this.equipmentDatabase[id];
+            if (e.allowedRoles) return;
+            if (table[id]) { e.allowedRoles = table[id]; return; }
+            // 既定: magic>0なら術士系、装飾品は全員、それ以外は戦士系
+            if ((e.magic || 0) > 0) e.allowedRoles = CASTER;
+            else if (e.slot === 'accessory') e.allowedRoles = ALL;
+            else e.allowedRoles = WARRIOR;
+        });
     }
 
     // キャラID（パーティ別装備のキー）
@@ -345,7 +399,13 @@ class EquipmentSystem {
             console.error('Equipment not in inventory:', equipmentId, this.inventory);
             return { success: false, message: 'この装備を持っていない' };
         }
-        
+
+        // ★クラス(role)制限: 戦士系/ヒーラー/メイジで装備できる物が違う（パーティの個性）
+        const role = (player && player.role) || 'all-rounder';
+        if (equipment.allowedRoles && !equipment.allowedRoles.includes(role)) {
+            return { success: false, message: `${player && player.name || 'このキャラ'}には ${equipment.name}は そうびできない（クラスが あわない）` };
+        }
+
         const slot = equipment.slot;
         const equipped = this.getEquipped(player);
         const oldEquipmentId = equipped[slot];
@@ -539,7 +599,9 @@ class EquipmentSystem {
             attack: 0,
             defense: 0,
             hp: 0,
-            mp: 0
+            mp: 0,
+            magic: 0,
+            speed: 0
         };
 
         const slots = this.getEquipped(character);
@@ -551,9 +613,11 @@ class EquipmentSystem {
                 stats.defense += equipment.defense || 0;
                 stats.hp += equipment.hp || 0;
                 stats.mp += equipment.mp || 0;
+                stats.magic += equipment.magic || 0;   // 術士装備の魔力
+                stats.speed += equipment.speed || 0;
             }
         }
-        
+
         return stats;
     }
     
@@ -572,6 +636,12 @@ class EquipmentSystem {
         if (player.baseMaxMp === undefined) {
             player.baseMaxMp = 50;
         }
+        if (player.baseMagic === undefined) {
+            player.baseMagic = player.magic || 0;
+        }
+        if (player.baseSpeed === undefined) {
+            player.baseSpeed = player.speed || 5;
+        }
 
         // 装備ボーナスを計算（このキャラの装備）
         const equipStats = this.getTotalStats(player);
@@ -585,6 +655,8 @@ class EquipmentSystem {
         player.defense = player.baseDefense + equipStats.defense;
         player.maxHp = player.baseMaxHp + equipStats.hp;
         player.maxMp = player.baseMaxMp + equipStats.mp;
+        player.magic = player.baseMagic + equipStats.magic;   // 術士装備で魔力が伸びる
+        player.speed = player.baseSpeed + equipStats.speed;
 
         // HPとMPを調整（割合を維持）
         player.hp = Math.min(Math.floor(player.maxHp * hpRatio), player.maxHp);
