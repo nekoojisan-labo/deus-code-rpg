@@ -850,28 +850,24 @@ class BattleSystem {
         const criticalResult = this.checkCritical(member, this.currentEnemy);
         const isCritical = criticalResult.isCritical;
 
-        if (isCritical) {
-            damage = Math.floor(damage * criticalResult.multiplier);
-            this.addBattleLog(`${member.name}の こうげき！`);
-            this.addBattleLog(`かいしんの いちげき！`);
-        } else {
-            this.addBattleLog(`${member.name}の こうげき！`);
-        }
-
+        if (isCritical) damage = Math.floor(damage * criticalResult.multiplier);
         this.currentEnemy.currentHp = Math.max(0, this.currentEnemy.currentHp - damage);
-        this.addBattleLog(`${this.currentEnemy.name}に ${Math.floor(damage)}の ダメージ！`);
-
         this.showDamageEffect(damage, true, isCritical);
         this.updateBattleUI();
 
-        // 敵が倒れたかチェック
-        if (this.currentEnemy.currentHp <= 0) {
-            this.currentEnemy.currentHp = 0;
-            this.updateBattleUI();
-            setTimeout(() => this.battleVictory(window.player), 1500);
-        } else {
-            setTimeout(callback, 1500);
-        }
+        // ★攻撃→(会心)→ダメージ を1つずつ表示し、完了後に撃破判定/次へ（一気出しを解消）
+        const atkMsgs = isCritical
+            ? [`${member.name}の こうげき！`, `かいしんの いちげき！`, `${this.currentEnemy.name}に ${Math.floor(damage)}の ダメージ！`]
+            : [`${member.name}の こうげき！`, `${this.currentEnemy.name}に ${Math.floor(damage)}の ダメージ！`];
+        this.addBattleLogSequence(atkMsgs, () => {
+            if (this.currentEnemy.currentHp <= 0) {
+                this.currentEnemy.currentHp = 0;
+                this.updateBattleUI();
+                this.battleVictory(window.player);
+            } else if (callback) {
+                callback();
+            }
+        });
     }
 
     // クリティカル判定
@@ -1607,34 +1603,29 @@ class BattleSystem {
         const allMembers = this.getPartyMembers();
         const target = allMembers[Math.floor(Math.random() * allMembers.length)];
 
-        // 防御中はダメージ半減
+        const msgs = [`${this.currentEnemy.name}の こうげき！`];
         if (target.defending) {
             damage = Math.floor(damage / 2);
-            this.addBattleLog(`${this.currentEnemy.name}の こうげき！`);
-            this.addBattleLog(`${target.name}は ぼうぎょしている！`);
+            msgs.push(`${target.name}は ぼうぎょしている！`);
             target.defending = false;
-        } else {
-            this.addBattleLog(`${this.currentEnemy.name}の こうげき！`);
         }
-
         target.hp = Math.max(0, target.hp - damage);
-        this.addBattleLog(`${target.name}に ${Math.floor(damage)}の ダメージ！`);
+        msgs.push(`${target.name}に ${Math.floor(damage)}の ダメージ！`);
 
         this.showDamageEffect(damage, false, false, allMembers.indexOf(target));
         this.updateBattleUI();
 
-        // パーティ全滅チェック
-        if (this.checkPartyWipeout()) {
-            setTimeout(() => this.gameOver(), 1500);
-        } else {
-            // パーティメンバーのステータス異常処理
-            setTimeout(() => {
+        // ★攻撃→(防御)→ダメージ を1つずつ表示し、完了後に全滅判定/次ターンへ
+        this.addBattleLogSequence(msgs, () => {
+            if (this.checkPartyWipeout()) {
+                setTimeout(() => this.gameOver(), 1500);
+            } else {
                 this.processAllMembersStatusAilments(() => {
                     this.turnCount++;
                     this.startPlayerTurn();
                 });
-            }, 1500);
-        }
+            }
+        });
     }
 
     // 敵の防御
@@ -1739,44 +1730,24 @@ class BattleSystem {
         const body = document.getElementById('gameMessageBody');
         if (body) body.classList.remove('battle-cmd-mode', 'battle-cmd-grid');
 
-        // 勝利メッセージ
-        this.addBattleLog(`${this.currentEnemy.name}を たおした！`);
-
-        // 経験値とゴールド獲得
+        // 経験値・ゴールド・ドロップを先に適用（データ確定）。表示は1つずつ順次に。
         const expGained = this.currentEnemy.exp || 10;
         const goldGained = this.currentEnemy.gold || 5;
+        player.gold = (player.gold || 0) + goldGained;
+        const allMembers = [player];
+        if (window.partySystem) allMembers.push(...window.partySystem.getMembers());
+        allMembers.forEach(member => { member.exp = (member.exp || 0) + expGained; });
+        const droppedItems = this.processItemDrops();
 
-        // リザルト表示
-        setTimeout(() => {
-            this.addBattleLog(`せんとうに しょうり！`);
-            this.addBattleLog(`${expGained} の けいけんちを かくとく！`);
-
-            // ゴールド付与（プレイヤーのみ）
-            player.gold = (player.gold || 0) + goldGained;
-            this.addBattleLog(`${goldGained} ゴールドを てにいれた！`);
-
-            // 全パーティメンバーに経験値を配分
-            const allMembers = [player];
-            if (window.partySystem) {
-                allMembers.push(...window.partySystem.getMembers());
-            }
-
-            // 各メンバーに経験値付与
-            allMembers.forEach(member => {
-                member.exp = (member.exp || 0) + expGained;
-            });
-
-            // ドロップアイテム判定
-            const droppedItems = this.processItemDrops();
-            if (droppedItems.length > 0) {
-                droppedItems.forEach(item => {
-                    this.addBattleLog(`${item.name}を てにいれた！`);
-                });
-            }
-
-            // レベルアップ処理を順番に実行
-            this.processLevelUps(allMembers, 0);
-        }, 1000);
+        // ★一気出しをやめ、1メッセージずつ間隔をあけて表示（何が起きたか追える）→最後にレベルアップ
+        const victoryMsgs = [
+            `${this.currentEnemy.name}を たおした！`,
+            `せんとうに しょうり！`,
+            `${expGained} の けいけんちを かくとく！`,
+            `${goldGained} ゴールドを てにいれた！`,
+            ...droppedItems.map(item => `${item.name}を てにいれた！`)
+        ];
+        this.addBattleLogSequence(victoryMsgs, () => this.processLevelUps(allMembers, 0));
     }
 
     // ドロップアイテム処理
@@ -2132,6 +2103,19 @@ class BattleSystem {
                 this._flashCommandHeaderMessage(message);
             }
         }
+    }
+
+    // 複数メッセージを1つずつ間隔をあけて表示（勝利リザルト等の一気出しを防ぐ）。完了で onDone。
+    addBattleLogSequence(messages, onDone, interval = 950) {
+        const list = (messages || []).filter(m => m != null && m !== '');
+        let i = 0;
+        const step = () => {
+            if (i >= list.length) { if (onDone) onDone(); return; }
+            this.addBattleLog(list[i]);
+            i++;
+            setTimeout(step, interval);
+        };
+        step();
     }
 
     // コマンド入力中に小さく警告ログを表示する
