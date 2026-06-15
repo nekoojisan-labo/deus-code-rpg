@@ -3695,7 +3695,7 @@
     <script src="map-walkability-data.js?v=15"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=27"></script>
-    <script src="map-system.js?v=85"></script>
+    <script src="map-system.js?v=86"></script>
     <script src="map-system-grid.js"></script>
     <script src="player-grid-movement.js"></script>
     <script src="bgm-system.js?v=36"></script>
@@ -5096,6 +5096,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 const spawn = mapSystem.getSpawnPoint(transition.exit, canvas);
                 player.x = spawn.x;
                 player.y = spawn.y;
+                if (spawn.facing) player.facing = spawn.facing;   // ★来た扉の前で「中を向いて」出る
                 mapSystem.updateCamera(player.x, player.y, canvas);
                 if (mapSystem.startTransitionCooldown) {
                     mapSystem.startTransitionCooldown();
