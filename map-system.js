@@ -4804,15 +4804,18 @@ class ShopSystem {
             player.gold -= 50;
             player.hp = player.maxHp;
             player.mp = player.maxMp;
-            // パーティメンバー回復（party-system 互換）
-            if (window.party && window.party.members) {
-                window.party.members.forEach(m => {
-                    if (m && typeof m === 'object') {
-                        if (typeof m.hp !== 'undefined' && typeof m.maxHp !== 'undefined') m.hp = m.maxHp;
-                        if (typeof m.mp !== 'undefined' && typeof m.maxMp !== 'undefined') m.mp = m.maxMp;
-                    }
-                });
-            }
+            // ★パーティメンバー回復。正しいアクセサは window.partySystem.getMembers()。
+            //   旧コードは存在しない window.party.members を見ており仲間が回復していなかった。
+            const members = (window.partySystem && typeof window.partySystem.getMembers === 'function')
+                ? window.partySystem.getMembers() : [];
+            members.forEach(m => {
+                if (m && typeof m === 'object') {
+                    if (typeof m.maxHp !== 'undefined') m.hp = m.maxHp;
+                    if (typeof m.maxMp !== 'undefined') m.mp = m.maxMp;
+                }
+            });
+            // ステータス異常も宿泊で解消（休息）
+            members.concat(player).forEach(m => { if (m && m.statusAilments) m.statusAilments = {}; });
         }
         if (window.updateUI) window.updateUI();
         this.showShopNotice('ぐっすり眠った…\nHP・MP が全回復した！', () => {
