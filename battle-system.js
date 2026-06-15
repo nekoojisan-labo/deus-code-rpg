@@ -602,6 +602,7 @@ class BattleSystem {
 
         this.selectedCommand = 0;
         this.battleLog = [];
+        this._resetBattleMessages();  // メッセージ部品をリセット（前回戦闘の残りを消す）
         this.turnCount = 1;
         this.waitingForCommand = false; // 初期状態では待機しない
 
@@ -859,7 +860,8 @@ class BattleSystem {
         const atkMsgs = isCritical
             ? [`${member.name}の こうげき！`, `かいしんの いちげき！`, `${this.currentEnemy.name}に ${Math.floor(damage)}の ダメージ！`]
             : [`${member.name}の こうげき！`, `${this.currentEnemy.name}に ${Math.floor(damage)}の ダメージ！`];
-        this.addBattleLogSequence(atkMsgs, () => {
+        atkMsgs.forEach(m => this.addBattleLog(m));
+        this.afterBattleMessages(() => {
             if (this.currentEnemy.currentHp <= 0) {
                 this.currentEnemy.currentHp = 0;
                 this.updateBattleUI();
@@ -1616,7 +1618,8 @@ class BattleSystem {
         this.updateBattleUI();
 
         // ★攻撃→(防御)→ダメージ を1つずつ表示し、完了後に全滅判定/次ターンへ
-        this.addBattleLogSequence(msgs, () => {
+        msgs.forEach(m => this.addBattleLog(m));
+        this.afterBattleMessages(() => {
             if (this.checkPartyWipeout()) {
                 setTimeout(() => this.gameOver(), 1500);
             } else {
@@ -1747,7 +1750,8 @@ class BattleSystem {
             `${goldGained} ゴールドを てにいれた！`,
             ...droppedItems.map(item => `${item.name}を てにいれた！`)
         ];
-        this.addBattleLogSequence(victoryMsgs, () => this.processLevelUps(allMembers, 0));
+        victoryMsgs.forEach(m => this.addBattleLog(m));
+        this.afterBattleMessages(() => this.processLevelUps(allMembers, 0));
     }
 
     // ドロップアイテム処理
@@ -1943,6 +1947,7 @@ class BattleSystem {
         this.turnCount = 0;
         this.waitingForCommand = false;
         this.battleLog = [];
+        this._resetBattleMessages();  // メッセージ部品の保留タイマ等をクリア
         this.isBossBattle = false;
         this.onBossDefeat = null;
 
@@ -2079,43 +2084,58 @@ class BattleSystem {
         }, 2000);
     }
     
-    // バトルログ追加
+    // ===== バトルメッセージ部品（全メッセージがここを通る。1行ずつ順次表示） =====
+    // addBattleLog: ログに積むだけ。表示は単一ポンプ _pumpBattleMsg が1行ずつ送る。
+    // → どこから addBattleLog しても自動で「1つずつ」になる（経路ごとの個別対応が不要）。
     addBattleLog(message) {
         this.battleLog.push(message);
 
-        // 旧バトルメッセージ枠（DOM互換）にも反映
+        // 旧バトルメッセージ枠（DOM互換）
         const battleMessage = document.getElementById('battleMessage');
         if (battleMessage) {
-            const recentLogs = this.battleLog.slice(-4);
-            battleMessage.textContent = recentLogs.join('\n');
+            battleMessage.textContent = this.battleLog.slice(-4).join('\n');
             battleMessage.scrollTop = battleMessage.scrollHeight;
         }
-
-        // バトル中はメッセージパネルにも描画する。
-        if (this.inBattle) {
-            const body = document.getElementById('gameMessageBody');
-            const isCommandMode = body && body.classList.contains('battle-cmd-mode');
-            if (!isCommandMode) {
-                // ログモード: 直近の数行をパネルに表示
-                BattlePanel.renderLog(this.battleLog);
-            } else {
-                // コマンド入力中はリストを潰さず、ヘッダ右側に最新ログを点滅表示
-                this._flashCommandHeaderMessage(message);
-            }
-        }
+        // バトル中はキューを1行ずつ送る（pumpが止まっていれば再開）
+        if (this.inBattle && !this._msgPumping) this._pumpBattleMsg();
     }
 
-    // 複数メッセージを1つずつ間隔をあけて表示（勝利リザルト等の一気出しを防ぐ）。完了で onDone。
-    addBattleLogSequence(messages, onDone, interval = 950) {
-        const list = (messages || []).filter(m => m != null && m !== '');
-        let i = 0;
-        const step = () => {
-            if (i >= list.length) { if (onDone) onDone(); return; }
-            this.addBattleLog(list[i]);
-            i++;
-            setTimeout(step, interval);
-        };
-        step();
+    // 単一ポンプ: battleLog を1行ずつ表示。溜まり過ぎたら少し速めに送り遅延を抑える。
+    _pumpBattleMsg() {
+        if (this._shownCount == null) this._shownCount = 0;
+        if (this._shownCount >= this.battleLog.length) {
+            this._msgPumping = false;
+            if (this._msgTimer) { clearTimeout(this._msgTimer); this._msgTimer = null; }
+            const cbs = this._msgDrainCbs || []; this._msgDrainCbs = [];
+            cbs.forEach(cb => { try { cb(); } catch (e) {} });
+            return;
+        }
+        this._msgPumping = true;
+        this._shownCount++;
+        const body = document.getElementById('gameMessageBody');
+        const isCommandMode = body && body.classList.contains('battle-cmd-mode');
+        if (!isCommandMode) {
+            BattlePanel.renderLog(this.battleLog.slice(0, this._shownCount));
+        } else {
+            this._flashCommandHeaderMessage(this.battleLog[this._shownCount - 1]);
+        }
+        const pending = this.battleLog.length - this._shownCount;
+        this._msgTimer = setTimeout(() => this._pumpBattleMsg(), pending > 2 ? 480 : 950);
+    }
+
+    // 表示中メッセージが全部出てから cb を実行（行動間の進行をテキストに同期）
+    afterBattleMessages(cb) {
+        if (!cb) return;
+        if (!this._msgPumping && (this._shownCount || 0) >= this.battleLog.length) { cb(); return; }
+        (this._msgDrainCbs = this._msgDrainCbs || []).push(cb);
+    }
+
+    // バトル開始/終了でメッセージ部品をリセット
+    _resetBattleMessages() {
+        this._shownCount = 0;
+        this._msgPumping = false;
+        this._msgDrainCbs = [];
+        if (this._msgTimer) { clearTimeout(this._msgTimer); this._msgTimer = null; }
     }
 
     // コマンド入力中に小さく警告ログを表示する
