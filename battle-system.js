@@ -694,6 +694,15 @@ class BattleSystem {
 
         const currentMember = partyMembers[this.currentMemberIndex];
 
+        // ★戦闘不能(HP0)は行動不能＝コマンド選択させず自動スキップ（蘇生するまで操作不可）。
+        //   麻痺/毒など通常の状態異常はターン毎に確率回復するが、戦闘不能は回復まで復帰しない。
+        if ((currentMember.hp || 0) <= 0) {
+            this.partyCommands[this.currentMemberIndex] = { member: currentMember, command: 'skip' };
+            this.currentMemberIndex++;
+            this.showNextMemberCommand();
+            return;
+        }
+
         // ステータス異常チェック
         const ailmentResult = this.checkStatusAilmentBeforeAction(currentMember);
 

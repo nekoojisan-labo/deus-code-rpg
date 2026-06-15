@@ -3649,7 +3649,7 @@
     <script src="se-system.js?v=1"></script>
     <script src="ui-panel.js?v=3"></script>
     <script src="save-system.js?v=2"></script>
-    <script src="battle-system.js?v=69"></script>
+    <script src="battle-system.js?v=70"></script>
     <script src="map-walkability-data.js?v=12"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=27"></script>
@@ -5226,6 +5226,23 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
 
         // 仲間加入（リク/ヤミ）
         // 加入の中核（ナレーションは加入イベントが担当。装備キット＋固定Lvも付与）
+        // メンバーの「初期スキル＋現在Lv以下のskillLearning」を習得済みにする（冪等）。
+        // 加入時(joinMember)と、セーブロード後(applyGameState)の両方で呼ぶ＝古いセーブでもスキルを補完。
+        function ensureMemberSkills(memberId, member) {
+            if (!window.magicSystem || !member || !memberId) return;
+            const data = window.CHARACTER_DATA && window.CHARACTER_DATA[memberId];
+            (data && data.skills || []).forEach(sk => { try { window.magicSystem.learnMagic(sk, member); } catch (e) {} });
+            const growth = window.CHARACTER_GROWTH && window.CHARACTER_GROWTH[memberId];
+            if (growth && growth.skillLearning) {
+                Object.keys(growth.skillLearning).forEach(lv => {
+                    if (parseInt(lv, 10) <= (member.level || 1)) {
+                        [].concat(growth.skillLearning[lv]).forEach(sk => { try { window.magicSystem.learnMagic(sk, member); } catch (e) {} });
+                    }
+                });
+            }
+        }
+        window.ensureMemberSkills = ensureMemberSkills;
+
         function joinMember(memberId) {
             const joinedFlag = memberId + 'Joined';
             if (storyFlags[joinedFlag]) return false;
@@ -5234,20 +5251,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 partySystem.addMember({ ...data });
                 const member = partySystem.getMember(memberId);
                 if (member) applyMemberLoadout(memberId, member);  // 固定Lv＋初期装備（丸腰防止）。先にLvを確定
-                if (window.magicSystem && member) {
-                    // 初期スキル（CHARACTER_DATA.skills）
-                    (data.skills || []).forEach(sk => { try { window.magicSystem.learnMagic(sk, member); } catch (e) {} });
-                    // ★加入レベル以下の skillLearning を遡って習得（例: Lv6加入のヤミも Lv3/5 スキルを持つ＝
-                    //   メイジが加入時から使えるカムイ無しの丸腰にならない）
-                    const growth = window.CHARACTER_GROWTH && window.CHARACTER_GROWTH[memberId];
-                    if (growth && growth.skillLearning) {
-                        Object.keys(growth.skillLearning).forEach(lv => {
-                            if (parseInt(lv, 10) <= (member.level || 1)) {
-                                [].concat(growth.skillLearning[lv]).forEach(sk => { try { window.magicSystem.learnMagic(sk, member); } catch (e) {} });
-                            }
-                        });
-                    }
-                }
+                ensureMemberSkills(memberId, member);              // 初期スキル＋加入Lv以下の遡及スキル
             }
             storyFlags[joinedFlag] = true;
             if (memberId === 'yami') storyFlags.metYami = true;
@@ -5552,6 +5556,14 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             if (itemSystem) itemSystem.fromJSON(data.items);
             if (magicSystem) magicSystem.fromJSON(data.magic);
             if (partySystem) partySystem.fromJSON(data.party);
+            // ★ロード後にスキルを補完（古いセーブでヤミの初期スキル等が欠けていても復元・冪等）。
+            //   現在Lv以下のskillLearningも再習得するのでレベルアップ習得スキルも復活する。
+            if (typeof ensureMemberSkills === 'function') {
+                if (player) ensureMemberSkills(player.characterId || 'kaito', player);
+                if (partySystem && partySystem.getMembers) {
+                    partySystem.getMembers().forEach(m => { if (m) ensureMemberSkills(m.characterId || m.id, m); });
+                }
+            }
             // 装備は最後（recalculatePlayerStats が base+装備を一発計算＝二重加算なし）
             if (equipmentSystem) {
                 equipmentSystem.fromJSON(data.equipment, player);
