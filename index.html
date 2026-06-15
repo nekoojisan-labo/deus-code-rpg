@@ -103,18 +103,22 @@
             align-content: start;
         }
         .ui-panel__list::-webkit-scrollbar { display: none; }
+        /* ★一覧表(リスト)スタイル: カード(枠＋背景)をやめ、密な行でカーソル移動して探す。
+           量が多くても見渡せるよう行を詰め、選択行だけハイライト。 */
         .ui-panel__row {
             display: flex;
             align-items: center;
             gap: 8px;
-            min-height: 44px;
-            padding: 6px 12px;
+            min-height: 30px;
+            padding: 3px 12px;
             border: 1px solid transparent;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.03);
+            border-radius: 5px;
+            background: transparent;
             cursor: pointer;
-            transition: background 0.12s, border-color 0.12s;
+            transition: background 0.1s, border-color 0.1s;
         }
+        /* 行間の薄い区切りで「表」らしく（先頭以外の上罫線） */
+        .ui-panel__list .ui-panel__row + .ui-panel__row { border-top: 1px solid rgba(255, 255, 255, 0.04); }
         .ui-panel--fixed-rows .ui-panel__row { min-height: var(--row-h-fixed); }
         .ui-panel__row:hover { background: rgba(0, 229, 255, 0.10); }
         .ui-panel__row.is-selected {
@@ -7030,24 +7034,126 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         }
         
         // 装備メニュー
+        // ★そうび — そうび→キャラ→部位→アイテム欄(一覧表)で探す、のFF風全画面フロー。
+        const EQUIP_SLOTS = [
+            { key: 'weapon', label: 'ぶき', icon: '⚔️' },
+            { key: 'head', label: 'あたま', icon: '⛑️' },
+            { key: 'body', label: 'からだ', icon: '🛡️' },
+            { key: 'hands', label: 'うで', icon: '🧤' },
+            { key: 'accessory', label: 'アクセサリ', icon: '💍' }
+        ];
+        const slotMeta = (k) => EQUIP_SLOTS.find(s => s.key === k) || { label: k, icon: '🔧' };
+        function equipStatSummary(e) {
+            if (!e) return '';
+            const p = [];
+            if (e.attack) p.push(`攻${e.attack > 0 ? '+' : ''}${e.attack}`);
+            if (e.magic) p.push(`魔${e.magic > 0 ? '+' : ''}${e.magic}`);
+            if (e.defense) p.push(`防${e.defense > 0 ? '+' : ''}${e.defense}`);
+            if (e.magicDefense) p.push(`魔防+${e.magicDefense}`);
+            if (e.hp) p.push(`HP+${e.hp}`);
+            if (e.mp) p.push(`MP+${e.mp}`);
+            return p.join(' ');
+        }
+        function equippedItemsOf(m) {
+            return (window.equipmentSystem && equipmentSystem.getEquippedItems) ? (equipmentSystem.getEquippedItems(m) || {}) : {};
+        }
+        // 1段目: だれの装備をかえる（左=名前のみ／右=ステータス＋装備一覧）
         function openEquipmentMenu() {
-            closeMenu();
-            const equipmentMenuOverlay = document.getElementById('equipmentMenuOverlay');
-            if (equipmentMenuOverlay) {
-                equipmentMenuOverlay.classList.add('active');
-                equipmentSelectedIndex = 0;
-
-                // 現在のキャラクター名を表示
-                const allMembers = [player];
-                if (window.partySystem) {
-                    allMembers.push(...window.partySystem.getMembers());
-                }
-                const currentMember = allMembers[selectedPartyMemberIndex] || player;
-                document.getElementById('equipmentCharacterName').textContent = currentMember.name || 'カイト';
-
-                updateEquipmentDisplay();
-                console.log('Equipment menu opened');
+            const members = (typeof getMenuMembers === 'function') ? getMenuMembers() : [player];
+            const items = members.map((m, i) => ({ icon: '🛡️', label: m.name || 'カイト', value: i }));
+            UIPanel.open({
+                host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
+                title: '🛡️ そうび — だれの装備をかえる', items, selectedIndex: 0, columns: 1,
+                detailFor: (it) => equipCharDetail(members[it && it.value != null ? it.value : 0]),
+                onSelect: (v) => openEquipSlots(v),
+                onCancel: () => openMenu(),
+                hint: '↑↓ 選択 / Z 決定 / X もどる'
+            });
+        }
+        function equipCharDetail(m) {
+            if (!m) return '';
+            const eq = equippedItemsOf(m);
+            const rows = EQUIP_SLOTS.map(s => `<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 2px;border-bottom:1px solid rgba(255,255,255,.05);"><span class="ui-panel__dmuted">${s.icon} ${s.label}</span><span>${eq[s.key] ? UIPanel.esc(eq[s.key].name) : '—'}</span></div>`).join('');
+            return menuStatusHtml(m) + `<div class="ui-panel__dtitle" style="margin-top:10px;">そうび</div>${rows}`;
+        }
+        // 2段目: 部位をえらぶ（左=部位＋現在の装備名／右=現在装備の効果）
+        function openEquipSlots(memberIdx) {
+            const m = ((typeof getMenuMembers === 'function') ? getMenuMembers() : [player])[memberIdx];
+            const eq = equippedItemsOf(m);
+            const items = EQUIP_SLOTS.map(s => ({
+                icon: s.icon, label: s.label,
+                right: eq[s.key] ? eq[s.key].name : '—',
+                value: s.key
+            }));
+            UIPanel.open({
+                host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
+                title: `🛡️ ${m.name || 'カイト'} — 部位をえらぶ`, items, selectedIndex: 0, columns: 1,
+                detailFor: (it) => equipSlotDetail(m, it && it.value != null ? it.value : EQUIP_SLOTS[0].key),
+                onSelect: (slotKey) => openEquipItemList(memberIdx, slotKey),
+                onCancel: () => openEquipmentMenu(),
+                hint: '↑↓ 部位 / Z 決定 / X もどる'
+            });
+        }
+        function equipSlotDetail(m, slotKey) {
+            const eq = equippedItemsOf(m);
+            const cur = eq[slotKey];
+            const meta = slotMeta(slotKey);
+            const body = cur
+                ? `<div class="ui-panel__dname">${UIPanel.esc(cur.name)}</div><div style="margin-top:6px;">${equipStatSummary(cur) || '<span class="ui-panel__dmuted">効果なし</span>'}</div>${cur.description ? `<div class="ui-panel__dmuted" style="margin-top:8px;line-height:1.6;">${UIPanel.esc(cur.description)}</div>` : ''}`
+                : '<div class="ui-panel__dmuted">何も装備していません。</div>';
+            return `<div class="ui-panel__dtitle">${meta.icon} ${meta.label}（現在）</div>${body}`;
+        }
+        // 3段目: アイテム欄(一覧表)から探す。左=広い一覧、右=効果＋現在装備との差分
+        function openEquipItemList(memberIdx, slotKey) {
+            const m = ((typeof getMenuMembers === 'function') ? getMenuMembers() : [player])[memberIdx];
+            const role = m.role || 'all-rounder';
+            const inv = ((window.equipmentSystem && equipmentSystem.getEquipmentInventory) ? (equipmentSystem.getEquipmentInventory() || []) : [])
+                .filter(e => e.slot === slotKey && (!e.allowedRoles || e.allowedRoles.includes(role)));
+            const meta = slotMeta(slotKey);
+            const items = inv.map(e => ({
+                icon: meta.icon, label: e.name,
+                right: equipStatSummary(e) + (e.quantity > 1 ? `　×${e.quantity}` : ''),
+                value: e.id
+            }));
+            items.push({ icon: '✋', label: 'はずす（そうびなし）', value: '__unequip__', color: '#ff8c8c' });
+            UIPanel.open({
+                host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
+                title: `🛡️ ${m.name || 'カイト'} — ${meta.label}を そうび`, items, selectedIndex: 0, columns: 1, pageSize: 9,
+                detailFor: (it) => equipItemDetail(m, slotKey, it && it.value != null ? (it.value === '__unequip__' ? '__unequip__' : inv.find(x => x.id === it.value)) : null),
+                onSelect: (id) => equipApply(memberIdx, slotKey, id),
+                onCancel: () => openEquipSlots(memberIdx),
+                hint: '↑↓ 選択 / Z そうび / X もどる'
+            });
+        }
+        function equipItemDetail(m, slotKey, e) {
+            const eq = equippedItemsOf(m);
+            const cur = eq[slotKey];
+            if (e === '__unequip__') {
+                return `<div class="ui-panel__dtitle">はずす</div>${cur ? `現在の <b>${UIPanel.esc(cur.name)}</b> を外して装備なしにします。` : '<span class="ui-panel__dmuted">もともと何も装備していません。</span>'}`;
             }
+            if (!e) return '<div class="ui-panel__dmuted" style="padding:8px;">そうびする物を選んでください。</div>';
+            const keys = [['attack', '攻撃'], ['magic', '魔力'], ['defense', '物防'], ['magicDefense', '魔防'], ['hp', 'HP'], ['mp', 'MP'], ['speed', '速さ']];
+            const rows = keys.map(([k, lbl]) => {
+                const nv = e[k] || 0, ov = cur ? (cur[k] || 0) : 0, d = nv - ov;
+                if (!nv && !ov) return '';
+                const dtxt = d === 0 ? '<span class="ui-panel__dmuted">±0</span>' : `<b style="color:${d > 0 ? '#7CFC9A' : '#ff6b6b'}">${d > 0 ? '+' : ''}${d}</b>`;
+                return `<div style="display:flex;justify-content:space-between;font-size:13px;padding:2px 2px;"><span>${lbl}</span><span>${ov} → ${nv}　${dtxt}</span></div>`;
+            }).join('');
+            return `<div class="ui-panel__dname">${UIPanel.esc(e.name)}</div>
+                <div class="ui-panel__dmuted" style="margin:4px 0 8px;">現在: ${cur ? UIPanel.esc(cur.name) : 'なし'}</div>
+                ${rows || '<span class="ui-panel__dmuted">能力変化なし</span>'}
+                ${e.description ? `<div class="ui-panel__dmuted" style="margin-top:10px;line-height:1.6;">${UIPanel.esc(e.description)}</div>` : ''}`;
+        }
+        function equipApply(memberIdx, slotKey, id) {
+            const m = ((typeof getMenuMembers === 'function') ? getMenuMembers() : [player])[memberIdx];
+            if (id === '__unequip__') {
+                equipmentSystem.unequipItem(slotKey, m);
+            } else {
+                const r = equipmentSystem.equipItem(id, m);
+                if (!r || !r.success) { showMessage((r && r.message) || 'そうびできない'); return; }
+            }
+            if (window.updateUI) updateUI();
+            openEquipItemList(memberIdx, slotKey);   // 一覧を開き直す＝差し替え結果が反映され続けて変更できる
         }
         
         function closeEquipmentMenu() {
