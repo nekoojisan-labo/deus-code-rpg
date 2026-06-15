@@ -228,32 +228,24 @@ const UIPanel = (() => {
     function pageSizeOf() { return (state && state.config.pageSize) || 0; }
     function pageCount() { const ps = pageSizeOf(); return ps && state.items.length > ps ? Math.ceil(state.items.length / ps) : 1; }
     function curPage() { const ps = pageSizeOf(); return ps ? Math.floor(state.index / ps) : 0; }
-    function pageLabel() {
-        const ps = pageSizeOf();
-        if (!ps || state.items.length <= ps) return '';
-        return `　◀ ${curPage() + 1}/${pageCount()} ▶`;
-    }
+    function pageLabel() { return ''; }   // ★ページ送り廃止（選択追従スクロールに変更）→ 頁表示は出さない
     // ヒント右端のページ表示「◀ 1/2 ▶」だけを更新（ページ送り時）。
     function updatePageLabel() {
         if (!state) return;
         const el = state.host.querySelector('.ui-panel__page');
         if (el) el.innerHTML = pageLabel();
     }
-    // リストを「現在ページの項目だけ」描画し、クリックはグローバルindexへ写像。
+    // ★リストは「全項目」を描画し、入りきらない分は選択追従(scrollIntoView)で1つずつスクロールする。
+    //   ページ送りはしない（←→上下でページ先頭に飛びカーソルが消える不具合を解消＋全画面で統一）。
+    //   スクロールバーは出さない（CSS: overflow-y:auto + scrollbar非表示）。
     function paintList(listEl, selectable) {
         if (!listEl || !state) return;
-        const ps = pageSizeOf();
-        let items = state.items, sel = state.index, offset = 0;
-        if (ps && state.items.length > ps) {
-            offset = curPage() * ps;
-            items = state.items.slice(offset, offset + ps);
-            sel = state.index - offset;
-        }
-        renderList(listEl, decorateItems(items), { structured: true, selectedIndex: selectable ? sel : -1, rowClass: 'ui-panel__row', selectedClass: 'is-selected' });
+        renderList(listEl, decorateItems(state.items), { structured: true, selectedIndex: selectable ? state.index : -1, rowClass: 'ui-panel__row', selectedClass: 'is-selected' });
         listEl.querySelectorAll('.ui-panel__row').forEach((row) => {
             const li = parseInt(row.dataset.index, 10);
-            row.onclick = () => { state.index = offset + li; fireSelect(); };
+            row.onclick = () => { state.index = li; fireSelect(); };
         });
+        setSelectedIndexIn(listEl, selectable ? state.index : -1, 'ui-panel__row', 'is-selected');
     }
 
     function wireRowClicks(listEl) {
@@ -280,16 +272,14 @@ const UIPanel = (() => {
 
     function move(delta) {
         if (!state || !state.items.length) return;
-        const oldPage = curPage();
         let i = state.index;
         for (let n = 0; n < state.items.length; n++) {
             i = (i + delta + state.items.length) % state.items.length;
             if (!state.items[i] || !state.items[i].disabled) break;
         }
         state.index = i;
-        const listEl = state.host.querySelector('.ui-panel__list');
-        if (curPage() !== oldPage) { paintList(listEl, state.config.selectable !== false); updatePageLabel(); }
-        else setSelectedIndexIn(listEl, state.index, 'ui-panel__row', 'is-selected');
+        // ★選択追従スクロール（一覧が多い時は選択に合わせ1つずつスクロール）。ページ送りはしない。
+        setSelectedIndexIn(state.host.querySelector('.ui-panel__list'), state.index, 'ui-panel__row', 'is-selected');
         repaintDetail();   // ★frame: 選択追従で右ペイン更新
     }
 
@@ -340,11 +330,8 @@ const UIPanel = (() => {
     }
     function setSelectedIndex(i) {
         if (!state) return;
-        const oldPage = curPage();
         state.index = clampToSelectable(state.items, i, +1);
-        const listEl = state.host.querySelector('.ui-panel__list');
-        if (curPage() !== oldPage) { paintList(listEl, state.config.selectable !== false); updatePageLabel(); }
-        else setSelectedIndexIn(listEl, state.index, 'ui-panel__row', 'is-selected');
+        setSelectedIndexIn(state.host.querySelector('.ui-panel__list'), state.index, 'ui-panel__row', 'is-selected');
         repaintDetail();
     }
 

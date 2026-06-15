@@ -95,7 +95,7 @@
         .ui-panel__list {
             flex: 1 1 auto;
             min-height: 0;
-            overflow: hidden;          /* ★スクロールバーは出さない＝ページ送り(paintList)で下へ送る */
+            overflow-y: auto;          /* ★選択追従スクロール用。バーは出さず1つずつスクロール */
             scrollbar-width: none;
             display: grid;
             grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
@@ -3678,7 +3678,7 @@
     <script src="equipment-system.js?v=52"></script>
     <script src="magic-system.js?v=51"></script>
     <script src="se-system.js?v=1"></script>
-    <script src="ui-panel.js?v=5"></script>
+    <script src="ui-panel.js?v=6"></script>
     <script src="save-system.js?v=2"></script>
     <script src="battle-system.js?v=81"></script>
     <script src="map-walkability-data.js?v=15"></script>
@@ -5917,14 +5917,15 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                   <div style="font-size:14px;font-weight:700;color:var(--accent);margin-top:3px;">売値 ${s.sellPrice.toLocaleString()} G</div></div></div>
                 <div class="ui-panel__dmuted" style="padding:6px 2px;line-height:1.7;">${UIPanel.esc(s.description || '')}</div>`;
         }
-        function shopSellOne(s) {
+        function shopSellOne(s, count) {
             if (!s) return;
-            if (s.kind === 'item' && window.itemSystem && itemSystem.removeItem) itemSystem.removeItem(s.id, 1);
+            const n = Math.max(1, Math.min(count || 1, s.qty || 1));
+            if (s.kind === 'item' && window.itemSystem && itemSystem.removeItem) itemSystem.removeItem(s.id, n);
             else if (s.kind === 'equip' && window.equipmentSystem && equipmentSystem.inventory && equipmentSystem.inventory[s.id]) {
-                equipmentSystem.inventory[s.id].quantity--;
+                equipmentSystem.inventory[s.id].quantity -= n;
                 if (equipmentSystem.inventory[s.id].quantity <= 0) delete equipmentSystem.inventory[s.id];
             }
-            if (window.player) player.gold = (player.gold || 0) + s.sellPrice;
+            if (window.player) player.gold = (player.gold || 0) + (s.sellPrice || 0) * n;
             if (window.updateUI) updateUI();
         }
         function openShopSell() {
@@ -5935,12 +5936,44 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 : [{ label: '売れる物がありません', disabled: true }];
             UIPanel.open({
                 host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
-                title: '💰 売る', items, selectedIndex: 0, columns: 1, pageSize: 9,
+                title: '💰 売る', items, selectedIndex: 0, columns: 1,
                 footHtml: shopGoldFoot(),
                 detailFor: (it) => shopSellDetail(list[it && it.value != null ? it.value : 0]),
-                onSelect: (i) => { shopSellOne(list[i]); openShopSell(); },
+                onSelect: (i) => shopSellPickQty(list[i]),   // ★アイテム選択→個数選択へ
                 onCancel: () => openShopMenu(ctx.shopType, ctx.shopkeeper),
-                hint: '↑↓ 選択 / Z 売る / X もどる'
+                hint: '↑↓ 選択 / Z きめる / X もどる'
+            });
+        }
+        // ★個数選択（1〜所持数＋「ぜんぶ」）。1個しかない物は確認へ直行。
+        function shopSellPickQty(s) {
+            if (!s) return;
+            if ((s.qty || 1) <= 1) { shopSellConfirm(s, 1); return; }
+            const items = [];
+            for (let q = 1; q <= s.qty; q++) items.push({ icon: '🔹', label: `${q} 個`, right: `${(s.sellPrice * q).toLocaleString()} G`, value: q });
+            items.push({ icon: '🔷', label: `ぜんぶ（${s.qty}個）`, right: `${(s.sellPrice * s.qty).toLocaleString()} G`, value: s.qty });
+            UIPanel.open({
+                host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
+                title: `${s.name} — 何個 売る？`, items, selectedIndex: 0, columns: 1,
+                footHtml: shopGoldFoot(),
+                detailFor: (it) => { const q = (it && it.value) || 1; return `<div class="ui-panel__dlead" style="align-items:center;"><div style="font-size:34px;width:50px;text-align:center;">${s.icon}</div><div><div class="ui-panel__dname">${UIPanel.esc(s.name)}</div><div class="ui-panel__dmuted">所持 ×${s.qty}</div><div style="font-size:14px;font-weight:700;color:var(--accent);margin-top:3px;">${q}個 → +${(s.sellPrice * q).toLocaleString()} G</div></div></div>`; },
+                onSelect: (q) => shopSellConfirm(s, q),
+                onCancel: () => openShopSell(),
+                hint: '↑↓ 個数 / Z きめる / X もどる'
+            });
+        }
+        // ★最終確認
+        function shopSellConfirm(s, q) {
+            const total = (s.sellPrice || 0) * q;
+            const back = () => { if ((s.qty || 1) <= 1) openShopSell(); else shopSellPickQty(s); };
+            const items = [{ icon: '✅', label: 'うる', value: 'yes' }, { icon: '↩', label: 'やめる', value: 'no' }];
+            UIPanel.open({
+                host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
+                title: '最終確認', items, selectedIndex: 0, columns: 1,
+                footHtml: shopGoldFoot(),
+                detailFor: () => `<div class="ui-panel__dlead" style="align-items:center;"><div style="font-size:34px;width:50px;text-align:center;">${s.icon}</div><div><div class="ui-panel__dname">${UIPanel.esc(s.name)} ×${q}</div><div style="font-size:15px;font-weight:700;color:var(--accent);margin-top:4px;">売値 ${total.toLocaleString()} G</div></div></div><div class="ui-panel__dmuted" style="padding:8px 2px;">この内容で売却します。よろしいですか？</div>`,
+                onSelect: (v) => { if (v === 'yes') { shopSellOne(s, q); openShopSell(); } else back(); },
+                onCancel: back,
+                hint: 'Z 決定 / X もどる'
             });
         }
         function openInnMenu(shopkeeper) {
