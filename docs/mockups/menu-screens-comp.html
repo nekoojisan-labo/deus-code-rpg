@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>デウス・コード メニュー全画面 カンプ（FF風2ペイン）</title>
+<style>
+  :root{
+    --accent:#00e5ff; --accent-soft:rgba(0,229,255,.35); --panel-line:rgba(0,229,255,.55);
+    --panel-glow:0 0 26px rgba(0,229,255,.28), 0 18px 44px rgba(0,0,0,.6);
+    --panel-radius:12px; --text-main:#eaf6ff; --text-sub:#9fc0cf; --sel:#facc15; --bg:#0a1220;
+    --good:#3be8c8; --warn:#f5a623; --bad:#ff6b6b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"Noto Sans JP",system-ui,sans-serif; color:var(--text-main);
+    background:
+      radial-gradient(60% 50% at 50% 0%, rgba(0,229,255,.05), transparent 70%),
+      repeating-linear-gradient(0deg, rgba(0,229,255,.02) 0 1px, transparent 1px 30px),
+      repeating-linear-gradient(90deg, rgba(0,229,255,.02) 0 1px, transparent 1px 30px), #05080f;
+    padding:26px 16px 60px; display:flex; flex-direction:column; align-items:center; gap:30px;
+  }
+  h1{font-size:18px;letter-spacing:.1em;color:var(--accent);font-weight:700}
+  .sub{color:var(--text-sub);font-size:12px;margin-top:-22px;letter-spacing:.06em}
+  .scr-label{align-self:flex-start; max-width:780px; margin:0 auto; width:100%;
+    font-size:12px; letter-spacing:.14em; color:var(--sel); border-left:3px solid var(--sel); padding-left:10px}
+  .scr-label small{color:var(--text-sub); letter-spacing:0; margin-left:8px; font-size:11px}
+
+  .menu{ width:min(780px,100%); background:var(--bg); border:2px solid var(--panel-line);
+    border-radius:var(--panel-radius); box-shadow:var(--panel-glow); overflow:hidden;
+    display:grid; grid-template-rows:auto 1fr auto; }
+  .menu__head{ display:flex; align-items:center; justify-content:space-between; padding:10px 16px;
+    border-bottom:1px solid var(--accent-soft); background:linear-gradient(180deg, rgba(0,229,255,.08), transparent); }
+  .menu__title{font-size:14px;font-weight:700;letter-spacing:.14em;color:var(--accent)}
+  .menu__sub{font-size:12px;color:var(--text-sub);display:flex;gap:14px}
+  .menu__sub b{color:var(--sel)}
+  .tabs{display:flex;gap:6px}
+  .tab{font-size:12px;padding:4px 14px;border-radius:7px;border:1px solid transparent;color:var(--text-sub)}
+  .tab.on{background:rgba(0,229,255,.16);border-color:var(--sel);color:var(--text-main)}
+
+  .body{display:grid; grid-template-columns:38% 1fr; min-height:300px}
+  .body.cols2{grid-template-columns:50% 1fr}
+  .pane-l{border-right:1px solid var(--accent-soft); padding:11px 9px; display:flex; flex-direction:column; gap:2px}
+  .pane-r{padding:13px 15px; overflow:auto}
+  .pane-r__title{font-size:11px;letter-spacing:.16em;color:var(--accent);margin-bottom:9px;text-transform:uppercase}
+
+  .row{ display:grid; grid-template-columns:22px 1fr auto; align-items:center; gap:9px; padding:7px 11px;
+    border-radius:7px; font-size:13px; border:1px solid transparent; cursor:default; }
+  .row .ic{text-align:center;font-size:15px}
+  .row .rt{color:var(--text-sub);font-size:12px;font-variant-numeric:tabular-nums}
+  .row.sel{background:rgba(0,229,255,.16);border-color:var(--sel);box-shadow:inset 0 0 10px rgba(0,229,255,.1);position:relative}
+  .row.sel::before{content:"▸";position:absolute;left:-1px;color:var(--sel);font-size:12px}
+  .row.dis{opacity:.34}
+  .row.cols{grid-template-columns:1fr}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:2px}
+  .foot{margin-top:auto;border-top:1px dashed var(--accent-soft);padding:8px 11px 2px;display:flex;justify-content:space-between;font-size:12px}
+  .foot .lbl{color:var(--text-sub);font-size:11px} .foot .g{color:var(--sel);font-weight:700}
+
+  .detail{font-size:13px;line-height:1.8}
+  .detail .lead{display:flex;gap:11px;align-items:center;margin-bottom:9px}
+  .detail .lead img{width:60px;height:60px;border-radius:9px;object-fit:cover;object-position:top center;border:1px solid var(--accent-soft)}
+  .detail .nm{font-size:16px;font-weight:700} .muted{color:var(--text-sub);font-size:12px}
+  .st{display:grid;grid-template-columns:1fr 1fr;gap:3px 20px;margin-top:6px}
+  .st div{display:flex;justify-content:space-between;border-bottom:1px dotted rgba(0,229,255,.14);padding-bottom:2px}
+  .st span{color:var(--text-sub)} .st b{color:var(--text-main);font-variant-numeric:tabular-nums}
+  .st .up b{color:var(--good)} .st .dn b{color:var(--bad)}
+  .pill{display:inline-block;border:1px solid var(--accent-soft);border-radius:999px;padding:2px 9px;font-size:11px;color:var(--accent);margin:2px 4px 2px 0}
+  .pill.w{border-color:rgba(245,166,35,.5);color:var(--warn)}
+  .bar{display:flex;align-items:center;gap:6px;margin-top:3px;font-size:10px;color:var(--text-sub)}
+  .bar .k{width:18px}.bar .v{width:56px;text-align:right;color:var(--text-main);font-variant-numeric:tabular-nums}
+  .track{flex:1;height:6px;border-radius:4px;background:rgba(0,0,0,.45);overflow:hidden}
+  .fill{height:100%;border-radius:4px} .fill.hp{background:linear-gradient(90deg,#16d39a,#3be8c8)} .fill.mp{background:linear-gradient(90deg,#2f6df6,#46c6ff)}
+  .mcard{display:grid;grid-template-columns:46px 1fr;gap:9px;align-items:center;background:rgba(255,255,255,.025);border:1px solid rgba(0,229,255,.18);border-radius:9px;padding:6px 10px 6px 6px;margin-bottom:7px}
+  .mcard img{width:46px;height:46px;border-radius:7px;object-fit:cover;object-position:top center;border:1px solid var(--accent-soft)}
+  .hint{display:flex;gap:16px;justify-content:center;padding:7px;font-size:11px;color:var(--text-sub);border-top:1px solid var(--accent-soft);background:rgba(0,0,0,.25)}
+  .hint b{color:var(--accent)}
+  kbd{border:1px solid var(--accent-soft);border-radius:4px;padding:1px 5px;font-size:11px;color:var(--text-main)}
+  .diff{color:var(--good)} .diff.dn{color:var(--bad)}
+</style>
+</head>
+<body>
+<h1>デウス・コード メニュー 全画面カンプ</h1>
+<div class="sub">FF風 2ペイン master-detail ／ 実キャラ立ち絵・実カラートークン</div>
+<div id="root"></div>
+
+<script>
+const P = (id)=>'../../assets/characters/'+id+'_portrait.webp';
+const hint = `<div class="hint"><span><b>↑↓←→</b> 選択</span><span><b>Z</b> 決定</span><span><b>X</b> もどる</span></div>`;
+const head = (title, sub='') => `<div class="menu__head"><span class="menu__title">${title}</span><span class="menu__sub">${sub}</span></div>`;
+const row = (sel,ic,label,right='',cls='')=>`<div class="row ${sel?'sel':''} ${cls}"><span class="ic">${ic}</span><span>${label}</span><span class="rt">${right}</span></div>`;
+const bar=(k,c,m,cls)=>`<div class="bar"><span class="k">${k}</span><div class="track"><div class="fill ${cls}" style="width:${Math.round(c/m*100)}%"></div></div><span class="v">${c}/${m}</span></div>`;
+
+function panel(label, sub, headHtml, bodyHtml, cols2){
+  return `<div class="scr-label">${label}<small>${sub}</small></div>
+  <div class="menu"><div class="menu__head">${headHtml}</div><div class="body ${cols2?'cols2':''}">${bodyHtml}</div>${hint}</div>`;
+}
+
+// 1) どうぐ（対象選択ドリル）
+const items = panel('① どうぐ', 'アイテムを選ぶ→対象（味方）の選択へドリル',
+  `<span class="menu__title">どうぐ</span><span class="menu__sub">所持金 <b>12,480G</b></span>`,
+  `<div class="pane-l">
+     ${row(1,'🧪','ポーション','×6')}${row(0,'💧','マナポーション','×3')}${row(0,'✨','復活の石','×2')}
+     ${row(0,'🍃','エリクサー','×1')}${row(0,'🗡️','力の薬','×2')}${row(0,'🧫','解毒剤','×4')}${row(0,'💨','けむり玉','×3')}
+   </div>
+   <div class="pane-r"><div class="pane-r__title">ポーション → だれに つかう？</div>
+     <div class="muted" style="margin-bottom:8px">HPを 120 回復する。戦闘不能には効かない。</div>
+     ${[['kaito','カイト',223,254],['akari','アカリ',198,198],['riku','リク',180,309],['yami','ヤミ',179,179]].map((m,i)=>
+       `<div class="mcard" style="${i===2?'border-color:var(--sel)':''}"><img src="${P(m[0])}"><div>
+         <div style="display:flex;justify-content:space-between"><b>${m[1]}</b><span class="muted">HP ${m[2]}/${m[3]}</span></div>
+         ${bar('HP',m[2],m[3],'hp')}</div></div>`).join('')}
+   </div>`);
+
+// 2) そうび（キャラ→スロット→候補＋ステ差分）
+const equip = panel('② そうび', 'キャラ→スロット選択。候補は装備可否＋ステ差分を表示',
+  `<span class="menu__title">そうび ／ ヤミ</span><span class="menu__sub">メイジ</span>`,
+  `<div class="pane-l">
+     ${row(0,'🪄','武器','賢王の杖')}${row(1,'🧥','体','幻幻のローブ','')}${row(0,'🎩','頭','賢者のサークレット')}
+     ${row(0,'🧤','手','—')}${row(0,'🔮','装飾','星雲のオーブ')}
+     <div class="foot"><span class="lbl">合計 魔力</span><span class="g">+80</span></div>
+   </div>
+   <div class="pane-r"><div class="pane-r__title">体 ＝ 装備の候補</div>
+     ${row(1,'🧥','天界のローブ','装備可','')}
+     <div class="st" style="margin:4px 0 10px"><div class="up"><span>魔法防御</span><b>26 → 35 ▲</b></div><div class="up"><span>魔力</span><b>18 → 25 ▲</b></div><div class="up"><span>MP</span><b>+90</b></div><div class="dn"><span>物理防御</span><b>20 ▼</b></div></div>
+     ${row(0,'🧥','幻幻のローブ','装備中')}
+     ${row(0,'🥼','タイタンアーマー','装備不可（戦士専用）','dis')}
+     <div class="muted" style="margin-top:8px">装備できないものは淡色＝ジョブで持ち物が変わる</div>
+   </div>`);
+
+// 3) カムイ（2列スキル＋詳細）
+const kamui = panel('③ カムイ / スキル', 'キャラ→習得スキル（2列）。属性・MP・単体/全体を表示',
+  `<span class="menu__title">カムイ ／ ヤミ</span><span class="menu__sub">MP <b>214/229</b></span>`,
+  `<div class="pane-l"><div class="grid2">
+     ${['🌑ダークパルス','❄️フロストピアス','⚡ヴォルトスピア','💥エクスプロージョン','🕳️ダークノヴァ','☄️インフェルノランス','🌌アビサルルイン','🌀サンダーストーム'].map((s,i)=>row(i===6,'',s,'','cols')).join('')}
+   </div></div>
+   <div class="pane-r"><div class="pane-r__title">アビサルルイン</div>
+     <div style="margin:2px 0 8px">${['闇属性','単体','MP 21','Lv35〜'].map(p=>`<span class="pill">${p}</span>`).join('')}</div>
+     <div class="muted">深淵の力で敵ひとりを侵食する。ヤミの単体最大火力。闇耐性の敵には効果いまひとつ。</div>
+     <div class="st" style="margin-top:10px"><div><span>基礎威力</span><b>bp 1.7</b></div><div><span>係数</span><b>魔力 × 1.7</b></div><div><span>弱点一致</span><b>×1.5</b></div><div><span>概算ダメージ</span><b>約 251</b></div></div>
+   </div>`);
+
+// 4) ステータス
+const m = {id:'yami',name:'ヤミ',role:'メイジ'};
+const status = panel('④ ステータス', 'キャラ一覧→ステータスシート（二系統＋属性＋装備）',
+  `<span class="menu__title">ステータス</span>`,
+  `<div class="pane-l">
+     ${[['kaito','カイト','万能'],['akari','アカリ','ヒーラー'],['riku','リク','タンク'],['yami','ヤミ','メイジ']].map((c,i)=>
+       `<div class="row ${i===3?'sel':''} cols"><span>${c[1]} <span class="muted">${c[2]}</span></span></div>`).join('')}
+   </div>
+   <div class="pane-r"><div class="detail">
+     <div class="lead"><img src="${P('yami')}"><div>
+       <div class="nm">ヤミ <span class="muted">/ メイジ</span></div>
+       <div class="muted">Lv 13　次のレベルまで 420 EXP</div>
+       ${bar('HP',179,179,'hp')}${bar('MP',214,229,'mp')}
+     </div></div>
+     <div style="margin:4px 0 6px">得意: ${['闇','氷','雷'].map(e=>`<span class="pill">${e}</span>`).join('')} 弱点: <span class="pill w">光</span></div>
+     <div class="st"><div><span>こうげき(力)</span><b>40</b></div><div><span>まほう(魔力)</span><b>148</b></div>
+       <div><span>ぶつりぼうぎょ</span><b>24</b></div><div><span>まほうぼうぎょ</span><b>26</b></div>
+       <div><span>すばやさ</span><b>38</b></div><div><span>うんめい力</span><b>27</b></div></div>
+     <div class="muted" style="margin-top:8px">装備: 賢王の杖 / 幻幻のローブ / 賢者のサークレット / 星雲のオーブ</div>
+   </div></div>`);
+
+// 5) クエスト
+const quest = panel('⑤ クエスト', '進行中の章＋サブクエスト',
+  `<span class="menu__title">クエスト</span>`,
+  `<div class="pane-l">
+     ${row(1,'▶','神託の在り処','主','')}${row(0,'◆','アカリの調律','済','')}${row(0,'◆','闇市の情報屋','進行','')}${row(0,'◆','失われた記憶','未','dis')}
+   </div>
+   <div class="pane-r"><div class="pane-r__title">神託の在り処</div>
+     <div class="muted">深層トンネルの最奥で「暴走AIコア」を止めろ。リクとヤミが合流した今、最終決戦の時は近い。</div>
+     <div style="margin-top:12px" class="muted">目標: 深層トンネル4Fへ到達 ／ 推奨レベル Lv33+</div>
+     <div style="margin-top:8px"><span class="pill">報酬: エリクサー ×2</span><span class="pill">解放: 隠し商店</span></div>
+   </div>`);
+
+// 6) セーブ/ロード
+const save = panel('⑥ セーブ / ロード', '3スロット＋エクスポート(.json)。スロットの中身をプレビュー',
+  `<span class="menu__title">セーブ</span>`,
+  `<div class="pane-l">
+     ${row(1,'💾','スロット1','Lv12 / 新宿','')}${row(0,'💾','スロット2','空き','')}${row(0,'💾','スロット3','Lv8 / 神社','')}
+     ${row(0,'⬇','エクスポート','.json','')}${row(0,'⬆','インポート','.json','')}
+   </div>
+   <div class="pane-r"><div class="pane-r__title">スロット1</div>
+     <div class="st"><div><span>場所</span><b>新宿中央広場</b></div><div><span>章</span><b>第4章</b></div>
+       <div><span>プレイ時間</span><b>03:42</b></div><div><span>所持金</span><b>12,480G</b></div></div>
+     <div style="display:flex;gap:6px;margin-top:10px">${['kaito','akari','riku','yami'].map(id=>`<img src="${P(id)}" style="width:42px;height:42px;border-radius:7px;object-fit:cover;object-position:top center;border:1px solid var(--accent-soft)">`).join('')}</div>
+   </div>`);
+
+// 7) ショップ（買う/売る）
+const shop = panel('⑦ ショップ（買う / 売る）', 'タブで購入/売却を切替。候補は価格＋装備可否＋ステ差分',
+  `<div class="tabs"><span class="tab on">買う</span><span class="tab">売る</span><span class="tab">でる</span></div><span class="menu__sub">所持金 <b>12,480G</b></span>`,
+  `<div class="pane-l">
+     ${row(1,'🪄','大魔術師の杖','4,200G')}${row(0,'🧥','幽幻のローブ','3,500G')}${row(0,'🔮','星雲のオーブ','3,000G')}
+     ${row(0,'🥼','タイタンアーマー','3,200G','dis')}${row(0,'🗡️','パルス大剣','3,000G')}${row(0,'🧪','ポーション','60G')}
+   </div>
+   <div class="pane-r"><div class="pane-r__title">大魔術師の杖 — 4,200G</div>
+     <div class="muted" style="margin-bottom:6px">術士専用の杖。魔力を大きく高める。ヤミ／アカリ が装備可能。</div>
+     <div class="st"><div class="up"><span>魔力</span><b>+27 ▲</b></div><div class="up"><span>MP</span><b>+32</b></div>
+       <div><span>装備中(ヤミ)</span><b>賢王の杖 mag+53</b></div><div class="dn"><span>差分</span><b>魔力 -26 ▼</b></div></div>
+     <div class="muted" style="margin-top:8px">※ 既に上位を装備中＝差分が赤。売却なら 2,100G で買い取り</div>
+   </div>`, true);
+
+document.getElementById('root').innerHTML = items+equip+kamui+status+quest+save+shop;
+document.body.insertAdjacentHTML('beforeend','<div class="sub" style="margin-top:6px">各画面とも 左=コマンド固定／右=詳細だけ再描画（master-detail）。入力は全画面共通 ↑↓←→ / Z / X。</div>');
+</script>
+</body>
+</html>

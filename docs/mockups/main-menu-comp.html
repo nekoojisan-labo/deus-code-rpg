@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>デウス・コード メインメニュー カンプ（FF風2ペイン）</title>
+<style>
+  :root{
+    --accent:#00e5ff; --accent-soft:rgba(0,229,255,.35);
+    --panel-line:rgba(0,229,255,.55);
+    --panel-glow:0 0 26px rgba(0,229,255,.28), 0 18px 44px rgba(0,0,0,.6);
+    --panel-radius:12px; --text-main:#eaf6ff; --text-sub:#9fc0cf;
+    --sel:#facc15; --bg:#0a1220;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"Noto Sans JP",system-ui,sans-serif;
+    min-height:100vh; color:var(--text-main);
+    background:
+      radial-gradient(60% 60% at 50% 30%, rgba(0,229,255,.06), transparent 70%),
+      repeating-linear-gradient(0deg, rgba(0,229,255,.025) 0 1px, transparent 1px 28px),
+      repeating-linear-gradient(90deg, rgba(0,229,255,.025) 0 1px, transparent 1px 28px),
+      #05080f;
+    display:flex; flex-direction:column; align-items:center; gap:18px;
+    padding:28px 16px 40px;
+  }
+  .cap{color:var(--text-sub); font-size:12px; letter-spacing:.08em; text-align:center; max-width:760px; line-height:1.7}
+  .cap b{color:var(--accent)}
+
+  /* ===== メニューパネル（FF風2ペイン master-detail） ===== */
+  .menu{
+    width:min(760px,100%); background:var(--bg);
+    border:2px solid var(--panel-line); border-radius:var(--panel-radius);
+    box-shadow:var(--panel-glow); overflow:hidden;
+    display:grid; grid-template-rows:auto 1fr auto;
+  }
+  .menu__head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:11px 16px; border-bottom:1px solid var(--accent-soft);
+    background:linear-gradient(180deg, rgba(0,229,255,.08), transparent);
+  }
+  .menu__title{font-size:15px; font-weight:700; letter-spacing:.14em; color:var(--accent)}
+  .menu__loc{font-size:12px; color:var(--text-sub); display:flex; gap:14px; align-items:center}
+  .menu__loc b{color:var(--text-main); font-weight:600}
+
+  .menu__body{display:grid; grid-template-columns:34% 1fr; min-height:340px}
+
+  /* 左ペイン＝コマンド */
+  .pane-l{border-right:1px solid var(--accent-soft); padding:12px 10px; display:flex; flex-direction:column}
+  .cmd{
+    display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px;
+    color:var(--text-main); font-size:14px; cursor:pointer; border:1px solid transparent;
+    position:relative; transition:background .12s, border-color .12s;
+  }
+  .cmd .ic{width:22px; text-align:center; font-size:16px; filter:saturate(1.1)}
+  .cmd:hover{background:rgba(0,229,255,.06)}
+  .cmd.is-sel{
+    background:rgba(0,229,255,.16); border-color:var(--sel);
+    box-shadow:inset 0 0 12px rgba(0,229,255,.12);
+  }
+  .cmd.is-sel::before{content:"▸"; position:absolute; left:-2px; color:var(--sel); font-size:13px}
+  .pane-l__foot{margin-top:auto; padding:10px 12px 4px; border-top:1px dashed var(--accent-soft)}
+  .gold{display:flex; justify-content:space-between; align-items:baseline; font-size:13px}
+  .gold .lbl{color:var(--text-sub); font-size:11px; letter-spacing:.1em}
+  .gold .val{color:var(--sel); font-weight:700; font-variant-numeric:tabular-nums}
+
+  /* 右ペイン＝詳細（コマンドで中身が変わる） */
+  .pane-r{padding:14px 16px; overflow:auto}
+  .pane-r__title{font-size:11px; letter-spacing:.16em; color:var(--accent); margin-bottom:10px; text-transform:uppercase}
+
+  /* パーティ・ロースター */
+  .roster{display:flex; flex-direction:column; gap:10px}
+  .mcard{
+    display:grid; grid-template-columns:54px 1fr; gap:11px; align-items:center;
+    background:rgba(255,255,255,.025); border:1px solid rgba(0,229,255,.18);
+    border-radius:10px; padding:8px 12px 8px 8px;
+  }
+  .mcard .face{
+    width:54px; height:54px; border-radius:8px; object-fit:cover; object-position:top center;
+    border:1px solid var(--accent-soft); background:#0b1626;
+  }
+  .mrow1{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px}
+  .mname{font-size:14px; font-weight:600}
+  .mrole{font-size:10px; color:var(--text-sub); margin-left:7px; letter-spacing:.06em}
+  .mlv{font-size:12px; color:var(--text-sub)} .mlv b{color:var(--sel); font-size:14px; margin-left:3px}
+  .bar{display:flex; align-items:center; gap:7px; margin-top:3px; font-size:10px; color:var(--text-sub)}
+  .bar .k{width:18px} .bar .v{width:58px; text-align:right; font-variant-numeric:tabular-nums; color:var(--text-main)}
+  .track{flex:1; height:6px; border-radius:4px; background:rgba(0,0,0,.45); overflow:hidden}
+  .fill{height:100%; border-radius:4px}
+  .fill.hp{background:linear-gradient(90deg,#16d39a,#3be8c8)}
+  .fill.mp{background:linear-gradient(90deg,#2f6df6,#46c6ff)}
+
+  /* 詳細ビュー（ステータス等） */
+  .detail{font-size:13px; line-height:1.85}
+  .detail .grid{display:grid; grid-template-columns:1fr 1fr; gap:4px 22px; margin-top:6px}
+  .detail .grid div{display:flex; justify-content:space-between; border-bottom:1px dotted rgba(0,229,255,.14); padding-bottom:2px}
+  .detail .grid span{color:var(--text-sub)} .detail .grid b{color:var(--text-main)}
+  .detail .lead{display:flex; gap:12px; align-items:center; margin-bottom:8px}
+  .detail .lead img{width:64px;height:64px;border-radius:10px;object-fit:cover;object-position:top center;border:1px solid var(--accent-soft)}
+  .muted{color:var(--text-sub); font-size:12px}
+  .pill{display:inline-block;border:1px solid var(--accent-soft);border-radius:999px;padding:2px 9px;font-size:11px;color:var(--accent);margin:2px 4px 2px 0}
+
+  .menu__hint{
+    display:flex; gap:18px; justify-content:center; padding:8px; font-size:11px; color:var(--text-sub);
+    border-top:1px solid var(--accent-soft); background:rgba(0,0,0,.25); letter-spacing:.05em;
+  }
+  .menu__hint b{color:var(--accent); font-weight:700}
+  kbd{border:1px solid var(--accent-soft); border-radius:5px; padding:1px 6px; color:var(--text-main); font-size:11px; margin-right:4px}
+</style>
+</head>
+<body>
+  <div class="cap">
+    <b>デウス・コード メインメニュー</b> ／ FF風 2ペイン master-detail カンプ（実キャラ立ち絵・実カラートークン）<br>
+    左でコマンドを <kbd>↑</kbd><kbd>↓</kbd> 選ぶと、右の詳細がリアルタイムに切り替わる。マウスでもクリック可。
+  </div>
+
+  <div class="menu" id="menu">
+    <div class="menu__head">
+      <span class="menu__title">メニュー</span>
+      <span class="menu__loc"><span>📍 <b>新宿中央広場</b></span><span>⏱ 03:42</span></span>
+    </div>
+    <div class="menu__body">
+      <div class="pane-l" id="cmds"></div>
+      <div class="pane-r" id="detail"></div>
+    </div>
+    <div class="menu__hint">
+      <span><b>↑↓</b> 選択</span><span><b>Z / Enter</b> 決定</span><span><b>X</b> とじる</span>
+    </div>
+  </div>
+
+<script>
+  const PARTY = [
+    {id:'kaito', name:'カイト', role:'万能', lv:12, hp:[223,254], mp:[154,210], el:['物理','神威'], atk:88, def:62, mag:84, mdef:31, spd:34},
+    {id:'akari', name:'アカリ', role:'ヒーラー', lv:12, hp:[198,198], mp:[229,229], el:['光','回復'], atk:48, def:42, mag:130, mdef:55, spd:36},
+    {id:'riku',  name:'リク',  role:'タンク',  lv:12, hp:[309,309], mp:[58,88],  el:['物理','防御'], atk:120, def:118, mag:18, mdef:84, spd:18},
+    {id:'yami',  name:'ヤミ',  role:'メイジ',  lv:13, hp:[179,179], mp:[214,229], el:['闇','氷','雷'], atk:40, def:24, mag:148, mdef:26, spd:38},
+  ];
+  const P = (id) => '../../assets/characters/'+id+'_portrait.webp';
+  const bar = (k, cur, max, cls) => `<div class="bar"><span class="k">${k}</span><div class="track"><div class="fill ${cls}" style="width:${Math.round(cur/max*100)}%"></div></div><span class="v">${cur}/${max}</span></div>`;
+
+  function roster(){
+    return `<div class="pane-r__title">パーティ</div><div class="roster">`+
+      PARTY.map(m=>`<div class="mcard">
+        <img class="face" src="${P(m.id)}" alt="${m.name}" onerror="this.style.opacity=.25">
+        <div>
+          <div class="mrow1"><span><span class="mname">${m.name}</span><span class="mrole">${m.role}</span></span><span class="mlv">Lv<b>${m.lv}</b></span></div>
+          ${bar('HP',m.hp[0],m.hp[1],'hp')}${bar('MP',m.mp[0],m.mp[1],'mp')}
+        </div></div>`).join('')+`</div>`;
+  }
+  function statusSheet(){
+    const m = PARTY[3]; // ヤミ を例に
+    return `<div class="pane-r__title">ステータス</div>
+      <div class="detail">
+        <div class="lead"><img src="${P(m.id)}" alt=""><div>
+          <div style="font-size:17px;font-weight:700">${m.name} <span class="muted">/ ${m.role}</span></div>
+          <div class="muted">Lv ${m.lv}　次のレベルまで 420 EXP</div>
+          <div style="margin-top:5px">${m.el.map(e=>`<span class="pill">${e}</span>`).join('')}</div>
+        </div></div>
+        <div class="grid">
+          <div><span>こうげき(力)</span><b>${m.atk}</b></div><div><span>まほう(魔力)</span><b>${m.mag}</b></div>
+          <div><span>ぶつりぼうぎょ</span><b>${m.def}</b></div><div><span>まほうぼうぎょ</span><b>${m.mdef}</b></div>
+          <div><span>すばやさ</span><b>${m.spd}</b></div><div><span>うんめい力</span><b>27</b></div>
+        </div>
+        <div class="muted" style="margin-top:8px">装備: 賢王の杖 / 幻幻のローブ / 賢者のサークレット / 星雲のオーブ</div>
+      </div>`;
+  }
+  const VIEWS = {
+    items:   ()=>`<div class="pane-r__title">どうぐ</div><div class="detail"><div class="muted">使うアイテムを選ぶと、対象（味方）の選択へ進む。</div>
+              <div class="grid" style="margin-top:8px">
+              <div><span>🧪 ポーション ×6</span><b>HP120</b></div><div><span>💧 マナポーション ×3</span><b>MP80</b></div>
+              <div><span>✨ 復活の石 ×2</span><b>蘇生</b></div><div><span>🍃 エリクサー ×1</span><b>全回復</b></div></div></div>`,
+    equip:   ()=>`<div class="pane-r__title">そうび</div><div class="detail"><div class="muted">キャラを選ぶ → スロット（武器/体/頭/手/装飾）を選ぶ。装備不可は淡色で表示。</div>
+              <div class="grid" style="margin-top:8px">
+              <div><span>武器</span><b>賢王の杖</b></div><div><span>体</span><b>幻幻のローブ</b></div>
+              <div><span>頭</span><b>賢者のサークレット</b></div><div><span>手</span><b>—</b></div>
+              <div><span>装飾</span><b>星雲のオーブ</b></div><div><span>魔力 +</span><b>＋80</b></div></div></div>`,
+    kamui:   ()=>`<div class="pane-r__title">カムイ / スキル</div><div class="detail"><div class="muted">キャラを選ぶ → 習得スキル（2列）。属性・消費MP・単体/全体を表示。</div>
+              <div style="margin-top:8px">${['🌌アビサルルイン 闇/単体','💥エクスプロージョン 火/全体','❄️アブソリュートゼロ 氷/単体','⚡ラグナロク 雷/全体'].map(s=>`<span class="pill">${s}</span>`).join('')}</div></div>`,
+    status:  statusSheet,
+    quest:   ()=>`<div class="pane-r__title">クエスト</div><div class="detail"><div style="font-weight:600;margin-bottom:4px">▶ 神託の在り処</div>
+              <div class="muted">深層トンネルの最奥で「暴走AIコア」を止めろ。リクとヤミが合流した今、最終決戦の時は近い。</div>
+              <div style="margin-top:10px" class="muted">サブ: アカリの調律（完了）／闇市の情報屋（進行中）</div></div>`,
+    save:    ()=>`<div class="pane-r__title">セーブ</div><div class="detail"><div class="muted">スロットを選んで保存。エクスポートで .json として手元に残せる。</div>
+              <div class="grid" style="margin-top:8px"><div><span>スロット1</span><b>Lv12 / 新宿</b></div><div><span>スロット2</span><b>空き</b></div>
+              <div><span>スロット3</span><b>Lv8 / 神社</b></div><div><span>⬇ エクスポート</span><b>.json</b></div></div></div>`,
+    close:   roster,
+  };
+  const CMDS = [
+    {key:'items', ic:'🎒', label:'どうぐ'},
+    {key:'equip', ic:'🛡️', label:'そうび'},
+    {key:'kamui', ic:'✨', label:'カムイ'},
+    {key:'status',ic:'📊', label:'ステータス'},
+    {key:'quest', ic:'📜', label:'クエスト'},
+    {key:'save',  ic:'💾', label:'セーブ'},
+    {key:'close', ic:'✖', label:'とじる'},
+  ];
+  let sel = 0;
+  const cmdsEl = document.getElementById('cmds');
+  const detailEl = document.getElementById('detail');
+  function paintCmds(){
+    cmdsEl.innerHTML = CMDS.map((c,i)=>`<div class="cmd ${i===sel?'is-sel':''}" data-i="${i}"><span class="ic">${c.ic}</span><span>${c.label}</span></div>`).join('')
+      + `<div class="pane-l__foot"><div class="gold"><span class="lbl">所持金</span><span class="val">12,480 G</span></div></div>`;
+    cmdsEl.querySelectorAll('.cmd').forEach(el=>el.onclick=()=>{sel=+el.dataset.i; paint();});
+  }
+  function paintDetail(){ const v = VIEWS[CMDS[sel].key] || roster; detailEl.innerHTML = (typeof v==='function'?v():v); }
+  function paint(){ paintCmds(); paintDetail(); }
+  document.addEventListener('keydown',e=>{
+    if(['ArrowUp','w','k'].includes(e.key)){sel=(sel-1+CMDS.length)%CMDS.length;paint();e.preventDefault();}
+    else if(['ArrowDown','s','j'].includes(e.key)){sel=(sel+1)%CMDS.length;paint();e.preventDefault();}
+  });
+  paint();
+</script>
+</body>
+</html>
