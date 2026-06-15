@@ -217,11 +217,12 @@ const CHARACTER_GROWTH = {
 // 経験値テーブル計算関数
 function calculateExpNeeded(level, expCurve = 'normal') {
     // 単段コスト（L→L+1）。線形で「次のレベルまで」が常に手の届く距離に保つ。
-    // 旧二次式(lvl²×50)はLv50到達に累計約205万EXPを要し終盤が壁→線形化で累計5.2万へ圧縮。
+    // ★マルチ敵(平均1.92体/戦≒2倍取得EXP)に合わせて必要EXPを×1.5最適化（単体40L+60→60L+90）。
+    //   これで「敵1-3体出現」の実プレイで各ステージ≈9-14戦の快適なペースに。累積Lv50≈7.8万。
     const curves = {
-        fast: (lvl) => Math.floor(28 * lvl + 42),
-        normal: (lvl) => Math.floor(40 * lvl + 60),
-        slow: (lvl) => Math.floor(52 * lvl + 78)
+        fast: (lvl) => Math.floor(42 * lvl + 63),
+        normal: (lvl) => Math.floor(60 * lvl + 90),
+        slow: (lvl) => Math.floor(78 * lvl + 117)
     };
 
     return curves[expCurve](level);
