@@ -54,6 +54,8 @@ class StoryEventSystem {
 
         // パネルクリックで進行
         this.panelEl.addEventListener('click', (e) => {
+            // 選択肢(UIPanel行 / 旧game-msg-choice)上のクリックは進行に流さない（選択肢が処理）
+            if (e.target && e.target.closest && e.target.closest('#gameMessageChoices')) return;
             if (e.target && e.target.classList && e.target.classList.contains('game-msg-choice')) return;
             // オープニング中は同じパネルを使い回しているので、
             // story-event 側の handleAdvance には流さない
@@ -130,7 +132,31 @@ class StoryEventSystem {
         this.renderTypewriter(this.typeFullText, false);
         this.typeDone = true;
         this.setNextIndicator(true);
+        // 選択肢シーンなら、本文が出揃った時点で UIPanel の選択肢を開く（部品化）
+        const sc = this.currentEvent && this.currentEvent.data.scenes[this.currentEvent.sceneIndex];
+        if (sc && sc.choices && window.UIPanel && !UIPanel.isOpen()) {
+            this.openChoicePanel(sc.choices);
+            this.setNextIndicator(false); // 選択肢時は「次へ」インジケータ不要
+        }
     }
+
+    // VN選択肢を統一部品UIPanelで開く（#gameMessageChoices に bare リスト描画）
+    openChoicePanel(choices) {
+        if (!window.UIPanel || !this.eventChoices) return;
+        this.eventChoices.classList.add('active');
+        UIPanel.open({
+            host: this.eventChoices,
+            bare: true, selectable: true, columns: 1,
+            items: choices.map(c => ({ label: c.text, value: c })),
+            onSelect: (c) => {
+                UIPanel.close();
+                if (c && c.action) { try { c.action(this.currentEvent.context); } catch (e) {} }
+                // 同一キー入力で次シーンを二重進行しないよう、進行は次tickへ
+                setTimeout(() => this.nextScene(), 0);
+            }
+        });
+    }
+    closeChoicePanel() { if (window.UIPanel && UIPanel.isOpen()) UIPanel.close(); }
 
     startTypewriter(text) {
         if (this.typeTimer) {
@@ -598,30 +624,13 @@ class StoryEventSystem {
         this.eventChoices.innerHTML = '';
 
         if (scene.choices) {
-            // 選択肢シーン: 本文をタイプ表示後、選択肢を出す
+            // 選択肢シーン: 本文をタイプ表示し、出揃ったら UIPanel(部品)で選択肢を開く。
+            // → キーボード選択＋選択行が常に見える(scrollIntoView)＝スクロールバー破綻で操作不能を解消。
             this.eventChoices.classList.add('active');
             this.controlsEl.style.display = 'none';
-
             this.currentScenePages = [scene.text || ''];
             this.currentScenePageIndex = 0;
-            this.startTypewriter(this.currentScenePages[0]);
-
-            scene.choices.forEach(choice => {
-                const button = document.createElement('button');
-                button.textContent = choice.text;
-                button.className = 'game-msg-choice';
-                button.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (this.typeTimer && !this.typeDone) {
-                        this.finishTypewriter();
-                    }
-                    if (choice.action) {
-                        choice.action(this.currentEvent.context);
-                    }
-                    this.nextScene();
-                });
-                this.eventChoices.appendChild(button);
-            });
+            this.startTypewriter(this.currentScenePages[0]); // 完了時に openChoicePanel が呼ばれる
         } else {
             // 通常シーン: 本文を必要に応じてページ分割し、タイプ表示で順次見せる
             this.eventChoices.classList.remove('active');
@@ -636,7 +645,15 @@ class StoryEventSystem {
             this.keyHandler = (e) => {
                 if (!this.currentEvent) return;
                 const sc = this.currentEvent.data.scenes[this.currentEvent.sceneIndex];
-                if (!sc || sc.choices) return;
+                if (!sc) return;
+                if (sc.choices) {
+                    // 選択肢シーン: タイプ中ならZ等で全文表示(→選択肢が開く)。選択肢が開いた後はUIPanelが処理。
+                    if (this.typeTimer && !this.typeDone && (e.key === 'z' || e.key === 'Z' || e.key === ' ' || e.key === 'Enter')) {
+                        e.preventDefault();
+                        this.finishTypewriter();
+                    }
+                    return;
+                }
                 if (e.key === 'z' || e.key === 'Z' || e.key === ' ' || e.key === 'Enter') {
                     e.preventDefault();
                     this.handleAdvance();
@@ -657,6 +674,7 @@ class StoryEventSystem {
     // イベント終了
     endEvent() {
         if (!this.currentEvent) return;
+        this.closeChoicePanel(); // 選択肢パネルが残っていれば閉じる（安全）
 
         const { id, data, context } = this.currentEvent;
 

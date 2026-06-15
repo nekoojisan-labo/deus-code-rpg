@@ -2294,10 +2294,12 @@
             flex-direction: column;
             gap: 6px;
             min-height: 0;
-            max-height: 80px;
+            max-height: min(40vh, 200px);   /* 80pxだと選択肢2件で切れてスクロールバー破綻→広げる */
             padding: 4px 20px 8px;
             overflow-y: auto;
         }
+        /* VN選択肢をUIPanel(bareリスト)で描画する時のコンテナ調整。スクロールは親(.game-msg-choices)が担当 */
+        .game-msg-choices .ui-panel__list--bare { overflow: visible; gap: 6px; width: 100%; }
 
         .game-msg-choices.active { display: flex; }
 
@@ -3645,7 +3647,7 @@
     <script src="equipment-system.js?v=50"></script>
     <script src="magic-system.js?v=47"></script>
     <script src="se-system.js?v=1"></script>
-    <script src="ui-panel.js?v=2"></script>
+    <script src="ui-panel.js?v=3"></script>
     <script src="save-system.js?v=2"></script>
     <script src="battle-system.js?v=66"></script>
     <script src="map-walkability-data.js?v=12"></script>
@@ -3657,7 +3659,7 @@
     <script src="bgm-system.js?v=36"></script>
     <script src="party-system.js?v=47"></script>
     <script src="quest-system.js?v=7"></script>
-    <script src="story-events.js?v=56"></script>
+    <script src="story-events.js?v=57"></script>
 
     <script>
         const canvas = document.getElementById('gameCanvas');

@@ -151,6 +151,16 @@ const UIPanel = (() => {
         const cfg = state.config;
         const cols = cfg.columns || 1;
         const selectable = cfg.selectable !== false;
+        // bare: リストのみ描画（既存コンテナ＝VN選択肢#gameMessageChoices等に埋め込む。シェル無し）
+        if (cfg.bare) {
+            state.host.innerHTML = `<div class="ui-panel__list ui-panel__list--bare" style="--cols:${cols}"></div>`;
+            const listB = state.host.querySelector('.ui-panel__list');
+            if (listB && state.items.length) {
+                renderList(listB, decorateItems(state.items), { structured: true, selectedIndex: selectable ? state.index : -1, rowClass: 'ui-panel__row', selectedClass: 'is-selected' });
+                wireRowClicks(listB);
+            }
+            return;
+        }
         // ヘッダ/ヒントを内包する .ui-panel シェルへ描画
         let html = '<div class="ui-panel__head">';
         html += `<span class="ui-panel__title">${esc(cfg.title || '')}</span>`;

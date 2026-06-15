@@ -143,6 +143,15 @@ UIPanel.close();
 
 chk('close後は isOpen()=false', UIPanel.isOpen() === false);
 
+// ---------- bareモード: シェル無しでリストのみ描画（VN選択肢を既存コンテナへ埋め込む） ----------
+let bareSel = null;
+const hostB = makeHost();
+UIPanel.open({ host: hostB, bare: true, selectable: true, items: [{ label: '人の心を取り戻す', value: 'a' }, { label: 'アークを壊す', value: 'b' }], onSelect: (v) => { bareSel = v; } });
+chk('bare: シェル(head)を描画せずリストのみ', hostB.innerHTML.indexOf('ui-panel__head') < 0 && hostB.innerHTML.indexOf('ui-panel__list--bare') >= 0);
+key('ArrowDown'); key('z');
+chk('bare: 矢印選択＋Z決定でonSelectが発火（キーボード操作可＝スクロールバー不要で選べる）', bareSel === 'b');
+UIPanel.close();
+
 // ---------- ロード画面: 全スロット空→New Gameのみ選択可（SV3の核心不変条件） ----------
 let pickedNewGame = false, pickedSlot = null;
 const hostL = makeHost();
