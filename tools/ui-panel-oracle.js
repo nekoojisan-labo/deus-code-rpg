@@ -129,14 +129,16 @@ key('ArrowRight');
 chk('入力: → は +1 移動', UIPanel.getSelectedIndex() === 3);
 UIPanel.close();
 
-// read-only(selectable:false): 移動しない・決定/キャンセルのみ
-let roCancel = false;
+// read-only(selectable:false): 移動しない・決定/キャンセル双方で閉じる
+let roCloseCount = 0;
 const host4 = makeHost();
-UIPanel.open({ host: host4, selectable: false, bodyText: '読み物', items: [{ label: 'x' }, { label: 'y' }], onCancel: () => { roCancel = true; } });
+UIPanel.open({ host: host4, selectable: false, bodyText: '読み物', items: [], onCancel: () => { roCloseCount++; } });
 key('ArrowDown');
 chk('入力: read-onlyは矢印で移動しない', UIPanel.getSelectedIndex() === 0);
+key('z');
+chk('入力: read-onlyは決定(z)でも閉じる(onCancel)', roCloseCount === 1);
 key('x');
-chk('入力: read-onlyでもキャンセルは効く', roCancel === true);
+chk('入力: read-onlyはキャンセル(x)でも閉じる', roCloseCount === 2);
 UIPanel.close();
 
 chk('close後は isOpen()=false', UIPanel.isOpen() === false);

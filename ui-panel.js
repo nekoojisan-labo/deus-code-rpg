@@ -234,7 +234,8 @@ const UIPanel = (() => {
         const k = e.key;
         const cols = state.config.columns || 1;
         const selectable = state.config.selectable !== false;
-        if (CONFIRM.includes(k)) { e.preventDefault(); fireSelect(); return true; }
+        // read-only画面は決定もキャンセルも「閉じる」に倒す（読み物のz/x両方で戻る）
+        if (CONFIRM.includes(k)) { e.preventDefault(); if (selectable) fireSelect(); else fireCancel(); return true; }
         if (CANCEL.includes(k)) { e.preventDefault(); fireCancel(); return true; }
         if (!selectable) { e.preventDefault(); return true; }
         if (ARROW.up.includes(k)) { e.preventDefault(); move(-cols); return true; }

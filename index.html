@@ -3439,11 +3439,8 @@
 
         <!-- Quest Log -->
         <div class="menu-overlay" id="questMenuOverlay">
-            <div class="menu-container">
-                <div class="menu-title">クエスト</div>
-                <div class="item-list" id="questLogList" style="text-align:left;"></div>
-                <div class="menu-close">X / Z で戻る</div>
-            </div>
+            <!-- UIPanel が描画するホスト（.menu-container＝.ui-panelと同枠・背景アート維持） -->
+            <div class="menu-container" id="questPanelHost"></div>
         </div>
         
         <!-- Equipment Menu -->
@@ -3639,7 +3636,7 @@
     <script src="equipment-system.js?v=50"></script>
     <script src="magic-system.js?v=47"></script>
     <script src="se-system.js?v=1"></script>
-    <script src="ui-panel.js?v=1"></script>
+    <script src="ui-panel.js?v=2"></script>
     <script src="battle-system.js?v=61"></script>
     <script src="map-walkability-data.js?v=12"></script>
     <script src="object-catalog.js?v=2"></script>
@@ -4056,6 +4053,12 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         let isMessageShown = false;
 
         document.addEventListener('keydown', (e) => {
+            // 統一部品UIPanelが開いている画面は、全てここで一元処理（各画面は自前keydownを持たない）
+            if (window.UIPanel && UIPanel.isOpen()) {
+                UIPanel.handleKey(e);
+                return;
+            }
+
             // ショップが開いている場合
             if (window.gameShop && window.gameShop.isShopOpen) {
                 if (typeof window.gameShop.handleKeyboardInput === 'function') {
@@ -4097,13 +4100,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 return;
             }
 
-            // クエストログが開いている場合
-            const questMenuOverlay = document.getElementById('questMenuOverlay');
-            if (questMenuOverlay && questMenuOverlay.classList.contains('active')) {
-                handleQuestLogInput(e.key);
-                e.preventDefault();
-                return;
-            }
+            // クエストログは UIPanel へ移行済み（上の UIPanel.isOpen 分岐で処理）
 
             // メニューが開いている場合
             const menuOverlay = document.getElementById('menuOverlay');
@@ -5139,8 +5136,8 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                     lastObjectiveSignature = 'cleared';
                     showObjectiveBannerFor(duration);
                 }
-                if (document.getElementById('questMenuOverlay')?.classList.contains('active')) {
-                    renderQuestLog();
+                if (window.UIPanel && UIPanel.isOpen() && document.getElementById('questMenuOverlay')?.classList.contains('active')) {
+                    UIPanel.update({ bodyHtml: buildQuestLogMarkup() });
                 }
                 return;
             }
@@ -5154,8 +5151,8 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 lastObjectiveSignature = signature;
                 showObjectiveBannerFor(duration);
             }
-            if (document.getElementById('questMenuOverlay')?.classList.contains('active')) {
-                renderQuestLog();
+            if (window.UIPanel && UIPanel.isOpen() && document.getElementById('questMenuOverlay')?.classList.contains('active')) {
+                UIPanel.update({ bodyHtml: buildQuestLogMarkup() });
             }
         }
         window.refreshObjective = refreshObjective;
@@ -5782,20 +5779,27 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         // ===== クエストログ（メニュー内） =====
         function openQuestLog() {
             closeMenu();
-            const ov = document.getElementById('questMenuOverlay');
-            if (!ov) return;
+            const host = document.getElementById('questPanelHost');
+            if (!host || !window.UIPanel) return;
             hideObjectiveBanner(true);
-            renderQuestLog();
-            ov.classList.add('active');
+            // 統一部品UIPanelで描画（read-only・bodyHtmlにクエスト進行マークアップ）。
+            // getLog()が未来ステップを伏せる＝ネタバレ防止はquest-system側で担保。
+            UIPanel.open({
+                host,
+                overlay: 'questMenuOverlay',
+                selectable: false,
+                title: 'クエスト',
+                bodyHtml: buildQuestLogMarkup(),
+                hint: 'X / Z で戻る',
+                onCancel: closeQuestLog
+            });
         }
         function closeQuestLog() {
-            const ov = document.getElementById('questMenuOverlay');
-            if (ov) ov.classList.remove('active');
+            if (window.UIPanel) UIPanel.close();
             openMenu();
         }
-        function renderQuestLog() {
-            const list = document.getElementById('questLogList');
-            if (!list || !questSystem) return;
+        function buildQuestLogMarkup() {
+            if (!questSystem) return '';
             const cur = questSystem.getCurrent(storyFlags);
             const prog = questSystem.getProgress(storyFlags);
             const groups = questSystem.getLog(storyFlags);
@@ -5832,12 +5836,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             if (allDone && window.QUEST_ENDING) {
                 html += `<div style="color:#ffd23f;margin-top:12px;font-size:13px;">🎉 ${window.QUEST_ENDING.title}</div>`;
             }
-            list.innerHTML = html;
-        }
-        function handleQuestLogInput(key) {
-            if (key === 'Escape' || key === 'x' || key === 'X' || key === 'z' || key === 'Z' || key === 'Enter' || key === ' ') {
-                closeQuestLog();
-            }
+            return html;
         }
 
         function openItemMenu() {
