@@ -173,14 +173,17 @@
             padding: 0 4px 4px 14px; font-size: 13px; line-height: 1.7; color: var(--text-main);
         }
         .ui-panel__pane-r::-webkit-scrollbar { display: none; }
-        /* ★メニュー類(item/equip/kamui/status/shop)は全画面・固定枠で統一。
-           場所ごとにサイズが変わらないよう、.menu-overlay 内の UIPanel(frame) を枠いっぱいに広げる。
+        /* ★メニュー類(item/equip/kamui/status/quest/shop)は全画面・固定枠で統一。
+           frame(2ペイン)も shell(クエスト等のbodyHtml)も等しく枠いっぱいに広げる。
            溢れる項目は paintList のページ送りで下へ（スクロールバーは出さない）。 */
-        .menu-overlay.active .ui-panel--frame {
+        .menu-overlay.active .ui-panel {
             --panel-w: 100%;
             --panel-max-h: 100%;
             width: 100%; height: 100%; max-width: 100%; max-height: 100%;
         }
+        /* 全画面シェルの本文(クエスト等)は余白を埋めて伸ばし、溢れはバー無しで下へ */
+        .menu-overlay.active .ui-panel .ui-panel__text { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: none; }
+        .menu-overlay.active .ui-panel .ui-panel__text::-webkit-scrollbar { display: none; }
         .ui-panel__foot {
             flex: 0 0 auto; margin-top: 6px; padding-top: 8px;
             border-top: 1px dashed var(--accent-soft);
@@ -7171,22 +7174,29 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 : '<div class="ui-panel__dmuted">何も装備していません。</div>';
             return `<div class="ui-panel__dtitle">${meta.icon} ${meta.label}（現在）</div>${body}`;
         }
-        // 3段目: アイテム欄(一覧表)から探す。左=広い一覧、右=効果＋現在装備との差分
-        function openEquipItemList(memberIdx, slotKey) {
+        const equipRoleOk = (e, role) => !e || !e.allowedRoles || e.allowedRoles.includes(role || 'all-rounder');
+        // 3段目: アイテム欄(一覧表)から探す。左=広い一覧、右=効果＋現在装備との差分。
+        //   ★ロール不適合も一覧に出す（灰色）が、選ぶと装備せずパネル内にメッセージを出して弾く。
+        function openEquipItemList(memberIdx, slotKey, notice) {
             const m = ((typeof getMenuMembers === 'function') ? getMenuMembers() : [player])[memberIdx];
             const role = m.role || 'all-rounder';
             const inv = ((window.equipmentSystem && equipmentSystem.getEquipmentInventory) ? (equipmentSystem.getEquipmentInventory() || []) : [])
-                .filter(e => e.slot === slotKey && (!e.allowedRoles || e.allowedRoles.includes(role)));
+                .filter(e => e.slot === slotKey);
             const meta = slotMeta(slotKey);
-            const items = inv.map(e => ({
-                icon: meta.icon, label: e.name,
-                right: e.quantity > 1 ? `×${e.quantity}` : '',   // ★左は名前(＋個数)だけ。能力/差分は右の詳細で
-                value: e.id
-            }));
+            const items = inv.map(e => {
+                const ok = equipRoleOk(e, role);
+                return {
+                    icon: ok ? meta.icon : '🚫', label: e.name,
+                    right: e.quantity > 1 ? `×${e.quantity}` : '',
+                    value: e.id,
+                    color: ok ? undefined : '#7a8699'   // 不適合は灰色（選択は可・選ぶと弾く）
+                };
+            });
             items.push({ icon: '✋', label: 'はずす（そうびなし）', value: '__unequip__', color: '#ff8c8c' });
             UIPanel.open({
                 host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
                 title: `🛡️ ${m.name || 'カイト'} — ${meta.label}を そうび`, items, selectedIndex: 0, columns: 1, pageSize: 9,
+                footHtml: notice ? `<span style="color:#ff6b6b;font-weight:700;">✕ ${UIPanel.esc(notice)}</span>` : '',
                 detailFor: (it) => equipItemDetail(m, slotKey, it && it.value != null ? (it.value === '__unequip__' ? '__unequip__' : inv.find(x => x.id === it.value)) : null),
                 onSelect: (id) => equipApply(memberIdx, slotKey, id),
                 onCancel: () => openEquipSlots(memberIdx),
@@ -7200,6 +7210,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 return `<div class="ui-panel__dtitle">はずす</div>${cur ? `現在の <b>${UIPanel.esc(cur.name)}</b> を外して装備なしにします。` : '<span class="ui-panel__dmuted">もともと何も装備していません。</span>'}`;
             }
             if (!e) return '<div class="ui-panel__dmuted" style="padding:8px;">そうびする物を選んでください。</div>';
+            const roleOk = equipRoleOk(e, m.role);
             const keys = [['attack', '攻撃'], ['magic', '魔力'], ['defense', '物防'], ['magicDefense', '魔防'], ['hp', 'HP'], ['mp', 'MP'], ['speed', '速さ']];
             const rows = keys.map(([k, lbl]) => {
                 const nv = e[k] || 0, ov = cur ? (cur[k] || 0) : 0, d = nv - ov;
@@ -7208,6 +7219,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 return `<div style="display:flex;justify-content:space-between;font-size:13px;padding:2px 2px;"><span>${lbl}</span><span>${ov} → ${nv}　${dtxt}</span></div>`;
             }).join('');
             return `<div class="ui-panel__dname">${UIPanel.esc(e.name)}</div>
+                ${!roleOk ? `<div style="color:#ff6b6b;font-size:13px;font-weight:700;margin:4px 0;">🚫 ${UIPanel.esc(m.name || 'このキャラ')}（${roleLabel(m) || m.role || ''}）には そうびできない</div>` : ''}
                 <div class="ui-panel__dmuted" style="margin:4px 0 8px;">現在: ${cur ? UIPanel.esc(cur.name) : 'なし'}</div>
                 ${rows || '<span class="ui-panel__dmuted">能力変化なし</span>'}
                 ${e.description ? `<div class="ui-panel__dmuted" style="margin-top:10px;line-height:1.6;">${UIPanel.esc(e.description)}</div>` : ''}`;
@@ -7218,7 +7230,9 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 equipmentSystem.unequipItem(slotKey, m);
             } else {
                 const r = equipmentSystem.equipItem(id, m);
-                if (!r || !r.success) { showMessage((r && r.message) || 'そうびできない'); return; }
+                // ★失敗(ロール不適合等)はパネル内のメッセージで弾く（フィールドのメッセージ箱は
+                //   全画面メニューの裏に隠れて見えないため、一覧を開き直して foot に出す）。
+                if (!r || !r.success) { openEquipItemList(memberIdx, slotKey, (r && r.message) || 'そうびできない'); return; }
             }
             if (window.updateUI) updateUI();
             openEquipItemList(memberIdx, slotKey);   // 一覧を開き直す＝差し替え結果が反映され続けて変更できる
