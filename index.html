@@ -316,12 +316,27 @@
         /* gameplay: フレーム高が足りない環境（低背ウィンドウ等）では、canvas の
            800:450 を保ったまま viewport の幅側を縮めて全UI（パネル・操作系）を枠内に収める。
            428px = 枠線6 + パネル領域228 + コントローラー194 */
-        .game-container.gameplay-mode .game-viewport {
-            /* max() の下限フロア: 低背ウィンドウで calc が極端に縮む/負になり
-               ゲーム画面が消滅するのを防ぐ（最低280px幅を保証） */
+        /* ★フィールド: マップを縦に広げる(canvas 660 と縦横比一致)。メッセージ欄は会話時だけ
+           オーバーレイ表示し、普段は場所を取らない＝下の黒い余白を解消。控除は操作系のみ(200)。 */
+        .game-container.gameplay-mode:not(.battle-active) .game-viewport {
+            aspect-ratio: 800 / 660;
+            width: min(100%, max(280px, calc((min(100dvh, 875px) - 200px) * 800 / 660)));
+            margin-inline: auto;
+        }
+        /* ★バトル: 従来の16:9＋コマンド窓(228)。max() 下限フロアでウィンドウ消滅を防ぐ */
+        .game-container.gameplay-mode.battle-active .game-viewport {
+            aspect-ratio: 800 / 450;
             width: min(100%, max(280px, calc((min(100vh, 875px) - 428px) * 800 / 450)));
             width: min(100%, max(280px, calc((min(100dvh, 875px) - 428px) * 800 / 450)));
             margin-inline: auto;
+        }
+        /* フィールドのメッセージ窓は会話時だけ画面下にオーバーレイ（場所を予約しない＝余白ゼロ）。
+           バトル時(.battle-mode)は従来どおりコマンド窓として下に場所を取る。 */
+        .game-container:not(.battle-active) .game-message-panel:not(.battle-mode) {
+            position: absolute;
+            left: 12px; right: 12px; bottom: 200px;   /* ★操作系(約194px)の上＝マップ下端にオーバーレイ */
+            height: auto; max-height: 32%;
+            margin: 0; z-index: 30;
         }
 
         /* gameplay 中のフレーム余白（viewport外）はフラットな黒ではなく
@@ -7053,6 +7068,18 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             if (typeof refreshObjective === 'function') refreshObjective();
         };
 
+        // ★フィールド/バトルで画面配分を切替える。フィールドはマップを縦に広げ(canvas 560)、
+        //   メッセージ欄は短く(会話時だけ目立つ)。バトルは従来の16:9＋コマンド窓(canvas 450)。
+        //   canvas高はカメラ(updateCamera)が表示範囲に使うため、変えると見えるマップ量が増える。
+        window.setFieldViewMode = function(battle) {
+            const container = document.querySelector('.game-container');
+            const canvas = document.getElementById('gameCanvas');
+            if (!container || !canvas) return;
+            const wantH = battle ? 450 : 660;
+            if (canvas.height !== wantH) canvas.height = wantH;   // 解像度=描画範囲。歪まないようCSSの縦横比も連動
+            container.classList.toggle('battle-active', !!battle);
+        };
+
         function showBattleItemMenu() {
             const inventory = itemSystem.getInventory();
 
@@ -7708,6 +7735,11 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             //   従来は try/catch が無く、1度でも throw すると clearRect 後に loop が死に、
             //   フィールドが真っ暗のまま固まる(入力listenerは別なのでメニューだけ開ける)失敗モードだった。
             try {
+                // ★フィールド⇄バトルの遷移を検知して画面配分を切替（battle-system.jsには触れない）
+                if (window._fieldBattleMode !== battleSystem.inBattle) {
+                    window._fieldBattleMode = battleSystem.inBattle;
+                    if (window.setFieldViewMode) window.setFieldViewMode(battleSystem.inBattle);
+                }
                 if (!battleSystem.inBattle) {
                     // クリア
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
