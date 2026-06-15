@@ -3543,7 +3543,7 @@
     <script src="player-grid-movement.js"></script>
     <script src="bgm-system.js?v=36"></script>
     <script src="party-system.js?v=47"></script>
-    <script src="quest-system.js?v=6"></script>
+    <script src="quest-system.js?v=7"></script>
     <script src="story-events.js?v=56"></script>
 
     <script>
@@ -5698,7 +5698,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
 
             if (cur) {
                 html += `<div class="quest-current-card">`
-                    + `<div class="quest-current-label">現在の目的　${questSystem.getChapterTitle(cur)} (${prog.done}/${prog.total})</div>`
+                    + `<div class="quest-current-label">現在の目的　${questSystem.getChapterTitle(cur)}</div>`
                     + `<div class="quest-current-title">🎯 ${cur.title}</div>`
                     + (cur.where ? `<div class="quest-current-where">→ ${cur.where}</div>` : '')
                     + `</div>`;
@@ -5863,14 +5863,21 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         function applyFieldItem(itemId, member) {
             itemTargetMode = false;
             const result = itemSystem.useItem(itemId, member, false);  // ★対象=選んだメンバー
-            if (result.success) {
-                showMessage(`${member.name || 'カイト'}に ${result.item.name}を つかった。\n${result.message}`);
-                updateUI();
-                if (itemSystem.getInventory().length === 0) { setTimeout(() => closeItemMenu(), 1000); return; }
-            } else {
-                showMessage(result.message);
+            updateUI();
+            updateItemList();  // アイテムリストへ戻す
+            // ★効果はアイテムメニュー内の上部に表示（裏のメッセージ枠に隠れて読めない問題を解消）
+            const itemList = document.getElementById('itemList');
+            if (itemList) {
+                const note = document.createElement('div');
+                note.style.cssText = `color:${result.success ? '#8fffa0' : '#ff9a9a'};font-size:14px;margin-bottom:10px;text-align:center;line-height:1.5;`;
+                note.textContent = result.success
+                    ? `${member.name || 'カイト'} → ${(result.message || '').replace(/\n/g, ' ').trim()}`
+                    : result.message;
+                itemList.insertBefore(note, itemList.firstChild);
             }
-            updateItemList();  // アイテムリストへ戻る
+            if (result.success && itemSystem.getInventory().length === 0) {
+                setTimeout(() => closeItemMenu(), 1400);
+            }
         }
 
         // 神威（フィールド）- MP回復

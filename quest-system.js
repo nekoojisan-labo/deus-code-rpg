@@ -27,7 +27,7 @@ const QUEST_STEPS = [
     id: 'defeat_drone', chapter: 1,
     title: '暴走ドローン・Ωを倒す',
     where: '地下コンコースA',
-    detail: '最奥のΩと対峙せよ。窮地にアカリが駆けつけ共闘で加わる。二人でΩを撃破しよう。',
+    detail: '最奥の暴走監視ドローン・Ωを止めよう。',
     target: 'subway_concourse_a',
     done: f => !!f.chapter1_complete || !!f.bossDefeated
   },
@@ -53,7 +53,7 @@ const QUEST_STEPS = [
     id: 'recruit_yami', chapter: 2, chapterTitle: '第2章 神託と仲間',
     title: '闇市のヤミを仲間にする',
     where: '広場の南 → 商業街 → さらに南西の闇市',
-    detail: 'リクを仲間にすると闇市が開く。闇魔法使いヤミに話しかけ、契約を交わそう（都庁の前で合流する）。',
+    detail: '監視外の闇市へ。闇魔法使いヤミに話しかけ、仲間に引き入れよう。',
     target: 'black_market_entrance',
     done: f => !!f.yamiPactMade || !!f.yamiJoined
   },
@@ -114,16 +114,24 @@ class QuestSystem {
     return { done, total: this.steps.length };
   }
 
-  // クエストログ用: 章ごとにまとめた一覧 [{chapterTitle, items:[{title, done, current}]}]
+  // クエストログ用: 章ごとにまとめた一覧。★未到達(未来)のステップは伏せる＝ネタバレ防止。
+  // 完了済み＋現在の目的までを表示し、続きがあれば「？？？」で1つだけ示す。
   getLog(flags = {}) {
     const current = this.getCurrent(flags);
+    const curIdx = current ? this.steps.indexOf(current) : this.steps.length - 1; // 全完了なら全部
     const groups = [];
     let g = null;
-    this.steps.forEach(s => {
+    this.steps.forEach((s, idx) => {
+      if (idx > curIdx) return;  // 未来のステップ(どの仲間/どこ等)は出さない
       if (s.chapterTitle) { g = { chapterTitle: s.chapterTitle, items: [] }; groups.push(g); }
       if (!g) { g = { chapterTitle: `第${s.chapter}章`, items: [] }; groups.push(g); }
       g.items.push({ title: s.title, where: s.where, done: s.done(flags), current: s === current });
     });
+    // 続きがあることだけ示す（中身は伏せる）
+    if (current && curIdx < this.steps.length - 1) {
+      if (!g) { g = { chapterTitle: '', items: [] }; groups.push(g); }
+      g.items.push({ title: '？？？', where: '', done: false, current: false, locked: true });
+    }
     return groups;
   }
 }
