@@ -71,6 +71,9 @@ const BattlePanel = (() => {
             bodyRemoveClasses: opts.grid ? [] : ['battle-cmd-grid']
         });
         els.body.classList.toggle('battle-cmd-grid', !!opts.grid);
+        // ★listMode: スキル/どうぐ等の「長い名前が多数並ぶ一覧」はボタン枠を外し、
+        //   平文＋カーソルの読みやすい行にする（メイン5コマンドは枠付きのまま）。
+        els.body.classList.toggle('battle-cmd-list', !!opts.listMode);
     }
 
     function setSelectedIndex(index) {
@@ -91,7 +94,7 @@ const BattlePanel = (() => {
             maxLines: opts.maxLines || 6,
             join: '<br>',
             scrollBottom: true,
-            bodyRemoveClasses: ['battle-cmd-mode', 'battle-cmd-grid']
+            bodyRemoveClasses: ['battle-cmd-mode', 'battle-cmd-grid', 'battle-cmd-list']
         });
     }
 
@@ -107,7 +110,7 @@ const BattlePanel = (() => {
             els.character.classList.remove('battle-mode-label');
         }
         if (els.body) {
-            els.body.classList.remove('battle-cmd-mode', 'battle-cmd-grid');
+            els.body.classList.remove('battle-cmd-mode', 'battle-cmd-grid', 'battle-cmd-list');
             els.body.innerHTML = '';
         }
     }
@@ -856,8 +859,9 @@ class BattleSystem {
             return;
         }
 
-        this.addBattleLog(`${currentMember.name || 'カイト'}の こうどう`);
-
+        // ★「○○の こうどう」のログは出さない。誰の入力番かは下のパーティUIのハイライト
+        //   (updateCurrentMemberDisplay)で示す。ここでログを足すと人数分のノイズ行が並び、
+        //   実際の行動ログ(「○○の攻撃」)の前に「○○のこうどう」が連発する違和感の原因になる。
         this.waitingForCommand = true;
         this.selectedCommand = 0;
         this.showCommands();
@@ -1285,7 +1289,8 @@ class BattleSystem {
             headerLabel: `${memberName} のスキル`,
             title: '⚡ スキル',
             selectedIndex: this.selectedCommand,
-            grid: true   // ★2列グリッド（縦一列→2列で一覧性UP・行数半減でスクロールも減る）
+            grid: true,    // ★2列グリッド（縦一列→2列で一覧性UP・行数半減でスクロールも減る）
+            listMode: true // ★枠を外して平文行に＝narrowセルでも名前が潰れず読める
         });
     }
 

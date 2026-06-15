@@ -1080,6 +1080,42 @@
             left: 8px;
         }
 
+        /* ★listMode: スキル/どうぐ等の「長い名前が多数並ぶ一覧」専用。
+           ボタン枠(border-image)を外して平文＋カーソルの読みやすい行にする。
+           枠ぶんの横余白が消えるので2列セルでも名前が潰れず、行高も上げて視認性UP。
+           メイン5コマンド(枠付き)は battle-cmd-list を付けないので影響なし。 */
+        .game-message-panel.battle-mode .game-msg-body.battle-cmd-mode.battle-cmd-list .command-item {
+            border: none;
+            border-image: none;
+            background: transparent;
+            box-shadow: none;
+            text-shadow: 0 0 4px rgba(0, 255, 255, 0.18);
+            padding: 4px 6px 4px 18px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #dfeefc;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: clip;
+        }
+        .game-message-panel.battle-mode .game-msg-body.battle-cmd-mode.battle-cmd-list .command-item:hover,
+        .game-message-panel.battle-mode .game-msg-body.battle-cmd-mode.battle-cmd-list .command-item.selected {
+            border: none;
+            border-image: none;
+            background: rgba(0, 229, 255, 0.14);
+            box-shadow: none;
+            color: #ffffff;
+            padding-left: 18px;
+        }
+        .game-message-panel.battle-mode .game-msg-body.battle-cmd-mode.battle-cmd-list .command-item.selected::before {
+            left: 4px;
+            color: #00e5ff;
+        }
+        /* listMode の2列は行間を少し広げ、名前＋MPがゆったり読めるように */
+        .game-message-panel.battle-mode .game-msg-body.battle-cmd-mode.battle-cmd-list.battle-cmd-grid {
+            gap: 5px 12px;
+        }
+
         .game-message-panel.battle-mode .game-msg-character.battle-mode-label {
             color: #ffff66;
         }
@@ -3626,7 +3662,7 @@
     <script src="se-system.js?v=1"></script>
     <script src="ui-panel.js?v=4"></script>
     <script src="save-system.js?v=2"></script>
-    <script src="battle-system.js?v=77"></script>
+    <script src="battle-system.js?v=78"></script>
     <script src="map-walkability-data.js?v=13"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=27"></script>
@@ -6919,7 +6955,8 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 headerLabel: 'どうぐ を えらぶ',
                 title: 'アイテム',
                 selectedIndex: 0,
-                grid: true   // ★2列グリッドで一覧性UP
+                grid: true,    // ★2列グリッドで一覧性UP
+                listMode: true // ★枠を外し平文行で名前を読みやすく
             });
 
             battleItemSelectedIndex = 0;
