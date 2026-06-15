@@ -452,6 +452,60 @@ class BattleSystem {
         // tier→ステータス倍率。物語の章進行（quest）に対応する難易度帯。
         // 1=序盤(広場) 2=地下鉄/神社 3=植物園/闇市 4=都庁 5=深層ダンジョン
         this.tierMultiplier = { 1: 1.0, 2: 1.5, 3: 2.2, 4: 3.0, 5: 4.2 };
+
+        // ★v2 敵ロスター: 新規17体追加 + 既存15体に属性/弱点/耐性レトロフィット + 既存zakoのHP底上げ + 出現表更新
+        Object.assign(this.enemyDatabase, {
+            rust_rat: { id: 'rust_rat', name: 'ラストラット', emoji: '🐀', hp: 44, maxHp: 44, attack: 7, defense: 4, magicDefense: 2, mp: 0, exp: 14, gold: 12, element: 'none', weakness: null, elementalResistance: null, skills: ['gnaw', 'scatter'], description: 'ラストラット', prescaled: true },
+            spark_moth: { id: 'spark_moth', name: 'スパークモス', emoji: '🦋', hp: 36, maxHp: 36, attack: 6, defense: 3, magicDefense: 4, mp: 0, exp: 16, gold: 14, element: 'thunder', weakness: 'ice', elementalResistance: { thunder: 0.5 }, skills: ['spark', 'dazzle'], description: 'スパークモス', prescaled: true },
+            cinder_hound: { id: 'cinder_hound', name: 'シンダーハウンド', emoji: '🔥', hp: 96, maxHp: 96, attack: 16, defense: 11, magicDefense: 6, mp: 0, exp: 34, gold: 30, element: 'fire', weakness: 'ice', elementalResistance: { fire: 0.5 }, skills: ['ember_fang', 'heat_howl'], description: 'シンダーハウンド', prescaled: true },
+            frost_widow: { id: 'frost_widow', name: 'フロストウィドウ', emoji: '🕷️', hp: 80, maxHp: 80, attack: 13, defense: 8, magicDefense: 10, mp: 0, exp: 46, gold: 34, element: 'ice', weakness: 'fire', elementalResistance: { ice: 0.6 }, skills: ['ice_web', 'chill_bite', 'venom_fang'], description: 'フロストウィドウ', prescaled: true },
+            static_wisp: { id: 'static_wisp', name: 'スタティックウィスプ', emoji: '⚡', hp: 68, maxHp: 68, attack: 11, defense: 6, magicDefense: 14, mp: 0, exp: 50, gold: 32, element: 'thunder', weakness: null, elementalResistance: { thunder: 0.75 }, skills: ['arc_bolt', 'overload'], description: 'スタティックウィスプ', prescaled: true },
+            salt_pillar: { id: 'salt_pillar', name: 'ソルトピラー', emoji: '🗿', hp: 264, maxHp: 264, attack: 20, defense: 40, magicDefense: 8, mp: 0, exp: 95, gold: 70, element: 'none', weakness: 'thunder,ice', elementalResistance: null, skills: ['rock_throw', 'harden', 'quake_stomp'], description: 'ソルトピラー', prescaled: true },
+            venom_bloom: { id: 'venom_bloom', name: 'ヴェノムブルーム', emoji: '🌺', hp: 154, maxHp: 154, attack: 22, defense: 16, magicDefense: 20, mp: 0, exp: 100, gold: 66, element: 'dark', weakness: 'fire,light', elementalResistance: { dark: 0.5 }, skills: ['toxic_spore', 'drain', 'entangle'], description: 'ヴェノムブルーム', prescaled: true, aoe: true },
+            mirror_sentinel: { id: 'mirror_sentinel', name: 'ミラーセンチネル', emoji: '🪞', hp: 220, maxHp: 220, attack: 24, defense: 18, magicDefense: 30, mp: 0, exp: 120, gold: 80, element: 'light', weakness: 'dark', elementalResistance: { fire: 0.5, ice: 0.5, thunder: 0.5, light: 0.75 }, skills: ['prism_beam', 'mirror_guard', 'barrier'], description: 'ミラーセンチネル', prescaled: true },
+            plasma_lancer: { id: 'plasma_lancer', name: 'プラズマランサー', emoji: '🔫', hp: 360, maxHp: 360, attack: 38, defense: 26, magicDefense: 22, mp: 0, exp: 175, gold: 120, element: 'thunder', weakness: 'dark', elementalResistance: { thunder: 0.5, fire: 0.25 }, skills: ['plasma_thrust', 'charge_break', 'overload'], description: 'プラズマランサー', prescaled: true },
+            cryo_warden: { id: 'cryo_warden', name: 'クライオウォーデン', emoji: '❄️', hp: 520, maxHp: 520, attack: 34, defense: 44, magicDefense: 38, mp: 0, exp: 190, gold: 130, element: 'ice', weakness: 'fire', elementalResistance: { ice: 0.75, thunder: 0.5 }, skills: ['glacier_slam', 'frost_nova_aoe', 'barrier', 'guard'], description: 'クライオウォーデン', prescaled: true, aoe: true },
+            null_revenant: { id: 'null_revenant', name: 'ヌル・レヴナント', emoji: '🕳️', hp: 400, maxHp: 400, attack: 40, defense: 28, magicDefense: 30, mp: 0, exp: 210, gold: 140, element: 'none', weakness: null, elementalResistance: { fire: 0.3, ice: 0.3, thunder: 0.3, dark: 0.3, light: 0.3 }, skills: ['void_grasp', 'null_pulse_aoe', 'curse'], description: 'ヌル・レヴナント', prescaled: true, aoe: true },
+            ember_seraph: { id: 'ember_seraph', name: 'エンバーセラフ', emoji: '😇', hp: 470, maxHp: 470, attack: 52, defense: 40, magicDefense: 46, mp: 0, exp: 260, gold: 180, element: 'fire', weakness: 'ice,dark', elementalResistance: { fire: 0.6, light: 0.4 }, skills: ['flare_burst', 'meteor_aoe', 'heat_howl'], description: 'エンバーセラフ', prescaled: true, aoe: true },
+            glacier_titan: { id: 'glacier_titan', name: 'グレイシアタイタン', emoji: '🧊', hp: 500, maxHp: 500, attack: 50, defense: 56, magicDefense: 30, mp: 0, exp: 270, gold: 190, element: 'ice', weakness: 'fire,thunder', elementalResistance: { ice: 0.75 }, skills: ['avalanche_aoe', 'glacier_slam', 'harden'], description: 'グレイシアタイタン', prescaled: true, aoe: true },
+            oblivion_shade: { id: 'oblivion_shade', name: 'オブリビオンシェイド', emoji: '🌒', hp: 460, maxHp: 460, attack: 48, defense: 38, magicDefense: 52, mp: 0, exp: 280, gold: 200, element: 'dark', weakness: 'light', elementalResistance: { dark: 0.75, ice: 0.4, fire: 0.4 }, skills: ['abyss_lance', 'dark_tide_aoe', 'drain', 'curse'], description: 'オブリビオンシェイド', prescaled: true, aoe: true },
+            aegis_colossus: { id: 'aegis_colossus', name: 'イージスコロッサス', emoji: '🛡️', hp: 500, maxHp: 500, attack: 54, defense: 60, magicDefense: 48, mp: 0, exp: 290, gold: 210, element: 'none', weakness: null, elementalResistance: { fire: 0.4, ice: 0.4, thunder: 0.4, dark: 0.5, light: 0.5 }, skills: ['siege_slam', 'crushing_aoe', 'barrier', 'guard'], description: 'イージスコロッサス', prescaled: true, aoe: true },
+            archon_deus: { id: 'archon_deus', name: 'アルコン・デウス', emoji: '👑', hp: 2800, maxHp: 2800, attack: 88, defense: 72, magicDefense: 60, mp: 100, exp: 700, gold: 1200, element: 'light', weakness: 'dark,thunder', elementalResistance: { light: 0.6, fire: 0.4, ice: 0.4 }, skills: ['judgment_ray_aoe', 'triple_lance', 'aegis_protocol', 'radiant_nova_burst'], description: 'アルコン・デウス', boss: true, type: 'boss', bossId: 'archon_deus' },
+            leviathan_core: { id: 'leviathan_core', name: 'リヴァイアサン・コア', emoji: '🐉', hp: 3200, maxHp: 3200, attack: 95, defense: 90, magicDefense: 70, mp: 100, exp: 900, gold: 1500, element: 'none', weakness: null, elementalResistance: { fire: 0.5, ice: 0.5, thunder: 0.5, dark: 0.5, light: 0.5 }, skills: ['data_storm_aoe', 'recursive_strike', 'firewall', 'core_overload_burst'], description: 'リヴァイアサン・コア', boss: true, type: 'boss', bossId: 'leviathan_core' }
+        });
+        const _v2Retrofit = {
+            watcher: { weakness: 'thunder', element: 'none', elementalResistance: null },
+            patrol_drone: { weakness: 'thunder', element: 'none', elementalResistance: null },
+            cerberus: { weakness: 'ice', element: 'fire', elementalResistance: { fire: 0.3 } },
+            dustGolem: { weakness: 'thunder,ice', element: 'none', elementalResistance: null },
+            alraune: { weakness: 'fire,light', element: 'dark', elementalResistance: { dark: 0.4 } },
+            deusMachina: { weakness: 'thunder', element: 'thunder', elementalResistance: { fire: 0.3, ice: 0.3 } },
+            data_spider: { weakness: 'fire', element: 'thunder', elementalResistance: { thunder: 0.5 } },
+            phantom: { weakness: 'light', element: 'dark', elementalResistance: { dark: 0.6, ice: 0.3 } },
+            security_drone: { weakness: 'thunder', element: 'none', elementalResistance: { fire: 0.4 } },
+            shadow_entity: { weakness: 'light', element: 'dark', elementalResistance: { dark: 0.6, fire: 0.3 } },
+            guard_robo: { weakness: 'thunder,ice', element: 'none', elementalResistance: null },
+            glitch_spirit: { weakness: null, element: 'none', elementalResistance: { thunder: 0.5, dark: 0.5, fire: 0.5 } },
+            queen_spider: { weakness: 'fire', element: 'ice', elementalResistance: { ice: 0.4 } },
+            corrupted_drone_boss: { weakness: 'thunder,ice', element: 'none', elementalResistance: { fire: 0.4, light: 0.3 } },
+            rogue_ai_core: { weakness: null, element: 'none', elementalResistance: { fire: 0.5, ice: 0.5, thunder: 0.5, dark: 0.5, light: 0.5 } }
+        };
+        Object.keys(_v2Retrofit).forEach(id => {
+            const e = this.enemyDatabase[id];
+            if (!e) return;
+            Object.assign(e, _v2Retrofit[id]);
+            if (!e.boss) { e.hp = Math.round((e.hp || 1) * 1.7); e.maxHp = e.hp; }  // 既存zakoのHP底上げ(一撃回避)
+        });
+        this.encounterTables = {
+            city:    ['watcher', 'patrol_drone', 'rust_rat', 'spark_moth', 'watcher', 'cerberus'],
+            subway:  ['data_spider', 'frost_widow', 'dustGolem', 'static_wisp', 'cerberus'],
+            shrine:  ['phantom', 'venom_bloom', 'alraune', 'watcher'],
+            garden:  ['alraune', 'venom_bloom', 'cinder_hound', 'security_drone', 'data_spider'],
+            market:  ['shadow_entity', 'oblivion_shade', 'deusMachina', 'mirror_sentinel', 'cerberus'],
+            gov:     ['guard_robo', 'glitch_spirit', 'plasma_lancer', 'cryo_warden', 'deusMachina'],
+            dungeon: ['queen_spider', 'null_revenant', 'salt_pillar', 'glitch_spirit', 'aegis_colossus', 'oblivion_shade', 'dustGolem']
+        };
+
     }
     
     // ランダムエンカウント歩数を決定
@@ -538,7 +592,10 @@ class BattleSystem {
         const mult = this.tierMultiplier[tier] || 1.0;
         const range = (zone && zone.levelRange) || [1, 1];
         const level = range[0] + Math.floor(Math.random() * (range[1] - range[0] + 1));
-        const sc = (v) => Math.max(1, Math.round((v || 0) * mult));
+        // ★prescaled な敵(v2新規)は hp/atk/def/exp/gold すべて tier最終値（×1）。既存敵は base×tier。
+        //   (新規敵の content値はその敵固有の最終値。zone tier で二重スケールしない＝レベリング過剰を防ぐ)
+        const m = base.prescaled ? 1 : mult;
+        const sc = (v) => Math.max(1, Math.round((v || 0) * m));
         const hp = sc(base.hp);
         return {
             ...base, hp, maxHp: hp, currentHp: hp, currentMp: base.mp || 0,

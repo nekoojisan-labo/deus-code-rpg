@@ -59,8 +59,11 @@ const zone = msys.getEncounterZone();
 const e = battle.makeScaledEnemy('watcher', zone);
 chk('makeScaledEnemy: magicDefense が数値', num(e.magicDefense), `=${e.magicDefense}`);
 chk('makeScaledEnemy: magicDefense ≈ floor(defense*0.5)', e.magicDefense === Math.floor(e.defense * 0.5), `magDef${e.magicDefense} def${e.defense}`);
-chk('makeScaledEnemy: element 既定 none', e.element === 'none');
-chk('makeScaledEnemy: weakness 既定 null', e.weakness === null);
+chk('makeScaledEnemy: watcher は属性レトロフィット済(weakness=thunder)', e.weakness === 'thunder' && e.element === 'none', `weak=${e.weakness}`);
+// 属性未指定の合成敵は既定(element=none/weakness=null)になる
+battle.enemyDatabase._test_plain = { id: '_test_plain', name: 'テスト', hp: 20, attack: 5, defense: 8 };
+const e2 = battle.makeScaledEnemy('_test_plain', zone);
+chk('makeScaledEnemy: 属性未指定なら element=none / weakness=null 既定', e2.element === 'none' && e2.weakness === null);
 
 // startBattle 経由(ボス等 makeScaledEnemy を通らない単体)でも既定が付く
 sb.window.bgmSystem = { startBattleBGM: noop, endBattleBGM: noop, stop: noop };

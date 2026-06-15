@@ -155,10 +155,13 @@ const CHARACTER_GROWTH = {
             speed: { min: 1, max: 3 }
         },
         skillLearning: {
-            3: ['ice_lance'],
-            5: ['protect'],
+            6: ['piercing_arrow'],
             8: ['kamui_storm'],
-            12: ['kamui_blessing']
+            12: ['kamui_blessing'],
+            14: ['blade_dance'],
+            16: ['cross_slash'],
+            20: ['war_cry'],
+            24: ['rending_edge']
         }
     },
     akari: {
@@ -172,9 +175,10 @@ const CHARACTER_GROWTH = {
             speed: { min: 2, max: 4 }
         },
         skillLearning: {
-            4: ['mega_heal'],
-            6: ['protect'],
-            8: ['haste']
+            3: ['cure_status'], 5: ['protect_shell'], 7: ['regen_field'], 9: ['revive'],
+            11: ['holy_ray'], 13: ['shell_barrier'], 15: ['group_heal'], 18: ['purify_wave'],
+            22: ['holy_nova'], 25: ['haste_boon'], 28: ['mega_heal'], 34: ['sanctuary'],
+            38: ['holy_lance'], 44: ['omega_heal']
         }
     },
     riku: {
@@ -188,8 +192,8 @@ const CHARACTER_GROWTH = {
             speed: { min: 0, max: 2 }
         },
         skillLearning: {
-            5: ['fire_bolt'],
-            7: ['protect']
+            8: ['iron_wall'], 12: ['heavy_smash'], 15: ['guard_break'],
+            18: ['whirl_strike'], 20: ['war_cry']
         }
     },
     yami: {
@@ -203,10 +207,9 @@ const CHARACTER_GROWTH = {
             speed: { min: 2, max: 5 }
         },
         skillLearning: {
-            3: ['ice_lance'],
-            5: ['thunder_strike'],
-            8: ['explosion'],
-            10: ['haste']
+            2: ['fire_bolt'], 3: ['ice_lance'], 5: ['thunder_strike'], 18: ['frost_pierce'],
+            20: ['voltspear'], 24: ['thunderstorm'], 28: ['explosion'], 30: ['inferno_lance'],
+            34: ['dark_nova'], 35: ['abyssal_ruin']
         }
     }
 };
