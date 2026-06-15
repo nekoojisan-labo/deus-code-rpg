@@ -601,6 +601,7 @@ class EquipmentSystem {
             hp: 0,
             mp: 0,
             magic: 0,
+            magicDefense: 0,   // ★v2: 魔法防御（術士装備で供給）
             speed: 0
         };
 
@@ -614,6 +615,7 @@ class EquipmentSystem {
                 stats.hp += equipment.hp || 0;
                 stats.mp += equipment.mp || 0;
                 stats.magic += equipment.magic || 0;   // 術士装備の魔力
+                stats.magicDefense += equipment.magicDefense || 0;   // ★v2: 魔法防御
                 stats.speed += equipment.speed || 0;
             }
         }
@@ -642,6 +644,9 @@ class EquipmentSystem {
         if (player.baseSpeed === undefined) {
             player.baseSpeed = player.speed || 5;
         }
+        // ★v2: 魔法防御の基礎値＝物理防御基礎の半分から常に導出（独立成長statが無いため baseDefense に追従）。
+        //   旧セーブ/新規どちらも baseDefense から決定論導出＝非破壊。
+        player.baseMagicDefense = Math.floor((player.baseDefense || 5) * 0.5);
 
         // 装備ボーナスを計算（このキャラの装備）
         const equipStats = this.getTotalStats(player);
@@ -656,6 +661,7 @@ class EquipmentSystem {
         player.maxHp = player.baseMaxHp + equipStats.hp;
         player.maxMp = player.baseMaxMp + equipStats.mp;
         player.magic = player.baseMagic + equipStats.magic;   // 術士装備で魔力が伸びる
+        player.magicDefense = player.baseMagicDefense + equipStats.magicDefense;   // ★v2: 魔法防御
         player.speed = player.baseSpeed + equipStats.speed;
 
         // HPとMPを調整（割合を維持）

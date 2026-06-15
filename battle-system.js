@@ -543,6 +543,9 @@ class BattleSystem {
         return {
             ...base, hp, maxHp: hp, currentHp: hp, currentMp: base.mp || 0,
             attack: sc(base.attack), defense: sc(base.defense), exp: sc(base.exp), gold: sc(base.gold),
+            // ★v2: 魔法防御は未定義なら物理防御の半分。属性/弱点/耐性は未定義なら無し(倍率1.0)。
+            magicDefense: (base.magicDefense != null) ? sc(base.magicDefense) : Math.floor(sc(base.defense) * 0.5),
+            element: base.element || 'none', weakness: base.weakness || null, elementalResistance: base.elementalResistance || null,
             level, id: enemyId, statusAilments: {}
         };
     }
@@ -618,6 +621,10 @@ class BattleSystem {
             if (!copy.currentHp) copy.currentHp = copy.hp;
             if (!copy.maxHp) copy.maxHp = copy.hp;
             if (!copy.currentMp) copy.currentMp = copy.mp || 0;
+            // ★v2: 魔法防御/属性/弱点の既定（ボス等 makeScaledEnemy を通らない敵でも v2式が NaN にならない）
+            if (copy.magicDefense == null) copy.magicDefense = Math.floor((copy.defense || 0) * 0.5);
+            if (copy.element == null) copy.element = 'none';
+            if (copy.weakness === undefined) copy.weakness = null;
             copy.statusAilments = {};
             return copy;
         });
@@ -2095,6 +2102,9 @@ class BattleSystem {
             character.attack = character.baseAttack;
             character.defense = character.baseDefense;
             character.magic = character.baseMagic;
+            // ★v2: 魔法防御は物理防御基礎の半分から導出（成長に追従）。装備分はrecalcAllで後乗せ。
+            character.baseMagicDefense = Math.floor((character.baseDefense || 5) * 0.5);
+            character.magicDefense = character.baseMagicDefense;
             character.speed = character.baseSpeed;
         }
 

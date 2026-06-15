@@ -5471,8 +5471,9 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         // ★セーブ「仕様(バランス)」のバージョン。ゲームの計算式/曲線/ステータス基準を変えるたびに +1。
         //   ロード時、保存仕様が古ければ migrateSaveSpec が「次回から影響・既存パラメータは保持」方針で
         //   非破壊的に整合だけ取る（レベル/HP/攻撃等は一切初期化しない）。
-        //   gen 1 = 旧二次EXP曲線 / gen 2 = 線形EXP曲線(現行)。
-        const SAVE_SPEC_VERSION = 2;
+        //   gen 1 = 旧二次EXP曲線 / gen 2 = 線形EXP曲線 / gen 3 = 戦闘v2(魔法防御/属性)。
+        //   gen2→gen3 は migrate不要(magicDefenseはrecalculatePlayerStats/recalcAllが baseDefense から自動導出)。
+        const SAVE_SPEC_VERSION = 3;
 
         // player の恒久ステータスのみ抽出（x/y/facing/isMoving/animTime/stepCount は除外）
         function serializePlayer() {

@@ -17,7 +17,7 @@ let pass = true;
 const chk = (label, cond, extra) => { console.log(`${cond ? '✅' : '❌'} ${label}${extra ? '  (' + extra + ')' : ''}`); pass = pass && cond; };
 
 // index.html の clampExp / migrateSaveSpec と同一ロジック（実コードと突き合わせ）
-const SAVE_SPEC_VERSION = 2;
+const SAVE_SPEC_VERSION = 3;   // gen3=戦闘v2(魔法防御/属性)。gen2→gen3 は migrate不要(recalcが導出)
 const clampExp = (ch) => {
   if (!ch || typeof ch.level !== 'number') return;
   const gid = ch.characterId || ch.id;
@@ -51,7 +51,11 @@ migrate({ specVersion: 1 }, ok, []);
 chk('exp<needed の値は変えない', ok.exp === 100, `exp=${ok.exp}`);
 const cur = { characterId: 'kaito', level: 10, exp: 99999 };
 migrate({ specVersion: SAVE_SPEC_VERSION }, cur, []);
-chk('現行世代(specVersion=2)は migrate しない', cur.exp === 99999, `exp=${cur.exp}`);
+chk('現行世代(specVersion=3)は migrate しない', cur.exp === 99999, `exp=${cur.exp}`);
+// gen2→gen3 は exp に触れない(魔法防御は recalc が導出するため migrate不要)
+const gen2 = { characterId: 'yami', level: 13, exp: 99999 };
+migrate({ specVersion: 2 }, gen2, []);
+chk('gen2→gen3 は exp を変えない(魔法防御はrecalc導出でmigrate不要)', gen2.exp === 99999, `exp=${gen2.exp}`);
 
 // (3) index.html 配線
 console.log('\n— (3) index.html 配線 —');
