@@ -222,9 +222,83 @@ class MagicSystem {
         console.log('Learned magic:', this.learnedMagicByCharacter[charId]);
         return true;
     }
-    
-    // 魔法を使用
-    useMagic(magicId, character, target, inBattle = false) {
+
+    // ===== v2 計算ヘルパー =====
+    // バフ倍率を取得（character.buffs[stat] = {mul,turns}）。stat: physDef/magDef/atk/mag
+    static buffMul(character, stat) {
+        const b = character && character.buffs && character.buffs[stat];
+        return (b && b.turns > 0 && b.mul) ? b.mul : 1;
+    }
+
+    // スキルの basePower（明示優先・旧powerは /30 でフォールブリッジ）
+    static skillBasePower(magic) {
+        if (magic.basePower != null) return magic.basePower;
+        return magic.power ? magic.power / 30 : 1.0;
+    }
+
+    // ★スキルダメージ式（攻撃魔法/物理スキル共通）。返り値 {damage, weak, resisted}
+    //   物理(scalingStat=attack): floor(攻撃×atkバフ×bp) - floor(物理防御×防御バフ/2)
+    //   魔法(scalingStat=magic):  floor(魔力×bp × 属性 × (1-耐性)) - floor(魔法防御×防御バフ/3)
+    computeSkillDamage(caster, target, magic) {
+        const isPhys = (magic.scalingStat === 'attack');
+        const bp = MagicSystem.skillBasePower(magic);
+        const atkStat = isPhys ? (caster.attack || 0) * MagicSystem.buffMul(caster, 'atk')
+                               : (caster.magic || 0) * MagicSystem.buffMul(caster, 'mag');
+        let base = Math.floor(atkStat * bp);
+        const element = magic.element || 'none';
+        // 属性: 弱点一致1.5・耐性で減衰（物理none/弱点noneは倍率1.0）
+        let weak = false;
+        if (element !== 'none' && target.weakness && target.weakness === element) weak = true;
+        const elemMul = weak ? 1.5 : 1.0;
+        const resistMap = target.elementalResistance || null;
+        const resist = (resistMap && element !== 'none' && resistMap[element]) ? Math.max(0, Math.min(0.9, resistMap[element])) : 0;
+        const variance = Math.floor(base * Math.random() * 0.12);
+        // 防御: 物理は physDef/2、魔法は magDef/3（バフで防御側が硬くなる）
+        let defRed;
+        if (isPhys) {
+            const pd = (target.defense || 0) * MagicSystem.buffMul(target, 'physDef');
+            defRed = Math.floor(pd / 2);
+        } else {
+            const mdRaw = (target.magicDefense != null) ? target.magicDefense : Math.floor((target.defense || 0) * 0.5);
+            const md = mdRaw * MagicSystem.buffMul(target, 'magDef');
+            defRed = Math.floor(md / 3);
+        }
+        const damage = Math.max(1, Math.floor(base * elemMul * (1 - resist)) + variance - defRed);
+        return { damage, weak, resisted: resist > 0 };
+    }
+
+    // ★回復量 = floor(魔力 × basePower)
+    computeHealAmount(caster, magic) {
+        const bp = MagicSystem.skillBasePower(magic);
+        return Math.max(1, Math.floor((caster.magic || 0) * bp));
+    }
+
+    // ★補助スキルの効果適用（バフ/状態治療）。magic.effect で分岐。
+    //   バフは character.buffs[stat] = {mul, turns} に積む。読み手は computeSkillDamage / battle-system。
+    applySupportEffect(target, magic) {
+        if (!target.buffs) target.buffs = {};
+        const dur = magic.duration || 3;
+        const setBuff = (stat, mul) => { target.buffs[stat] = { mul, turns: dur }; };
+        switch (magic.effect) {
+            case 'phys_def_up': setBuff('physDef', magic.buffMul || 1.5); return `${magic.name}！\n${target.name}の ぶつりぼうぎょが あがった！`;
+            case 'mag_def_up': setBuff('magDef', magic.buffMul || 1.5); return `${magic.name}！\n${target.name}の まほうぼうぎょが あがった！`;
+            case 'both_def_up': setBuff('physDef', magic.buffMul || 1.4); setBuff('magDef', magic.buffMul || 1.4); return `${magic.name}！\n${target.name}の ぼうぎょが あがった！`;
+            case 'atk_up': setBuff('atk', magic.buffMul || 1.3); return `${magic.name}！\n${target.name}の こうげきが あがった！`;
+            case 'speed_up': target.buffs.haste = { mul: 1, turns: dur }; target.magicSpeedBoost = true; return `${magic.name}！\n${target.name}は すばやさが あがった！`;
+            case 'cure_status': target.statusAilments = {}; return `${magic.name}！\n${target.name}の じょうたいいじょうが かいふくした！`;
+            case 'taunt': target.taunting = dur; return `${magic.name}！\n${target.name}は てきの こうげきを ひきつけた！`;
+            default: setBuff('physDef', 1.3); return `${magic.name}！\n${target.name}は みをかためた！`;
+        }
+    }
+
+    // 習得済みスキル定義を取得（MPチェック/対象種別の事前判定用）
+    getLearnedSkill(character, magicId) {
+        const charId = this.getCharacterId(character);
+        return (this.learnedMagicByCharacter[charId] || {})[magicId] || null;
+    }
+
+    // 魔法を使用（skipMpCost=true: 全体攻撃の2体目以降。MPは呼び出し側で1回だけ消費済み）
+    useMagic(magicId, character, target, inBattle = false, skipMpCost = false) {
         const charId = this.getCharacterId(character);
         const learnedMagic = this.learnedMagicByCharacter[charId] || {};
         const magic = learnedMagic[magicId];
@@ -242,13 +316,13 @@ class MagicSystem {
             return { success: false, message: 'この魔法は習得していない！' };
         }
 
-        // MPチェック
-        if (character.mp < magic.mpCost) {
-            return { success: false, message: 'MPが足りない！' };
+        // MPチェック＋消費（全体攻撃の2体目以降は skipMpCost で1回だけにする）
+        if (!skipMpCost) {
+            if (character.mp < magic.mpCost) {
+                return { success: false, message: 'MPが足りない！' };
+            }
+            character.mp -= magic.mpCost;
         }
-
-        // MP消費
-        character.mp -= magic.mpCost;
 
         let message = '';
         let damage = 0;
@@ -256,25 +330,32 @@ class MagicSystem {
         // 魔法タイプ別処理
         switch (magic.type) {
             case 'offensive':
-                // 攻撃魔法
+                // 攻撃魔法（★v2: 二系統式 scalingStat×basePower×属性×防御）
                 if (!target || !inBattle) {
                     return { success: false, message: '戦闘中にしか使えない！' };
                 }
-                damage = Math.floor(magic.power * (1 + Math.random() * 0.2));
-                target.currentHp = Math.max(0, target.currentHp - damage);
-                message = `${magic.name}！\n${target.name}に ${damage} のダメージ！`;
+                {
+                    const r = this.computeSkillDamage(character, target, magic);
+                    damage = r.damage;
+                    target.currentHp = Math.max(0, target.currentHp - damage);
+                    const tag = r.weak ? '　こうかは ばつぐんだ！' : (r.resisted ? '　こうかは いまひとつ…' : '');
+                    message = `${magic.name}！\n${target.name}に ${damage} のダメージ！${tag}`;
+                }
                 break;
 
             case 'healing':
-                // 回復魔法（対象が明示されていれば対象を、なければ自分を回復）
+                // 回復魔法（★v2: 回復量 = floor(魔力 × basePower)）
                 const healTarget = (target && target !== character && typeof target.maxHp === 'number') ? target : character;
                 // ★戦闘不能には通常の回復魔法は効かない（蘇生スキルが必要）
                 if (healTarget.hp <= 0) {
                     return { success: false, message: 'せんとうふのうには かいふくまほうは きかない！（そせいスキルが ひつよう）' };
                 }
-                const healAmount = Math.min(magic.power, healTarget.maxHp - healTarget.hp);
-                healTarget.hp = Math.min(healTarget.maxHp, healTarget.hp + magic.power);
-                message = `${magic.name}！\n${healTarget.name || character.name}の HPが ${healAmount} 回復した！`;
+                {
+                    const heal = this.computeHealAmount(character, magic);
+                    const applied = Math.min(heal, healTarget.maxHp - healTarget.hp);
+                    healTarget.hp = Math.min(healTarget.maxHp, healTarget.hp + heal);
+                    message = `${magic.name}！\n${healTarget.name || character.name}の HPが ${applied} 回復した！`;
+                }
                 break;
 
             case 'revive':
@@ -289,34 +370,28 @@ class MagicSystem {
                 break;
 
             case 'support':
-                // 補助魔法
+                // 補助魔法（★v2: バフ/状態治療。対象は target（味方）or 自分）
                 if (!inBattle) {
                     return { success: false, message: '戦闘中にしか使えない！' };
                 }
-
-                if (magic.effect === 'defense_up') {
-                    character.magicDefenseBoost = magic.power;
-                    character.magicDefenseBoostDuration = magic.duration;
-                    message = `${magic.name}！\n防御力が上がった！`;
-                } else if (magic.effect === 'speed_up') {
-                    character.magicSpeedBoost = true;
-                    character.magicSpeedBoostDuration = magic.duration;
-                    message = `${magic.name}！\n素早さが上がった！`;
-                } else if (magic.effect === 'all_up') {
-                    character.magicAllBoost = magic.power;
-                    character.magicAllBoostDuration = magic.duration;
-                    message = `${magic.name}！\n全能力が上がった！`;
+                {
+                    const buffTarget = (target && typeof target.maxHp === 'number') ? target : character;
+                    message = this.applySupportEffect(buffTarget, magic);
                 }
                 break;
 
             case 'kamui':
-                // 神威魔法
+                // 神威魔法（★v2: scalingStat×basePower。属性/防御は computeSkillDamage で）
                 if (!target || !inBattle) {
                     return { success: false, message: '戦闘中にしか使えない！' };
                 }
-                damage = Math.floor(magic.power * (1.2 + Math.random() * 0.3));
-                target.currentHp = Math.max(0, target.currentHp - damage);
-                message = `${magic.name}！\n神の力が襲いかかる！\n${target.name}に ${damage} のダメージ！`;
+                {
+                    const r = this.computeSkillDamage(character, target, magic);
+                    damage = r.damage;
+                    target.currentHp = Math.max(0, target.currentHp - damage);
+                    const tag = r.weak ? '　こうかは ばつぐんだ！' : (r.resisted ? '　こうかは いまひとつ…' : '');
+                    message = `${magic.name}！\n神の力が襲いかかる！\n${target.name}に ${damage} のダメージ！${tag}`;
+                }
                 break;
         }
 

@@ -585,6 +585,22 @@ class BattleSystem {
         return (this.enemies || []).filter(e => e && e.currentHp > 0);
     }
 
+    // ★v2 バフ倍率（character.buffs[stat]={mul,turns}）。stat: physDef/magDef/atk/mag
+    _buffMul(c, stat) {
+        const b = c && c.buffs && c.buffs[stat];
+        return (b && b.turns > 0 && b.mul) ? b.mul : 1;
+    }
+
+    // ★v2 バフ/挑発の持続ターンを1減らす（ラウンド終了時に各メンバーへ）
+    tickBuffs(c) {
+        if (c && c.buffs) {
+            Object.keys(c.buffs).forEach(k => {
+                if (c.buffs[k] && c.buffs[k].turns > 0) { c.buffs[k].turns--; if (c.buffs[k].turns <= 0) delete c.buffs[k]; }
+            });
+        }
+        if (c && c.taunting > 0) c.taunting--;
+    }
+
     // ターゲット解決: 指定indexが生存ならそれ、死んでいれば先頭の生存敵、全滅でもnullを返さない。
     resolveEnemyTarget(idx) {
         const list = this.enemies || [];
@@ -898,9 +914,9 @@ class BattleSystem {
         // ★対象を解決（選択敵が既に死んでいれば生存敵へ振替）。this.currentEnemy をその敵に向ける。
         this.currentEnemy = this.resolveEnemyTarget(enemyTarget);
         const enemyIdx = (this.enemies || []).indexOf(this.currentEnemy);
-        const baseDamage = member.attack || 10;
+        const baseDamage = (member.attack || 10) * this._buffMul(member, 'atk');   // ★ウォークライ等の攻撃バフ
         const variance = Math.floor(Math.random() * 5) - 2;
-        let damage = Math.max(1, baseDamage + variance - Math.floor(this.currentEnemy.defense / 2));
+        let damage = Math.max(1, Math.floor(baseDamage) + variance - Math.floor(this.currentEnemy.defense / 2));
 
         // クリティカル判定
         const criticalResult = this.checkCritical(member, this.currentEnemy);
@@ -1000,6 +1016,7 @@ class BattleSystem {
     // ターン終了時のステータス異常処理（メッセージ行の配列を返す。表示は呼び出し側が1ビートで）
     processStatusAilmentsEndTurn(character) {
         const lines = [];
+        this.tickBuffs(character);   // ★v2: バフ/挑発の持続を1ターン減らす（異常無しでも実行）
         if (!character.statusAilments) return lines;
 
         // 毒ダメージ
@@ -1039,6 +1056,12 @@ class BattleSystem {
             this.showKamuiSkillSelection(member, callback);
             return;
         }
+
+        // ★v2: 対象種別で分岐（全体攻撃 / 全体味方）。それ以外は従来の単体経路。
+        const skillDef = window.magicSystem.getLearnedSkill ? window.magicSystem.getLearnedSkill(member, magicId) : null;
+        const ttype = (skillDef && skillDef.target) || 'single';
+        if (ttype === 'all') { this._kamuiAllEnemies(member, callback, magicId, skillDef); return; }
+        if (ttype === 'allyAll') { this._kamuiAllAllies(member, callback, magicId, skillDef); return; }
 
         // 対象を解決。攻撃系は 'enemy'(=生存敵へ自動) または 'enemy:N'(=N番目の敵を指定)。
         let target = null;
@@ -1095,6 +1118,52 @@ class BattleSystem {
                 callback();
             }
         });
+    }
+
+    // ★全体攻撃スキル: 生存敵全員へ独立ロール（MPは1回消費）。各敵のダメージを1ビートに連ねる。
+    _kamuiAllEnemies(member, callback, magicId, skillDef) {
+        if (member.mp < (skillDef ? skillDef.mpCost : 0)) {
+            this.presentBeat(['MPが たりない！']);
+            this.afterBattleMessages(() => { if (callback) callback(); });
+            return;
+        }
+        const living = this.livingEnemies();
+        if (!living.length) { if (callback) callback(); return; }
+        const lines = [`${member.name}は ${skillDef.name}を よびだした！`];
+        const fx = [];
+        living.forEach((enemy, i) => {
+            const res = window.magicSystem.useMagic(magicId, member, enemy, true, i > 0);  // 2体目以降はMP消費スキップ
+            if (!res || !res.success) return;
+            const idx = (this.enemies || []).indexOf(enemy);
+            const dmgLine = lines.length;
+            const tag = res.weak ? '　ばつぐん！' : '';
+            lines.push(`${enemy.name}に ${res.damage}の ダメージ！${tag}`);
+            fx[dmgLine] = () => { this.showDamageEffect(res.damage, true, true, idx); this.updateBattleUI(); };
+            if (enemy.currentHp <= 0) lines.push(`${enemy.name}を たおした！`);
+        });
+        this.presentBeat(lines, { fx });
+        this.afterBattleMessages(() => {
+            if (this.livingEnemies().length === 0) { this.updateBattleUI(); this.battleVictory(window.player); }
+            else if (callback) callback();
+        });
+    }
+
+    // ★全体味方スキル: 回復/蘇生/バフを味方全員へ（MPは1回消費）。
+    _kamuiAllAllies(member, callback, magicId, skillDef) {
+        if (member.mp < (skillDef ? skillDef.mpCost : 0)) {
+            this.presentBeat(['MPが たりない！']);
+            this.afterBattleMessages(() => { if (callback) callback(); });
+            return;
+        }
+        const party = this.getPartyMembers();
+        const lines = [`${member.name}は ${skillDef.name}を となえた！`];
+        party.forEach((m, i) => {
+            const res = window.magicSystem.useMagic(magicId, member, m, true, i > 0);
+            if (res && res.success && res.message) lines.push(res.message.split('\n').pop());
+        });
+        const fx = []; fx[lines.length - 1] = () => { this.updateBattleUI(); if (window.updateUI) window.updateUI(); };
+        this.presentBeat(lines, { fx });
+        this.afterBattleMessages(() => { if (callback) callback(); });
     }
 
     // ===== カムイスキル「計画フェーズ」=====
@@ -1170,20 +1239,27 @@ class BattleSystem {
         }
 
         this.pendingMagic = skill;
+        const tgt = skill.target || 'single';
 
-        // 対象選択が必要な種別か判定
-        if (skill.type === 'healing' || skill.type === 'revive') {
-            // 味方を選ぶ（蘇生は戦闘不能の味方が対象）
+        // ★v2: 対象範囲で分岐
+        if (tgt === 'all') {
+            // 全体攻撃: 対象選択なしで確定（生存敵全員）
+            this.commitKamuiCommand(skill.id, 'all');
+        } else if (tgt === 'allyAll') {
+            // 全体味方（全体回復/蘇生/バフ）: 対象選択なしで確定
+            this.commitKamuiCommand(skill.id, 'allyAll');
+        } else if (tgt === 'self' || (skill.type === 'support' && tgt !== 'ally')) {
+            // 自分のみ（バフ等）: 自動確定
+            this.commitKamuiCommand(skill.id, 'self');
+        } else if (skill.type === 'healing' || skill.type === 'revive' || skill.type === 'support' || tgt === 'ally') {
+            // 単体味方を選ぶ（回復/蘇生/単体バフ。蘇生は戦闘不能の味方が対象）
             this.targetMode = 'skill';   // キャンセル時はスキル選択へ戻す
             this.availableTargets = this.getPartyMembers().map((m, i) => ({ member: m, index: i, scope: 'ally' }));
             this.commandPhase = 'target';
             this.selectedCommand = 0;
             this.renderTargetPhase('ally');
-        } else if (skill.type === 'support') {
-            // 自分のみ（自動確定）
-            this.commitKamuiCommand(skill.id, 'self');
         } else {
-            // offensive / kamui: ★敵が複数なら対象を選ぶ、単体なら自動。
+            // offensive / kamui 単体: 敵が複数なら対象を選ぶ、単体なら自動。
             const living = this.livingEnemies();
             if (living.length > 1) {
                 this.beginEnemyTargeting('skill', (enemyIdx) => this.commitKamuiCommand(skill.id, 'enemy:' + enemyIdx));
@@ -1858,15 +1934,19 @@ class BattleSystem {
 
     // 敵の通常攻撃（done: この敵の行動完了後に敵フェーズを進めるコールバック）
     enemyAttack(player, done) {
-        const baseDamage = this.currentEnemy.attack;
-        const variance = Math.floor(Math.random() * 3);
-        let damage = Math.max(1, baseDamage + variance - Math.floor((player.defense || 5) / 2));
-
-        // ★生存メンバーからランダムにターゲット（戦闘不能の味方は狙わない）
+        // ★生存メンバーからターゲット選択（戦闘不能は狙わない・挑発中の味方を優先）
         const allMembers = this.getPartyMembers();
         const aliveMembers = allMembers.filter(m => (m.hp || 0) > 0);
         if (!aliveMembers.length) { this.gameOver(); return; }
-        const target = aliveMembers[Math.floor(Math.random() * aliveMembers.length)];
+        const taunters = aliveMembers.filter(m => (m.taunting || 0) > 0);
+        const pool = taunters.length ? taunters : aliveMembers;
+        const target = pool[Math.floor(Math.random() * pool.length)];
+
+        // ★物理攻撃: 対象の物理防御(プロテスト等のバフ込み)で軽減
+        const baseDamage = this.currentEnemy.attack;
+        const variance = Math.floor(Math.random() * 3);
+        const tPhysDef = (target.defense || 5) * this._buffMul(target, 'physDef');
+        let damage = Math.max(1, baseDamage + variance - Math.floor(tPhysDef / 2));
 
         const msgs = [`${this.currentEnemy.name}の こうげき！`];
         if (target.defending) {
@@ -1893,17 +1973,23 @@ class BattleSystem {
         this.afterBattleMessages(() => { if (done) done(); });
     }
 
-    // 敵のスキル攻撃（done: 敵フェーズ継続コールバック）
+    // 敵のスキル攻撃（done: 敵フェーズ継続コールバック）。★v2: 魔法系=対象の魔法防御で軽減。
     enemySkillAttack(player, done) {
-        const skillDamage = Math.floor(this.currentEnemy.attack * 1.5);
-        const variance = Math.floor(Math.random() * 5);
-        let damage = Math.max(1, skillDamage + variance - Math.floor((player.defense || 5) / 3));
+        // ★ボス/高tierでAoEスキル持ちは確率で全体魔法バースト（大回復との釣り合い）
+        if (this._shouldUseAoE()) { this.enemyAoEAttack(player, done); return; }
 
-        // ★生存メンバーからランダムにターゲット
+        // ★生存メンバーからターゲット（挑発優先）
         const allMembers = this.getPartyMembers();
         const aliveMembers = allMembers.filter(m => (m.hp || 0) > 0);
         if (!aliveMembers.length) { this.gameOver(); return; }
-        const target = aliveMembers[Math.floor(Math.random() * aliveMembers.length)];
+        const taunters = aliveMembers.filter(m => (m.taunting || 0) > 0);
+        const pool = taunters.length ? taunters : aliveMembers;
+        const target = pool[Math.floor(Math.random() * pool.length)];
+
+        const skillDamage = Math.floor(this.currentEnemy.attack * 1.5);
+        const variance = Math.floor(Math.random() * 5);
+        const tMagDef = ((target.magicDefense != null ? target.magicDefense : Math.floor((target.defense || 0) * 0.5))) * this._buffMul(target, 'magDef');
+        let damage = Math.max(1, skillDamage + variance - Math.floor(tMagDef / 3));
 
         // 特殊攻撃→(防御)→ダメージ→(状態異常)→(結果) を1ビートに畳み込む
         const msgs = [`${this.currentEnemy.name}の とくしゅこうげき！`];
@@ -1930,6 +2016,39 @@ class BattleSystem {
         // 被弾エフェクト/HPバーはダメージ行と同時発火
         const fx = []; fx[dmgIdx] = () => { this.showDamageEffect(damage, false, true, targetIdx); this.updateBattleUI(); };
         this.presentBeat(msgs, { fx });
+        this.afterBattleMessages(() => { if (done) done(); });
+    }
+
+    // ★ボス/高tier敵が全体魔法バーストを撃つべきか（大回復との釣り合い＝消耗戦の自動化防止）
+    _shouldUseAoE() {
+        const e = this.currentEnemy;
+        if (!e) return false;
+        const hasAoE = (e.aoe === true) || (Array.isArray(e.skills) && e.skills.some(s => /aoe|burst|storm|nova|rain|tide|meteor|avalanche/i.test(s)));
+        if (!hasAoE) return false;
+        return Math.random() < (e.boss ? 0.45 : 0.3);
+    }
+
+    // ★敵の全体攻撃（魔法ベース＝貫通良くタンクにも通る）。生存メンバー全員へ。
+    enemyAoEAttack(player, done) {
+        const allMembers = this.getPartyMembers();
+        const alive = allMembers.filter(m => (m.hp || 0) > 0);
+        if (!alive.length) { this.gameOver(); return; }
+        const base = Math.floor((this.currentEnemy.attack || 10) * 1.3);
+        const lines = [`${this.currentEnemy.name}の ぜんたいこうげき！`];
+        const fx = [];
+        alive.forEach(m => {
+            const variance = Math.floor(Math.random() * 5);
+            const md = ((m.magicDefense != null ? m.magicDefense : Math.floor((m.defense || 0) * 0.5))) * this._buffMul(m, 'magDef');
+            let dmg = Math.max(1, base + variance - Math.floor(md / 3));
+            if (m.defending) { dmg = Math.floor(dmg / 2); m.defending = false; }
+            m.hp = Math.max(0, m.hp - dmg);
+            const idx = allMembers.indexOf(m);
+            const li = lines.length;
+            lines.push(`${m.name}に ${dmg}の ダメージ！`);
+            fx[li] = () => { this.showDamageEffect(dmg, false, true, idx); this.updateBattleUI(); };
+            if (m.hp <= 0) lines.push(`${m.name}は たおれた！`);
+        });
+        this.presentBeat(lines, { fx });
         this.afterBattleMessages(() => { if (done) done(); });
     }
 
