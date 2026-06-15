@@ -1070,7 +1070,7 @@ class MapSystem {
                 image: 'assets/maps/subway_concourse_a.png',
                 bgColor: '#08090d',
                 gridColor: 'transparent',
-                encounterRate: 'medium',
+                encounterRate: 'low',  // ★第1章は単騎で抜ける区間。遭遇頻度を下げて単騎クリア可能に(要実機調整)
                 area: 'subway',
                 bgm: 'subway',
                 // map-editor.html (タイルペイント版) で生成
