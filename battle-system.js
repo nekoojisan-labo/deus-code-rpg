@@ -824,16 +824,18 @@ class BattleSystem {
 
         if (isCritical) damage = Math.floor(damage * criticalResult.multiplier);
         this.currentEnemy.currentHp = Math.max(0, this.currentEnemy.currentHp - damage);
-        this.showDamageEffect(damage, true, isCritical);
-        this.updateBattleUI();
 
-        // ★攻撃→(会心)→ダメージ→(結果) を1ビートで表示し、完了後に撃破判定/次へ
+        // ★攻撃→(会心)→ダメージ→(結果) を1ビートで表示。ダメージ数字/被弾フラッシュ/HPバーは
+        //   「ダメージ行」が表示された瞬間に発火させ、メッセージと完全連動させる。
         const killed = this.currentEnemy.currentHp <= 0;
         const atkMsgs = isCritical
             ? [`${member.name}の こうげき！`, `かいしんの いちげき！`, `${this.currentEnemy.name}に ${Math.floor(damage)}の ダメージ！`]
             : [`${member.name}の こうげき！`, `${this.currentEnemy.name}に ${Math.floor(damage)}の ダメージ！`];
         if (killed) atkMsgs.push(`${this.currentEnemy.name}を たおした！`); // 結果行はビートの最後
-        this.presentBeat(atkMsgs);
+        const dmgIdx = isCritical ? 2 : 1;
+        const fx = [];
+        fx[dmgIdx] = () => { this.showDamageEffect(damage, true, isCritical); this.updateBattleUI(); };
+        this.presentBeat(atkMsgs, { fx });
         this.afterBattleMessages(() => {
             if (killed) {
                 this.currentEnemy.currentHp = 0;
@@ -987,17 +989,15 @@ class BattleSystem {
             return;
         }
 
-        // ダメージ系スキルの時のみ敵にエフェクト表示
-        if (result.damage && result.damage > 0) {
-            this.showDamageEffect(result.damage, true, true);
-        }
-        this.updateBattleUI();
-
-        // 召喚→効果→(結果) を1ビートで
+        // 召喚→効果→(結果) を1ビートで。ダメージ系は効果行(result.message)と同時にエフェクト発火
         const kamuiKilled = this.currentEnemy && this.currentEnemy.currentHp <= 0 && result.damage > 0;
         const kMsgs = [`${member.name}は ${result.magic.name}を よびだした！`, result.message];
         if (kamuiKilled) kMsgs.push(`${this.currentEnemy.name}を たおした！`);
-        this.presentBeat(kMsgs);
+        const fx = []; fx[1] = () => {
+            if (result.damage && result.damage > 0) this.showDamageEffect(result.damage, true, true);
+            this.updateBattleUI();
+        };
+        this.presentBeat(kMsgs, { fx });
         this.afterBattleMessages(() => {
             if (kamuiKilled) {
                 this.currentEnemy.currentHp = 0;
@@ -1478,14 +1478,13 @@ class BattleSystem {
         const damage = Math.max(1, baseDamage + variance - Math.floor(this.currentEnemy.defense / 2));
         
         this.currentEnemy.currentHp = Math.max(0, this.currentEnemy.currentHp - damage);
-        this.showDamageEffect(damage, true);
-        this.updateBattleUI();
 
-        // 攻撃→ダメージ→(結果) を1ビートで表示し、完了後に撃破判定/敵ターンへ
+        // 攻撃→ダメージ→(結果) を1ビートで表示。エフェクトはダメージ行と同時に発火
         const killed = this.currentEnemy.currentHp <= 0;
         const msgs = [`カイトの こうげき！`, `${this.currentEnemy.name}に ${Math.floor(damage)}の ダメージ！`];
         if (killed) msgs.push(`${this.currentEnemy.name}を たおした！`);
-        this.presentBeat(msgs);
+        const fx = []; fx[1] = () => { this.showDamageEffect(damage, true); this.updateBattleUI(); };
+        this.presentBeat(msgs, { fx });
         this.afterBattleMessages(() => {
             if (killed) {
                 this.currentEnemy.currentHp = 0;
@@ -1517,14 +1516,13 @@ class BattleSystem {
         const damage = baseDamage + variance;
 
         this.currentEnemy.currentHp = Math.max(0, this.currentEnemy.currentHp - damage);
-        this.showDamageEffect(damage, true, true);
-        this.updateBattleUI();
 
-        // 召喚→ダメージ→(結果) を1ビートで
+        // 召喚→ダメージ→(結果) を1ビートで。エフェクトはダメージ行と同時に発火
         const killed = this.currentEnemy.currentHp <= 0;
         const msgs = [`カイトは スサノオの力を よびだした！`, `${this.currentEnemy.name}に ${damage}の ダメージ！`];
         if (killed) msgs.push(`${this.currentEnemy.name}を たおした！`);
-        this.presentBeat(msgs);
+        const fx = []; fx[1] = () => { this.showDamageEffect(damage, true, true); this.updateBattleUI(); };
+        this.presentBeat(msgs, { fx });
         this.afterBattleMessages(() => {
             if (killed) {
                 this.currentEnemy.currentHp = 0;
@@ -1598,13 +1596,13 @@ class BattleSystem {
         }
         target.hp = Math.max(0, target.hp - damage);
         msgs.push(`${target.name}に ${Math.floor(damage)}の ダメージ！`);
+        const dmgIdx = msgs.length - 1;                         // ダメージ行の添字
+        const targetIdx = allMembers.indexOf(target);
         if (target.hp <= 0) msgs.push(`${target.name}は たおれた！`); // 結果行（味方が倒れた）
 
-        this.showDamageEffect(damage, false, false, allMembers.indexOf(target));
-        this.updateBattleUI();
-
-        // ★攻撃→(防御)→ダメージ→(結果) を1ビートで表示し、完了後に全滅判定/次ターンへ
-        this.presentBeat(msgs);
+        // ★攻撃→(防御)→ダメージ→(結果) を1ビートで表示。被弾エフェクト/HPバーはダメージ行と同時発火
+        const fx = []; fx[dmgIdx] = () => { this.showDamageEffect(damage, false, false, targetIdx); this.updateBattleUI(); };
+        this.presentBeat(msgs, { fx });
         this.afterBattleMessages(() => {
             if (this.checkPartyWipeout()) {
                 this.gameOver();
@@ -1649,8 +1647,8 @@ class BattleSystem {
 
         target.hp = Math.max(0, target.hp - damage);
         msgs.push(`${target.name}に ${Math.floor(damage)}の ダメージ！`);
-
-        this.showDamageEffect(damage, false, true, allMembers.indexOf(target));
+        const dmgIdx = msgs.length - 1;                         // ダメージ行の添字
+        const targetIdx = allMembers.indexOf(target);
 
         // ステータス異常付与判定（30%確率）— 同一ビートに告知を畳み込む（silent）
         if (Math.random() < 0.3) {
@@ -1660,9 +1658,9 @@ class BattleSystem {
         }
         if (target.hp <= 0) msgs.push(`${target.name}は たおれた！`); // 結果行
 
-        this.updateBattleUI();
-
-        this.presentBeat(msgs);
+        // 被弾エフェクト/HPバーはダメージ行と同時発火
+        const fx = []; fx[dmgIdx] = () => { this.showDamageEffect(damage, false, true, targetIdx); this.updateBattleUI(); };
+        this.presentBeat(msgs, { fx });
         this.afterBattleMessages(() => {
             if (this.checkPartyWipeout()) {
                 this.gameOver();
@@ -2071,11 +2069,14 @@ class BattleSystem {
     // 完了後にパネルをクリア＋間を置いてから次ビート → 可視窓に2行動を混在させない。
     // presentBeat が唯一の入口。addBattleLog は1行ビートのshim（既存全サイトは無改修でも安全）。
     // 全ビート枯渇後/各境界で afterBattleMessages の進行(次行動/勝利/敗北)をテキストに同期発火。
-    presentBeat(lines) {
+    // opts.fx: 行と同じ添字の関数配列。その行が表示された瞬間に発火（ダメージ数字/被弾フラッシュ等を
+    //   メッセージのダメージ行と連動させる＝「数字が先に飛ぶ」ズレを解消）。
+    presentBeat(lines, opts) {
         const arr = Array.isArray(lines) ? lines.filter(l => l != null).map(String) : [String(lines)];
         if (arr.length === 0) return;
+        const fx = (opts && Array.isArray(opts.fx)) ? opts.fx.slice() : null;
         this._beatQueue = this._beatQueue || [];
-        this._beatQueue.push(Object.freeze({ lines: Object.freeze(arr.slice()) }));
+        this._beatQueue.push(Object.freeze({ lines: Object.freeze(arr.slice()), fx: fx }));
         // 旧バトルメッセージ枠(DOM互換)＋battleLogにも積む
         arr.forEach(m => this.battleLog.push(m));
         const battleMessage = document.getElementById('battleMessage');
@@ -2111,6 +2112,10 @@ class BattleSystem {
         if (this._beatPhase === 'revealing') {
             this._beatShown++;
             this._renderBeat(beat, this._beatShown);
+            // その行に紐づくエフェクト(ダメージ数字/被弾フラッシュ/HPバー更新)を表示と同時に発火
+            if (beat.fx && typeof beat.fx[this._beatShown - 1] === 'function') {
+                try { beat.fx[this._beatShown - 1](); } catch (e) {}
+            }
             if (this._beatShown >= beat.lines.length) {
                 this._beatPhase = 'pausing';                 // 全行表示→読ませる間
                 this._scheduleMsgTick(INTER_BEAT_PAUSE_MS);

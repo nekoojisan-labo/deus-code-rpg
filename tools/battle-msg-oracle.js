@@ -148,6 +148,16 @@ chk('VICTORY-CHAIN: レベルアップは4行すべてが1ビート（途中分�
 chk('VICTORY-CHAIN: 習得スキル行がレベルアップビートの最後', lvupFinal[3] === 'アカリは ヒールを おぼえた！');
 chk('VICTORY-CHAIN: 最終進行(endBattle相当)が全ビート完了後に発火', vEnd === true);
 
+// ---------- (c4) FX-SYNC: ダメージエフェクトはダメージ行が表示された瞬間に発火（先に飛ばない） ----------
+reset();
+let fxAt = -1;
+const fxArr = []; fxArr[1] = () => { fxAt = shownLines().length; };
+battle.presentBeat(['カイトの こうげき！', 'スライムに 5 の ダメージ！'], { fx: fxArr });
+chk('FX-SYNC: 行動行(1行目)表示時点ではダメージfxは未発火（数字が先に飛ばない）', fxAt === -1, `fxAt=${fxAt}`);
+let fxGuard = 0;
+while (fxAt === -1 && timers.length && fxGuard++ < 6) tick();
+chk('FX-SYNC: ダメージ行(2行目)が表示された瞬間にfxが発火', fxAt === 2, `fxAt=${fxAt}`);
+
 // ---------- (d) DRAINED-IMMEDIATE: 空＆idleでは afterBattleMessages 即発火 ----------
 reset();
 let imm = false;
