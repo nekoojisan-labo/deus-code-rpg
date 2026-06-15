@@ -1203,9 +1203,9 @@ class BattleSystem {
     renderEnemyTargetPhase() {
         const items = this.availableTargets.map((entry, i) => {
             const e = entry.enemy;
-            const hp = `<span style="color:#ff9a9a; font-size:11px;">HP:${Math.max(0, e.currentHp)}/${e.maxHp}</span>`;
+            // ★敵HPは見せない（簡単になりすぎ防止）。どの敵かを名前で選ぶだけ。
             return {
-                html: `${e.name} ${hp}`,
+                html: `${e.name}`,
                 onClick: () => {
                     this.selectedCommand = i;
                     this.refreshCurrentPhaseSelection();
@@ -1549,9 +1549,10 @@ class BattleSystem {
             this.setBattleBackground();
             this.renderEnemyGroup();
 
-            // 敵情報更新（群れ名 or 単体名）
-            const nameEl = document.getElementById('enemyName');
-            if (nameEl) nameEl.textContent = this.enemyGroupName();
+            // ★上部の敵名＋HP HUDは非表示（名前は「あらわれた」メッセージで一度だけ告知。
+            //   常時の名前/HP表示は混乱の元・かつ敵HPを見せると簡単すぎるため出さない）。
+            const hud = document.querySelector('.enemy-hud');
+            if (hud) hud.style.display = 'none';
 
             // 旧コマンド領域は使わないが互換のため非表示維持
             const commands = document.getElementById('battleCommands');
@@ -1663,25 +1664,18 @@ class BattleSystem {
             } else {
                 sprite.textContent = enemy?.emoji || '??';
             }
-            if ((enemy.currentHp || 0) <= 0) { sprite.style.opacity = '0.3'; sprite.style.filter = 'grayscale(100%)'; }
+            // ★撃破済みは表示自体を消す（透明化ではなくスロットごと非表示＝画面から消える）
+            if ((enemy.currentHp || 0) <= 0 || enemy.defeated) { slot.style.display = 'none'; }
             slot.appendChild(sprite);
 
-            // 複数体時のみ各敵のミニ名＋HPバー（absolute配置でspriteの高さに影響しない）
+            // 複数体時のみ各敵のミニ名ラベル（識別＝どの敵を狙うか把握用）。★HPバーは出さない(簡単になりすぎ防止)。
             if (multi) {
                 const plate = document.createElement('div');
                 plate.style.cssText = 'position:absolute;left:50%;bottom:0;transform:translateX(-50%);z-index:3;display:flex;flex-direction:column;align-items:center;pointer-events:none;';
                 const label = document.createElement('div');
                 label.style.cssText = 'font-size:10px;color:#d8f4ff;max-width:78px;text-align:center;line-height:1.1;text-shadow:0 1px 2px #000;';
                 label.textContent = enemy.name;
-                const bar = document.createElement('div');
-                bar.style.cssText = 'width:54px;height:5px;background:rgba(0,0,0,.55);border-radius:3px;margin-top:2px;overflow:hidden;';
-                const fill = document.createElement('div');
-                fill.className = 'enemy-slot-hp-fill';
-                const ratio = Math.max(0, (enemy.currentHp || 0) / (enemy.maxHp || 1));
-                fill.style.cssText = `width:${ratio * 100}%;height:100%;background:${ratio > 0.5 ? '#43e97b' : ratio > 0.25 ? '#f5a623' : '#ef4444'};transition:width .2s;`;
-                bar.appendChild(fill);
                 plate.appendChild(label);
-                plate.appendChild(bar);
                 slot.appendChild(plate);
             }
             stage.appendChild(slot);
@@ -2552,32 +2546,16 @@ class BattleSystem {
     
     // UI更新
     updateBattleUI() {
-        // 上部HUDのHPバーは「現在の対象(currentEnemy)」を表示
-        if (this.currentEnemy) {
-            const enemyHpRatio = Math.max(0, this.currentEnemy.currentHp / this.currentEnemy.maxHp);
-            const enemyHpFill = document.getElementById('enemyHpFill');
-            if (enemyHpFill) enemyHpFill.style.width = (enemyHpRatio * 100) + '%';
-        }
-
-        // ★各敵スロットのミニHP・撃破グレーアウトを個別更新
+        // ★敵HPは一切表示しない（上部HUDは非表示・スロットのHPバーも撤去）。
+        //   撃破された敵は defeated フラグを立て、スロットごと画面から消す（透明化ではなく非表示）。
         const stage = document.querySelector('.enemy-stage');
         const list = (this.enemies && this.enemies.length) ? this.enemies : (this.currentEnemy ? [this.currentEnemy] : []);
         if (stage) {
             list.forEach((enemy, idx) => {
+                if ((enemy.currentHp || 0) <= 0) enemy.defeated = true;   // 撃破フラグ
                 const slot = stage.querySelector(`.enemy-slot[data-enemy-index="${idx}"]`);
                 if (!slot) return;
-                const sprite = slot.querySelector('.enemy-sprite');
-                const dead = (enemy.currentHp || 0) <= 0;
-                if (sprite) {
-                    sprite.style.opacity = dead ? '0.3' : '1';
-                    sprite.style.filter = dead ? 'grayscale(100%)' : 'none';
-                }
-                const fill = slot.querySelector('.enemy-slot-hp-fill');
-                if (fill) {
-                    const ratio = Math.max(0, (enemy.currentHp || 0) / (enemy.maxHp || 1));
-                    fill.style.width = (ratio * 100) + '%';
-                    fill.style.background = ratio > 0.5 ? '#43e97b' : ratio > 0.25 ? '#f5a623' : '#ef4444';
-                }
+                if (enemy.defeated) slot.style.display = 'none';           // 画面から消す
             });
         }
 

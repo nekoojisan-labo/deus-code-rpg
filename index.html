@@ -969,7 +969,9 @@
             gap: 2px;
             padding: 4px 14px 4px;
             white-space: normal;
-            overflow-y: auto;
+            /* ★スクロールバーは出さず、選択追従(setSelectedIndexIn の scrollIntoView)で下へ送る。
+               項目が増えても各行は縮めず(flex-shrink:0)、はみ出しはクリップして選択で送る。 */
+            overflow-y: hidden;
         }
 
         /* コマンド4件以上はJSが .battle-cmd-grid を付与し、2列でパネル内に全件可視化する
@@ -989,6 +991,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            flex-shrink: 0;   /* ★行を縮めて潰さない＝項目が多くてもレイアウト崩壊しない */
         }
 
         .game-message-panel.battle-mode .game-msg-body.battle-cmd-mode .battle-cmd-title {
@@ -3649,7 +3652,7 @@
     <script src="se-system.js?v=1"></script>
     <script src="ui-panel.js?v=3"></script>
     <script src="save-system.js?v=2"></script>
-    <script src="battle-system.js?v=73"></script>
+    <script src="battle-system.js?v=74"></script>
     <script src="map-walkability-data.js?v=12"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=27"></script>

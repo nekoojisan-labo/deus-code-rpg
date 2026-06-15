@@ -61,9 +61,10 @@ chk('スロット0のスプライトは id="enemySprite"（互換）', sp0 && sp
 chk('スロット1のスプライトは id無し（重複しない）', sp1 && sp1.id === '');
 chk('全スロットに .enemy-sprite が存在', stage.children.every(s => !!findSprite(s)));
 chk('全スロットに .enemy-shadow が存在', stage.children.every(s => s.children.some(c => c.className === 'enemy-shadow')));
-chk('複数時は各スロットに名前/HPプレート(子3つ以上)', stage.children.every(s => s.children.length >= 3));
-const deadSprite = findSprite(stage.children[2]);
-chk('HP0の敵スプライトはグレーアウト(opacity 0.3)', deadSprite && deadSprite.style.opacity === '0.3', `opacity=${deadSprite && deadSprite.style.opacity}`);
+chk('複数時は各スロットに名前プレート(子3つ: 影/スプライト/プレート)', stage.children.every(s => s.children.length >= 3));
+chk('★敵HPバーは描画しない(.enemy-slot-hp-fill 不在)', !stage.children.some(s => !!s.querySelector('.enemy-slot-hp-fill')));
+chk('★HP0の敵スロットは display:none で画面から消える(透明化ではない)', stage.children[2].style.display === 'none', `display=${stage.children[2].style.display}`);
+chk('生存スロットは表示されている(display!=none)', stage.children[0].style.display !== 'none' && stage.children[1].style.display !== 'none');
 chk('スロット高さは100%継承(height:100%)＝spriteの高さ崩壊回避', stage.children.every(s => /height:100%/.test(s.style.cssText || '')));
 
 // --- 1体（ボス/単体）---
