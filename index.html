@@ -95,14 +95,14 @@
         .ui-panel__list {
             flex: 1 1 auto;
             min-height: 0;
-            overflow-y: auto;
+            overflow: hidden;          /* ★スクロールバーは出さない＝ページ送り(paintList)で下へ送る */
+            scrollbar-width: none;
             display: grid;
             grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
             gap: 6px;
             align-content: start;
         }
-        .ui-panel__list::-webkit-scrollbar { width: 6px; }
-        .ui-panel__list::-webkit-scrollbar-thumb { background: var(--accent-soft); border-radius: 3px; }
+        .ui-panel__list::-webkit-scrollbar { display: none; }
         .ui-panel__row {
             display: flex;
             align-items: center;
@@ -164,11 +164,19 @@
         }
         .ui-panel__pane-l .ui-panel__list { flex: 1 1 auto; }
         .ui-panel__pane-r {
-            min-width: 0; min-height: 0; overflow-y: auto;
+            min-width: 0; min-height: 0; overflow: hidden;   /* ★スクロールバー無し（詳細はコンパクトに収める） */
+            scrollbar-width: none;
             padding: 0 4px 4px 14px; font-size: 13px; line-height: 1.7; color: var(--text-main);
         }
-        .ui-panel__pane-r::-webkit-scrollbar { width: 6px; }
-        .ui-panel__pane-r::-webkit-scrollbar-thumb { background: var(--accent-soft); border-radius: 3px; }
+        .ui-panel__pane-r::-webkit-scrollbar { display: none; }
+        /* ★メニュー類(item/equip/kamui/status/shop)は全画面・固定枠で統一。
+           場所ごとにサイズが変わらないよう、.menu-overlay 内の UIPanel(frame) を枠いっぱいに広げる。
+           溢れる項目は paintList のページ送りで下へ（スクロールバーは出さない）。 */
+        .menu-overlay.active .ui-panel--frame {
+            --panel-w: 100%;
+            --panel-max-h: 100%;
+            width: 100%; height: 100%; max-width: 100%; max-height: 100%;
+        }
         .ui-panel__foot {
             flex: 0 0 auto; margin-top: 6px; padding-top: 8px;
             border-top: 1px dashed var(--accent-soft);
@@ -7169,12 +7177,10 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             return '単体';
         }
         function kamuiCasterDetail(m) {
+            // ★右ペインはステータスのみ（コンパクト）。スキル一覧は次画面(openKamuiSkills)で
+            //   左リストとして出す＝詰め込み過ぎてスクロールバーが出るのを防ぐ。
             if (!m) return '';
-            const skills = casterFieldSkills(m);
-            const rows = skills.length
-                ? skills.map(s => `<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 2px;"><span>${s.emoji || '✨'} ${UIPanel.esc(s.name)}</span><span class="ui-panel__dmuted">MP${s.mpCost || 0}</span></div>`).join('')
-                : '<div class="ui-panel__dmuted">フィールドで使える回復スキルがありません。</div>';
-            return menuStatusHtml(m) + `<div class="ui-panel__dtitle" style="margin-top:10px;">フィールドで使える神威</div>${rows}`;
+            return menuStatusHtml(m);
         }
         function kamuiSkillDetail(caster, skill) {
             if (!skill) return '<div class="ui-panel__dmuted" style="padding:8px;">回復・蘇生・状態治療のスキルを選んでください。</div>';
@@ -7205,14 +7211,13 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                     icon: (m.hp || 0) <= 0 ? '💀' : '🙂',
                     label: m.name || 'カイト',
                     sub: `Lv${m.level || 1} ・ MP${m.mp || 0}/${m.maxMp || 0}`,
-                    right: skills.length ? `${skills.length}コ` : 'なし',
                     value: i,
-                    disabled: skills.length === 0
+                    disabled: skills.length === 0   // 回復スキルなしは選択不可（個数表示は出さない）
                 };
             });
             UIPanel.open({
                 host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
-                title: '✨ カムイ — つかう人をえらぶ', items, selectedIndex: 0, columns: 1, pageSize: 7,
+                title: '✨ カムイ — つかう人をえらぶ', items, selectedIndex: 0, columns: 1, pageSize: 9,
                 detailFor: (it) => kamuiCasterDetail(members[it && it.value != null ? it.value : 0]),
                 onSelect: (v) => openKamuiSkills(v),
                 onCancel: () => openMenu(),
@@ -7231,7 +7236,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 : [{ label: 'フィールドで使えるスキルがありません', disabled: true }];
             UIPanel.open({
                 host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
-                title: `✨ ${caster.name || 'カイト'} のカムイ`, items, selectedIndex: 0, columns: 1, pageSize: 7,
+                title: `✨ ${caster.name || 'カイト'} のカムイ`, items, selectedIndex: 0, columns: 1, pageSize: 9,
                 detailFor: (it) => kamuiSkillDetail(caster, it && it.value != null ? skills[it.value] : null),
                 onSelect: (v) => { if (skills[v]) kamuiFieldSelect(casterIdx, skills[v]); },
                 onCancel: () => openKamuiMenu(),
