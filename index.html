@@ -3652,7 +3652,7 @@
     <script src="se-system.js?v=1"></script>
     <script src="ui-panel.js?v=3"></script>
     <script src="save-system.js?v=2"></script>
-    <script src="battle-system.js?v=75"></script>
+    <script src="battle-system.js?v=76"></script>
     <script src="map-walkability-data.js?v=12"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=27"></script>
@@ -6861,9 +6861,9 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 return;
             }
 
-            // メッセージパネルにアイテムリストを描画
+            // メッセージパネルにアイテムリストを描画（★2列＋個数を見やすく）
             const items = usableItems.map((item, index) => ({
-                html: `${item.emoji} ${item.name} x${item.quantity}`,
+                html: `${item.emoji} ${item.name}<span style="color:#9fc0cf; font-size:10px; margin-left:4px;">×${item.quantity}</span>`,
                 onClick: () => useBattleItem(item.id)
             }));
 
@@ -6882,7 +6882,8 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             window.BattlePanel.renderCommands(items, {
                 headerLabel: 'どうぐ を えらぶ',
                 title: 'アイテム',
-                selectedIndex: 0
+                selectedIndex: 0,
+                grid: true   // ★2列グリッドで一覧性UP
             });
 
             battleItemSelectedIndex = 0;

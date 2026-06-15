@@ -1255,10 +1255,16 @@ class BattleSystem {
 
     // スキルリストをメッセージパネルに描画
     renderSkillPhase() {
+        // ★2列表示＋消費MP明示（見やすさ/操作しやすさ）。MP不足は赤・全体スキルは「全」タグ。
+        const member = this.kamuiPlanningMember;
+        const curMp = member ? (member.mp || 0) : 0;
         const items = this.availableSkills.map((skill, index) => {
-            const mpText = skill.mpCost ? ` <span style="color:#88aaff; font-size:11px;">(MP:${skill.mpCost})</span>` : '';
+            const cost = skill.mpCost || 0;
+            const afford = curMp >= cost;
+            const mpHtml = `<span style="color:${afford ? '#88aaff' : '#ff6b6b'}; font-size:10px; margin-left:4px;">MP${cost}</span>`;
+            const allTag = (skill.target === 'all' || skill.target === 'allyAll') ? ' <span style="color:#facc15; font-size:9px;">全</span>' : '';
             return {
-                html: `${skill.emoji || ''} ${skill.name}${mpText}`,
+                html: `${skill.emoji || ''} ${skill.name}${mpHtml}${allTag}`,
                 onClick: () => {
                     this.selectedCommand = index;
                     this.refreshCurrentPhaseSelection();
@@ -1274,11 +1280,12 @@ class BattleSystem {
             onClick: () => this.cancelKamuiPlanning()
         });
 
-        const memberName = (this.kamuiPlanningMember && this.kamuiPlanningMember.name) || 'カイト';
+        const memberName = (member && member.name) || 'カイト';
         BattlePanel.renderCommands(items, {
-            headerLabel: `${memberName} のじゅつ`,
-            title: '⚡ 神威スキル',
-            selectedIndex: this.selectedCommand
+            headerLabel: `${memberName} のスキル`,
+            title: '⚡ スキル',
+            selectedIndex: this.selectedCommand,
+            grid: true   // ★2列グリッド（縦一列→2列で一覧性UP・行数半減でスクロールも減る）
         });
     }
 
