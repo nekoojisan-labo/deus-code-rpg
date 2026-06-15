@@ -168,6 +168,8 @@ class MagicSystem {
                 name: '神威・祝福',
                 emoji: '✨',
                 type: 'kamui',
+                target: 'self',
+                buffMul: 1.3,
                 mpCost: 20,
                 duration: 5,
                 effect: 'all_up',
@@ -334,6 +336,9 @@ class MagicSystem {
             case 'speed_up': target.buffs.haste = { mul: 1, turns: dur }; target.magicSpeedBoost = true; return `${magic.name}！\n${target.name}は すばやさが あがった！`;
             case 'cure_status': target.statusAilments = {}; return `${magic.name}！\n${target.name}の じょうたいいじょうが かいふくした！`;
             case 'taunt': target.taunting = dur; return `${magic.name}！\n${target.name}は てきの こうげきを ひきつけた！`;
+            // 旧スキル互換のエイリアス
+            case 'defense_up': setBuff('physDef', magic.buffMul || 1.4); return `${magic.name}！\n${target.name}の ぼうぎょが あがった！`;
+            case 'all_up': setBuff('atk', magic.buffMul || 1.3); setBuff('physDef', magic.buffMul || 1.3); setBuff('magDef', magic.buffMul || 1.3); return `${magic.name}！\n${target.name}の ぜんのうりょくが あがった！`;
             default: setBuff('physDef', 1.3); return `${magic.name}！\n${target.name}は みをかためた！`;
         }
     }
@@ -429,7 +434,16 @@ class MagicSystem {
 
             case 'kamui':
                 // 神威魔法（★v2: scalingStat×basePower。属性/防御は computeSkillDamage で）
-                if (!target || !inBattle) {
+                if (!inBattle) {
+                    return { success: false, message: '戦闘中にしか使えない！' };
+                }
+                // ★effect持ち(kamui_blessing等のバフ系神威)はダメージではなくバフを適用
+                if (magic.effect) {
+                    const buffTarget = (target && typeof target.maxHp === 'number') ? target : character;
+                    message = this.applySupportEffect(buffTarget, magic);
+                    break;
+                }
+                if (!target) {
                     return { success: false, message: '戦闘中にしか使えない！' };
                 }
                 {
