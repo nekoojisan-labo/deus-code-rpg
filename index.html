@@ -6315,7 +6315,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 items = inv.map(it => ({
                     icon: it.emoji || '📦',
                     label: it.name,
-                    right: `×${it.quantity || 1}　${itemEffectSummary(it)}`,
+                    right: `×${it.quantity || 1}`,   // ★左は名前＋個数だけ。効果は右の詳細で（名前が切れないよう）
                     value: it.id,
                     disabled: !itemFieldInfo(it).usable
                 }));
@@ -7180,7 +7180,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             const meta = slotMeta(slotKey);
             const items = inv.map(e => ({
                 icon: meta.icon, label: e.name,
-                right: equipStatSummary(e) + (e.quantity > 1 ? `　×${e.quantity}` : ''),
+                right: e.quantity > 1 ? `×${e.quantity}` : '',   // ★左は名前(＋個数)だけ。能力/差分は右の詳細で
                 value: e.id
             }));
             items.push({ icon: '✋', label: 'はずす（そうびなし）', value: '__unequip__', color: '#ff8c8c' });
