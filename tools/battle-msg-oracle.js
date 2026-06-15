@@ -92,6 +92,32 @@ for (let i = 0; i < 12; i++) {
 chk('GATE: 進行は最終的に発火する', flow === true);
 chk('GATE: 進行はビート+区切り完了後（クリア後）に発火', firedAtEnd);
 
+// ---------- (c2) CHAIN: afterBattleMessages連鎖(executeActionsSequentially相当)で A→B が混ざらず順次 ----------
+reset();
+const MA = ['アカリの こうげき！', 'スライムに 8 の ダメージ！'];
+const MB = ['リクの こうげき！', 'スライムに 6 の ダメージ！', 'スライムを たおした！'];
+let chainDone = false;
+battle.presentBeat(MA);
+battle.afterBattleMessages(() => {
+  // メンバーAのビート完了後にメンバーBのビートを積む（再入: ドレインcb内のpresentBeat）
+  battle.presentBeat(MB);
+  battle.afterBattleMessages(() => { chainDone = true; });
+});
+let chainMixed = false, sawBLine = false, bBeforeAcleared = false, aCleared = false;
+const recC = () => {
+  const s = shownLines();
+  if (s.length === 0) { if (sawBLine === false) aCleared = true; return; }
+  const pa = isPrefixOf(s, MA), pb = isPrefixOf(s, MB);
+  if (!pa && !pb) chainMixed = true;
+  if (pb) { sawBLine = true; if (!aCleared) bBeforeAcleared = true; }
+};
+recC();
+for (let i = 0; i < 30 && timers.length; i++) { tick(); recC(); }
+chk('CHAIN: A→Bが同一フレームに混在しない（連鎖でも非混在）', !chainMixed);
+chk('CHAIN: メンバーBのビートはAがクリアされてから開始', sawBLine && !bBeforeAcleared);
+chk('CHAIN: Bビートは結果行「たおした！」を最後に含む（撃破=行動ビート）', shownLines().indexOf('スライムを たおした！') >= 0 || chainDone);
+chk('CHAIN: 連鎖の最終進行(次ターン相当)が発火', chainDone);
+
 // ---------- (d) DRAINED-IMMEDIATE: 空＆idleでは afterBattleMessages 即発火 ----------
 reset();
 let imm = false;

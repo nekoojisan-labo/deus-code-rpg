@@ -770,9 +770,9 @@ class BattleSystem {
     // 行動を順番に実行
     executeActionsSequentially(actions, actionIndex) {
         if (actionIndex >= actions.length) {
-            // 全員の行動が終わったら敵のターンへ
+            // 全員の行動が終わったら敵のターンへ（直前ビートの表示完了後に同期）
             this.executingTurn = false;
-            setTimeout(() => this.enemyTurn(window.player), 1000);
+            this.afterBattleMessages(() => this.enemyTurn(window.player));
             return;
         }
 
@@ -801,10 +801,10 @@ class BattleSystem {
                 });
                 break;
             case 'skip':
-                // 行動不能などスキップ
-                setTimeout(() => {
+                // 行動不能などスキップ（スキップ告知ビートの表示完了後に次へ）
+                this.afterBattleMessages(() => {
                     this.executeActionsSequentially(actions, actionIndex + 1);
-                }, 600);
+                });
                 break;
             default:
                 this.executeActionsSequentially(actions, actionIndex + 1);
@@ -827,13 +827,15 @@ class BattleSystem {
         this.showDamageEffect(damage, true, isCritical);
         this.updateBattleUI();
 
-        // ★攻撃→(会心)→ダメージ を1つずつ表示し、完了後に撃破判定/次へ（一気出しを解消）
+        // ★攻撃→(会心)→ダメージ→(結果) を1ビートで表示し、完了後に撃破判定/次へ
+        const killed = this.currentEnemy.currentHp <= 0;
         const atkMsgs = isCritical
             ? [`${member.name}の こうげき！`, `かいしんの いちげき！`, `${this.currentEnemy.name}に ${Math.floor(damage)}の ダメージ！`]
             : [`${member.name}の こうげき！`, `${this.currentEnemy.name}に ${Math.floor(damage)}の ダメージ！`];
-        atkMsgs.forEach(m => this.addBattleLog(m));
+        if (killed) atkMsgs.push(`${this.currentEnemy.name}を たおした！`); // 結果行はビートの最後
+        this.presentBeat(atkMsgs);
         this.afterBattleMessages(() => {
-            if (this.currentEnemy.currentHp <= 0) {
+            if (killed) {
                 this.currentEnemy.currentHp = 0;
                 this.updateBattleUI();
                 this.battleVictory(window.player);
@@ -863,8 +865,9 @@ class BattleSystem {
         return { isCritical, multiplier, critRate };
     }
 
-    // ステータス異常を付与
-    applyStatusAilment(target, ailmentType, duration = 3) {
+    // ステータス異常を付与。silent=true なら表示せずメッセージ文字列を返す
+    // （呼び出し側が同一ビートに結果行として畳み込むため）。
+    applyStatusAilment(target, ailmentType, duration = 3, silent = false) {
         if (!target.statusAilments) {
             target.statusAilments = {};
         }
@@ -879,7 +882,9 @@ class BattleSystem {
             curse: 'のろい'
         };
 
-        this.addBattleLog(`${target.name}は ${ailmentNames[ailmentType]}になった！`);
+        const msg = `${target.name}は ${ailmentNames[ailmentType]}になった！`;
+        if (!silent) this.addBattleLog(msg);
+        return msg;
     }
 
     // 行動前のステータス異常チェック
@@ -975,13 +980,10 @@ class BattleSystem {
         console.log('[DEBUG] useMagic result:', result);
 
         if (!result.success) {
-            this.addBattleLog(result.message);
-            setTimeout(callback, 1000);
+            this.presentBeat([result.message]);
+            this.afterBattleMessages(() => { if (callback) callback(); });
             return;
         }
-
-        this.addBattleLog(`${member.name}は ${result.magic.name}を よびだした！`);
-        this.addBattleLog(result.message);
 
         // ダメージ系スキルの時のみ敵にエフェクト表示
         if (result.damage && result.damage > 0) {
@@ -989,14 +991,20 @@ class BattleSystem {
         }
         this.updateBattleUI();
 
-        // 敵を倒したかは攻撃系スキル時のみチェック
-        if (this.currentEnemy && this.currentEnemy.currentHp <= 0 && result.damage > 0) {
-            this.currentEnemy.currentHp = 0;
-            this.updateBattleUI();
-            setTimeout(() => this.battleVictory(window.player), 1500);
-        } else {
-            setTimeout(callback, 1500);
-        }
+        // 召喚→効果→(結果) を1ビートで
+        const kamuiKilled = this.currentEnemy && this.currentEnemy.currentHp <= 0 && result.damage > 0;
+        const kMsgs = [`${member.name}は ${result.magic.name}を よびだした！`, result.message];
+        if (kamuiKilled) kMsgs.push(`${this.currentEnemy.name}を たおした！`);
+        this.presentBeat(kMsgs);
+        this.afterBattleMessages(() => {
+            if (kamuiKilled) {
+                this.currentEnemy.currentHp = 0;
+                this.updateBattleUI();
+                this.battleVictory(window.player);
+            } else if (callback) {
+                callback();
+            }
+        });
     }
 
     // ===== カムイスキル「計画フェーズ」=====
@@ -1190,16 +1198,16 @@ class BattleSystem {
     // カムイスキル選択UIを表示
     showKamuiSkillSelection(member, callback) {
         if (!window.magicSystem) {
-            this.addBattleLog('魔法システムが初期化されていません');
-            setTimeout(callback, 1000);
+            this.presentBeat(['魔法システムが初期化されていません']);
+            this.afterBattleMessages(() => { if (callback) callback(); });
             return;
         }
 
         const kamuiSkills = window.magicSystem.getLearnedMagic(member);
 
         if (kamuiSkills.length === 0) {
-            this.addBattleLog(`${member.name}は スキルを 習得していない！`);
-            setTimeout(callback, 1000);
+            this.presentBeat([`${member.name}は スキルを 習得していない！`]);
+            this.afterBattleMessages(() => { if (callback) callback(); });
             return;
         }
 
@@ -1318,9 +1326,9 @@ class BattleSystem {
 
     // メンバーの防御
     memberDefend(member, callback) {
-        this.addBattleLog(`${member.name}は みをまもっている！`);
         member.defending = true;
-        setTimeout(callback, 1500);
+        this.presentBeat([`${member.name}は みをまもっている！`]);
+        this.afterBattleMessages(() => { if (callback) callback(); });
     }
 
     // 戦闘画面表示
@@ -1468,58 +1476,62 @@ class BattleSystem {
         const damage = Math.max(1, baseDamage + variance - Math.floor(this.currentEnemy.defense / 2));
         
         this.currentEnemy.currentHp = Math.max(0, this.currentEnemy.currentHp - damage);
-        this.addBattleLog(`カイトの こうげき！`);
-        this.addBattleLog(`${this.currentEnemy.name}に ${Math.floor(damage)}の ダメージ！`);
-        
         this.showDamageEffect(damage, true);
         this.updateBattleUI();
-        
-        // 敵が倒れたかチェック
-        if (this.currentEnemy.currentHp <= 0) {
-            this.currentEnemy.currentHp = 0;
-            this.updateBattleUI();
-            setTimeout(() => this.battleVictory(player), 1500);
-        } else {
-            // 敵のターンに移行
-            setTimeout(() => this.enemyTurn(player), 1500);
-        }
+
+        // 攻撃→ダメージ→(結果) を1ビートで表示し、完了後に撃破判定/敵ターンへ
+        const killed = this.currentEnemy.currentHp <= 0;
+        const msgs = [`カイトの こうげき！`, `${this.currentEnemy.name}に ${Math.floor(damage)}の ダメージ！`];
+        if (killed) msgs.push(`${this.currentEnemy.name}を たおした！`);
+        this.presentBeat(msgs);
+        this.afterBattleMessages(() => {
+            if (killed) {
+                this.currentEnemy.currentHp = 0;
+                this.updateBattleUI();
+                this.battleVictory(player);
+            } else {
+                this.enemyTurn(player);
+            }
+        });
     }
-    
+
     // 神威（カムイ）攻撃
     playerKamui(player) {
         console.log('playerKamui called, MP:', player.mp);
         
         if (player.mp < 10) {
-            this.addBattleLog('MPが たりない！');
+            this.presentBeat(['MPが たりない！']);
             // コマンド選択に戻る
-            setTimeout(() => {
+            this.afterBattleMessages(() => {
                 this.waitingForCommand = true;
                 this.showCommands();
-            }, 1000);
+            });
             return;
         }
-        
+
         player.mp -= 10;
         const baseDamage = 25;
         const variance = Math.floor(Math.random() * 10);
         const damage = baseDamage + variance;
-        
+
         this.currentEnemy.currentHp = Math.max(0, this.currentEnemy.currentHp - damage);
-        this.addBattleLog(`カイトは スサノオの力を よびだした！`);
-        this.addBattleLog(`${this.currentEnemy.name}に ${damage}の ダメージ！`);
-        
         this.showDamageEffect(damage, true, true);
         this.updateBattleUI();
-        
-        // 敵が倒れたかチェック
-        if (this.currentEnemy.currentHp <= 0) {
-            this.currentEnemy.currentHp = 0;
-            this.updateBattleUI();
-            setTimeout(() => this.battleVictory(player), 1500);
-        } else {
-            // 敵のターンに移行
-            setTimeout(() => this.enemyTurn(player), 1500);
-        }
+
+        // 召喚→ダメージ→(結果) を1ビートで
+        const killed = this.currentEnemy.currentHp <= 0;
+        const msgs = [`カイトは スサノオの力を よびだした！`, `${this.currentEnemy.name}に ${damage}の ダメージ！`];
+        if (killed) msgs.push(`${this.currentEnemy.name}を たおした！`);
+        this.presentBeat(msgs);
+        this.afterBattleMessages(() => {
+            if (killed) {
+                this.currentEnemy.currentHp = 0;
+                this.updateBattleUI();
+                this.battleVictory(player);
+            } else {
+                this.enemyTurn(player);
+            }
+        });
     }
     
     // 敵のターン
@@ -1584,15 +1596,16 @@ class BattleSystem {
         }
         target.hp = Math.max(0, target.hp - damage);
         msgs.push(`${target.name}に ${Math.floor(damage)}の ダメージ！`);
+        if (target.hp <= 0) msgs.push(`${target.name}は たおれた！`); // 結果行（味方が倒れた）
 
         this.showDamageEffect(damage, false, false, allMembers.indexOf(target));
         this.updateBattleUI();
 
-        // ★攻撃→(防御)→ダメージ を1つずつ表示し、完了後に全滅判定/次ターンへ
-        msgs.forEach(m => this.addBattleLog(m));
+        // ★攻撃→(防御)→ダメージ→(結果) を1ビートで表示し、完了後に全滅判定/次ターンへ
+        this.presentBeat(msgs);
         this.afterBattleMessages(() => {
             if (this.checkPartyWipeout()) {
-                setTimeout(() => this.gameOver(), 1500);
+                this.gameOver();
             } else {
                 this.processAllMembersStatusAilments(() => {
                     this.turnCount++;
@@ -1604,14 +1617,13 @@ class BattleSystem {
 
     // 敵の防御
     enemyDefend(player) {
-        this.addBattleLog(`${this.currentEnemy.name}は みをまもっている！`);
         this.currentEnemy.defending = true;
-
-        // 次のターンへ
-        setTimeout(() => {
+        this.presentBeat([`${this.currentEnemy.name}は みをまもっている！`]);
+        // 次のターンへ（ビート表示完了後）
+        this.afterBattleMessages(() => {
             this.turnCount++;
             this.startPlayerTurn();
-        }, 1500);
+        });
     }
 
     // 敵のスキル攻撃
@@ -1624,40 +1636,41 @@ class BattleSystem {
         const allMembers = this.getPartyMembers();
         const target = allMembers[Math.floor(Math.random() * allMembers.length)];
 
-        this.addBattleLog(`${this.currentEnemy.name}の とくしゅこうげき！`);
+        // 特殊攻撃→(防御)→ダメージ→(状態異常)→(結果) を1ビートに畳み込む
+        const msgs = [`${this.currentEnemy.name}の とくしゅこうげき！`];
         // 防御中は特殊攻撃も半減（通常攻撃と同じ扱い。従来は特殊に防御が効かなかった）
         if (target.defending) {
             damage = Math.floor(damage / 2);
-            this.addBattleLog(`${target.name}は ぼうぎょしている！`);
+            msgs.push(`${target.name}は ぼうぎょしている！`);
             target.defending = false;
         }
 
         target.hp = Math.max(0, target.hp - damage);
-        this.addBattleLog(`${target.name}に ${Math.floor(damage)}の ダメージ！`);
+        msgs.push(`${target.name}に ${Math.floor(damage)}の ダメージ！`);
 
         this.showDamageEffect(damage, false, true, allMembers.indexOf(target));
 
-        // ステータス異常付与判定（30%確率）
+        // ステータス異常付与判定（30%確率）— 同一ビートに告知を畳み込む（silent）
         if (Math.random() < 0.3) {
             const ailments = ['poison', 'paralysis', 'sleep'];
             const randomAilment = ailments[Math.floor(Math.random() * ailments.length)];
-            this.applyStatusAilment(target, randomAilment, 3);
+            msgs.push(this.applyStatusAilment(target, randomAilment, 3, true));
         }
+        if (target.hp <= 0) msgs.push(`${target.name}は たおれた！`); // 結果行
 
         this.updateBattleUI();
 
-        // パーティ全滅チェック
-        if (this.checkPartyWipeout()) {
-            setTimeout(() => this.gameOver(), 1500);
-        } else {
-            // パーティメンバーのステータス異常処理
-            setTimeout(() => {
+        this.presentBeat(msgs);
+        this.afterBattleMessages(() => {
+            if (this.checkPartyWipeout()) {
+                this.gameOver();
+            } else {
                 this.processAllMembersStatusAilments(() => {
                     this.turnCount++;
                     this.startPlayerTurn();
                 });
-            }, 1500);
-        }
+            }
+        });
     }
 
     // 全メンバーのステータス異常処理
@@ -1875,12 +1888,11 @@ class BattleSystem {
     // 防御
     playerDefend(player) {
         console.log('playerDefend called');
-        
-        this.addBattleLog('カイトは みをまもっている！');
+
         player.defending = true;
-        
-        // 防御してもターンは消費、敵のターンへ
-        setTimeout(() => this.enemyTurn(player), 1500);
+        this.presentBeat(['カイトは みをまもっている！']);
+        // 防御してもターンは消費、敵のターンへ（ビート表示完了後）
+        this.afterBattleMessages(() => this.enemyTurn(player));
     }
     
     // 逃走処理
@@ -1889,8 +1901,8 @@ class BattleSystem {
 
         // ボス戦では逃げられない
         if (this.isBossBattle) {
-            this.addBattleLog('ボスせんから にげることは できない！');
-            setTimeout(() => this.enemyTurn(window.player), 1500);
+            this.presentBeat(['ボスせんから にげることは できない！']);
+            this.afterBattleMessages(() => this.enemyTurn(window.player));
             return;
         }
 
@@ -1898,12 +1910,12 @@ class BattleSystem {
 
         if (escapeChance > 0.4) { // 60%の確率で逃走成功
             if (window.playSE) window.playSE('escape');
-            this.addBattleLog('うまく にげきれた！');
-            setTimeout(() => this.endBattle(false), 1000);
+            this.presentBeat(['うまく にげきれた！']);
+            this.afterBattleMessages(() => this.endBattle(false));
         } else {
-            this.addBattleLog('にげられない！');
             // 逃走失敗時も敵のターンへ
-            setTimeout(() => this.enemyTurn(window.player), 1500);
+            this.presentBeat(['にげられない！']);
+            this.afterBattleMessages(() => this.enemyTurn(window.player));
         }
     }
     
