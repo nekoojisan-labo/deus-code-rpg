@@ -1109,7 +1109,9 @@ window.MAP_OBJECTS = {
         "spawnY": 300,
         "autoEnter": true,
         "visible": false,
-        "requireFacing": "up"
+        "requireFacing": "up",
+        "requiredFlag": "arcDefeated",
+        "lockedMsg": "深部への扉は固く閉ざされている… （物語をクリアすると、この先の深層トンネルに挑める）"
       }
     ],
     "objects": [
