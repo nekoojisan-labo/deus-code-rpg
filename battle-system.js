@@ -2796,11 +2796,11 @@ class BattleSystem {
         return meter;
     }
 
-    // パーティメンバーのステータス表示を更新
+    // パーティメンバーのステータス表示を更新（★ドラクエ5風: 画面下に名前＋HP/MP数値の横並び窓）
     updatePartyStatus() {
         const statusContainer = document.getElementById('battlePartyStatus');
         if (!statusContainer) return;
-
+        const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const allMembers = this.getPartyMembers();
 
         statusContainer.innerHTML = '';
@@ -2811,66 +2811,26 @@ class BattleSystem {
             const maxMp = Math.max(0, member.maxMp ?? member.baseMaxMp ?? 50);
             const currentHp = Math.max(0, Math.min(maxHp, member.hp ?? maxHp));
             const currentMp = maxMp > 0 ? Math.max(0, Math.min(maxMp, member.mp ?? maxMp)) : 0;
-            const hpRatio = currentHp / maxHp;
-            const mpRatio = maxMp > 0 ? currentMp / maxMp : 0;
+            const hpPct = Math.round(currentHp / maxHp * 100);
+            const mpPct = maxMp > 0 ? Math.round(currentMp / maxMp * 100) : 0;
             const name = member.name || 'カイト';
-            const characterId = member === window.player ? 'kaito' : (member.characterId || member.id || 'kaito');
             const isActive = index === this.currentMemberIndex && this.waitingForCommand;
+            const down = currentHp <= 0;
 
-            const statusBox = document.createElement('div');
-            statusBox.className = 'battle-party-card' + (isActive ? ' is-active' : '') + (currentHp <= 0 ? ' is-down' : '');
-            statusBox.dataset.memberIndex = String(index);
-            statusBox.setAttribute('role', 'listitem');
+            // ★DOMは軽量・横並びの数値窓。クラス名(battle-party-card)とdataset/is-active/is-downは
+            //   既存のヒット演出・手番ハイライト・入力ハンドラが参照するため維持する。
+            const cell = document.createElement('div');
+            cell.className = 'battle-party-card' + (isActive ? ' is-active' : '') + (down ? ' is-down' : '');
+            cell.dataset.memberIndex = String(index);
+            cell.setAttribute('role', 'listitem');
+            cell.innerHTML =
+                `<div class="bp-name">${esc(name)}${down ? ' <span class="bp-down">(ひんし)</span>' : ''}</div>` +
+                `<div class="bp-line"><span class="bp-k">HP</span><span class="bp-v${hpPct <= 25 ? ' low' : ''}">${currentHp}</span><span class="bp-max">/${maxHp}</span></div>` +
+                `<div class="bp-bar"><i class="bp-fill hp" style="width:${hpPct}%"></i></div>` +
+                `<div class="bp-line"><span class="bp-k">MP</span><span class="bp-v">${currentMp}</span><span class="bp-max">/${maxMp}</span></div>` +
+                `<div class="bp-bar"><i class="bp-fill mp" style="width:${mpPct}%"></i></div>`;
 
-            const portrait = document.createElement('div');
-            portrait.className = 'battle-party-portrait';
-
-            const initial = document.createElement('div');
-            initial.className = 'battle-party-initial';
-            initial.textContent = Array.from(name)[0] || '?';
-
-            const portraitImg = document.createElement('img');
-            // ?v=2: 旧キャッシュ画像の取り違え対策（キャッシュバスター）
-            portraitImg.src = `assets/characters/${characterId}_portrait.webp?v=2`;
-            portraitImg.alt = name;
-            portraitImg.decoding = 'async';
-            portraitImg.onerror = function() {
-                if (!this.dataset.fallbackTried && this.src.includes('.webp')) {
-                    this.dataset.fallbackTried = '1';
-                    // 拡張子のみ置換するため ?v=2 はそのまま png 側にも引き継がれる
-                    this.src = this.src.replace('.webp', '.png');
-                    return;
-                }
-                this.style.display = 'none';
-            };
-            portrait.appendChild(initial);
-            portrait.appendChild(portraitImg);
-
-            const info = document.createElement('div');
-            info.className = 'battle-party-info';
-
-            const head = document.createElement('div');
-            head.className = 'battle-party-head';
-
-            const nameEl = document.createElement('div');
-            nameEl.className = 'battle-party-name';
-            nameEl.textContent = name;
-
-            const levelEl = document.createElement('div');
-            levelEl.className = 'battle-party-level';
-            levelEl.textContent = `Lv.${member.level || 1}`;
-
-            head.appendChild(nameEl);
-            head.appendChild(levelEl);
-            info.appendChild(head);
-
-            info.appendChild(this.createBattlePartyMeter('HP', currentHp, maxHp, hpRatio, 'hp'));
-            info.appendChild(this.createBattlePartyMeter('MP', currentMp, maxMp, mpRatio, 'mp'));
-
-            statusBox.appendChild(portrait);
-            statusBox.appendChild(info);
-
-            statusContainer.appendChild(statusBox);
+            statusContainer.appendChild(cell);
         });
     }
     

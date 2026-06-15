@@ -817,65 +817,56 @@
             display: none;
         }
 
-        /* バトル中のパーティステータス（画面下部の立ち絵パネル＋全幅シェルフ） */
+        /* ★バトル中のパーティステータス（ドラクエ5風: 画面下の横並び数値窓・コンパクト） */
         #battlePartyStatus {
             position: absolute;
             left: 0;
             right: 0;
             bottom: 0;
-            height: min(158px, 37%);
+            height: auto;
             display: flex;
-            align-items: center;
+            align-items: stretch;
             justify-content: center;
-            gap: 12px;
-            padding: 14px 18px 16px;
+            gap: 6px;
+            padding: 8px 10px 10px;
             box-sizing: border-box;
-            max-width: none;
             z-index: 12;
             pointer-events: none;
-            background: linear-gradient(180deg, rgba(2, 8, 23, 0) 0%, rgba(2, 8, 23, 0.5) 44%, rgba(2, 8, 23, 0.85) 100%);
+            background: linear-gradient(180deg, rgba(2, 8, 23, 0) 0%, rgba(2, 8, 23, 0.55) 40%, rgba(2, 8, 23, 0.92) 100%);
             border-top: 1px solid rgba(34, 211, 238, 0.16);
         }
-
         .battle-party-card {
             position: relative;
             flex: 1 1 0;
-            max-width: 244px;
+            max-width: 200px;
             min-width: 0;
-            height: 126px;
-            display: grid;
-            grid-template-columns: 62px minmax(0, 1fr);
-            gap: 10px;
-            align-items: center;
-            padding: 9px 10px;
+            padding: 5px 9px 7px;
             box-sizing: border-box;
-            border: 2px solid rgba(34, 211, 238, 0.58);
-            border-radius: 14px;
-            background:
-                linear-gradient(135deg, rgba(3, 12, 28, 0.92), rgba(8, 24, 48, 0.78));
-            box-shadow: 0 0 16px rgba(34, 211, 238, 0.2), inset 0 0 18px rgba(59, 130, 246, 0.1);
+            border: 2px solid rgba(34, 211, 238, 0.5);
+            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(3, 12, 28, 0.95), rgba(8, 24, 48, 0.85));
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.16);
             overflow: hidden;
-            transform-origin: center bottom;
-            transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
             pointer-events: auto;
         }
-
-        .battle-party-card:nth-child(even) {
-            transform: translateY(4px) skewX(-1.5deg);
-        }
-
-        .battle-party-card.is-active:not([style*="2px solid"]),
-        .battle-party-card[style*="3px solid"] {
-            z-index: 3;
+        .battle-party-card.is-active {
             border-color: #facc15;
-            box-shadow: 0 0 24px rgba(250, 204, 21, 0.55), 0 0 18px rgba(34, 211, 238, 0.28), inset 0 0 18px rgba(250, 204, 21, 0.1);
-            transform: translateY(-7px) scale(1.04);
+            box-shadow: 0 0 18px rgba(250, 204, 21, 0.5);
+            transform: translateY(-3px);
         }
-
-        .battle-party-card.is-down {
-            opacity: 0.58;
-            filter: grayscale(0.85);
-        }
+        .battle-party-card.is-down { opacity: 0.6; filter: grayscale(0.8); }
+        .bp-name { font-size: 13px; font-weight: 700; color: #eaf6ff; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .bp-down { font-size: 10px; color: #ff6b6b; font-weight: 600; }
+        .bp-line { display: flex; align-items: baseline; gap: 4px; font-size: 13px; line-height: 1.2; }
+        .bp-k { color: #7fd4ff; font-size: 10px; width: 18px; flex: 0 0 auto; }
+        .bp-v { color: #fff; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .bp-v.low { color: #ff6b6b; }
+        .bp-max { color: #8aa0b8; font-size: 10px; }
+        .bp-bar { height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.1); margin: 1px 0 3px; overflow: hidden; }
+        .bp-fill { display: block; height: 100%; border-radius: 2px; }
+        .bp-fill.hp { background: linear-gradient(90deg, #22c55e, #4ade80); }
+        .bp-fill.mp { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
 
         .battle-party-portrait {
             position: relative;
@@ -3686,7 +3677,7 @@
     <script src="se-system.js?v=1"></script>
     <script src="ui-panel.js?v=5"></script>
     <script src="save-system.js?v=2"></script>
-    <script src="battle-system.js?v=79"></script>
+    <script src="battle-system.js?v=80"></script>
     <script src="map-walkability-data.js?v=15"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=27"></script>
