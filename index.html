@@ -140,7 +140,7 @@
             text-align: center;
         }
         /* ===== FF風 2ペイン master-detail（cfg.frame） ===== */
-        .ui-panel--frame { --panel-w: min(760px, calc(100% - 16px)); }
+        .ui-panel--frame { --panel-w: min(760px, calc(100% - 16px)); pointer-events: auto; }
         .ui-panel__frame {
             flex: 1 1 auto; min-height: 0;
             display: grid; grid-template-columns: minmax(140px, 36%) 1fr;
@@ -3402,77 +3402,7 @@
 
         <!-- Menu Screen -->
         <div class="menu-overlay" id="menuOverlay">
-            <div class="menu-container main-menu-panel">
-                <div class="menu-title">メニュー</div>
-
-                <!-- パーティメンバータブ -->
-                <div class="party-tabs-row">
-                    <button class="party-switch" type="button" id="partyPrevButton">←</button>
-                    <div class="party-tabs" id="partyTabs">
-                        <!-- JavaScriptで動的生成 -->
-                    </div>
-                    <button class="party-switch" type="button" id="partyNextButton">→</button>
-                </div>
-
-                <div class="menu-content-wrapper">
-                    <!-- キャラクター立ち絵 -->
-                    <div class="character-portrait">
-                        <img id="menuCharacterPortrait" src="assets/characters/kaito_portrait.webp?v=2"
-                             alt="カイト"
-                             decoding="async"
-                             data-fallback-src="assets/characters/kaito_portrait.png?v=2"
-                             onerror="if (this.dataset.fallbackSrc) { this.src = this.dataset.fallbackSrc; this.dataset.fallbackSrc = ''; } else { this.style.display='none'; this.nextElementSibling.style.display='flex'; }">
-                        <div id="menuCharacterEmoji" class="character-portrait-fallback">🧑‍💼</div>
-                    </div>
-                    <div class="menu-stats">
-                        <div class="menu-stat-row">
-                            <span>名前:</span>
-                            <span id="menuCharacterName">カイト</span>
-                        </div>
-                        <div class="menu-stat-row">
-                            <span>役割:</span>
-                            <span id="menuCharacterRole">主人公</span>
-                        </div>
-                        <div class="menu-stat-row">
-                            <span>レベル:</span>
-                            <span id="menuLevel">1</span>
-                        </div>
-                        <div class="menu-stat-row">
-                            <span>HP:</span>
-                            <span><span id="menuHP">100</span>/<span id="menuMaxHP">100</span></span>
-                        </div>
-                        <div class="menu-stat-row">
-                            <span>MP:</span>
-                            <span><span id="menuMP">50</span>/<span id="menuMaxMP">50</span></span>
-                        </div>
-                        <div class="menu-stat-row">
-                            <span>攻撃力:</span>
-                            <span id="menuAttack">15</span>
-                        </div>
-                        <div class="menu-stat-row">
-                            <span>防御力:</span>
-                            <span id="menuDefense">5</span>
-                        </div>
-                        <div class="menu-stat-row" id="menuExpRow">
-                            <span>経験値:</span>
-                            <span><span id="menuExp">0</span>/<span id="menuExpNeeded">100</span></span>
-                        </div>
-                        <div class="menu-stat-row" id="menuGoldRow">
-                            <span>ゴールド:</span>
-                            <span id="menuGold">0</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="menu-options" id="menuOptions">
-                    <button class="menu-option" type="button" data-menu="quest">📜 クエスト</button>
-                    <button class="menu-option" type="button" data-menu="items">🎒 アイテム</button>
-                    <button class="menu-option" type="button" data-menu="equipment">🛡️ 装備</button>
-                    <button class="menu-option" type="button" data-menu="kamui">✨ 神威</button>
-                    <button class="menu-option" type="button" data-menu="save">💾 セーブ</button>
-                    <button class="menu-option" type="button" data-menu="close">✖ 閉じる</button>
-                </div>
-                <div class="menu-close">←→/Q/E キャラ切替 / ↑↓ 選択 / Z 決定 / X 閉じる</div>
-            </div>
+            <div id="menuPanelHost"></div>
         </div>
         
         <!-- Item Menu -->
@@ -5724,28 +5654,87 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             selectPartyMember(selectedPartyMemberIndex + delta);
         }
 
+        // ★UI統一P1: メインメニューを UIPanel frame(FF風2ペイン)へ。左=7コマンド/右=パーティ概要。
         function openMenu() {
-            const menuOverlay = document.getElementById('menuOverlay');
-            if (menuOverlay) {
-                if (typeof clearMessage === 'function') {
-                    clearMessage();
-                }
-                menuOverlay.classList.add('active');
-                if (window.playSE) window.playSE('menu_open');
-                menuSelectedIndex = 0;
-                updatePartyTabs();
-                updateMenuStats();
-                updateMenuSelection();
-                console.log('Menu opened');
+            if (typeof clearMessage === 'function') clearMessage();
+            if (window.playSE) window.playSE('menu_open');
+            const cmds = [
+                { icon: '🎒', label: 'どうぐ', value: 'items' },
+                { icon: '🛡️', label: 'そうび', value: 'equipment' },
+                { icon: '✨', label: 'カムイ', value: 'kamui' },
+                { icon: '📊', label: 'ステータス', value: 'status' },
+                { icon: '📜', label: 'クエスト', value: 'quest' },
+                { icon: '💾', label: 'セーブ', value: 'save' },
+                { icon: '✖', label: 'とじる', value: 'close' }
+            ];
+            const loc = (typeof currentLocationName === 'function') ? currentLocationName() : '';
+            UIPanel.open({
+                host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
+                title: 'メニュー',
+                headerHtml: loc ? `<span style="color:var(--text-sub);font-size:12px;">📍 ${UIPanel.esc(loc)}</span>` : '',
+                items: cmds, selectedIndex: 0,
+                footHtml: `<span class="lbl">所持金</span><span class="val">${(player.gold || 0).toLocaleString()} G</span>`,
+                detailFor: () => menuRosterHtml(),
+                onSelect: (val) => menuExec(val),
+                onCancel: () => closeMenu(),
+                hint: '↑↓ 選択 / Z 決定 / X とじる'
+            });
+        }
+
+        function menuFace(m) { const id = m.characterId || m.id || 'kaito'; return `assets/characters/${id}_portrait.webp`; }
+        function roleLabel(m) { return ({ healer: 'ヒーラー', tank: 'タンク', mage: 'メイジ', 'all-rounder': '万能' })[m.role || ''] || ''; }
+        function menuBar(k, c, mx, cls) {
+            const r = mx ? Math.max(0, Math.min(100, Math.round(c / mx * 100))) : 0;
+            return `<div class="ui-panel__dbar"><span class="k">${k}</span><div class="ui-panel__dtrack"><div class="ui-panel__dfill ${cls}" style="width:${r}%"></div></div><span class="v">${Math.max(0, Math.floor(c))}/${Math.floor(mx)}</span></div>`;
+        }
+        function menuRosterHtml() {
+            const ms = getMenuMembers();
+            return `<div class="ui-panel__dtitle">パーティ</div>` + ms.map(m => `
+              <div style="display:grid;grid-template-columns:50px 1fr;gap:10px;align-items:center;background:rgba(255,255,255,.025);border:1px solid rgba(0,229,255,.18);border-radius:9px;padding:7px 11px 7px 7px;margin-bottom:8px;">
+                <img src="${menuFace(m)}" style="width:50px;height:50px;border-radius:8px;object-fit:cover;object-position:top center;border:1px solid var(--accent-soft);" onerror="this.style.opacity=.2">
+                <div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;"><b style="font-size:14px;">${UIPanel.esc(m.name || 'カイト')}</b><span class="ui-panel__dmuted">Lv ${m.level || 1}</span></div>
+                ${menuBar('HP', m.hp || 0, m.maxHp || 1, 'hp')}${menuBar('MP', m.mp || 0, m.maxMp || 1, 'mp')}</div></div>`).join('');
+        }
+        function menuStatusHtml(m) {
+            if (!m) return '';
+            const st = (l, v) => `<div><span>${l}</span><b>${v}</b></div>`;
+            const md = (m.magicDefense != null) ? m.magicDefense : Math.floor((m.defense || 0) * 0.5);
+            return `<div class="ui-panel__dlead"><img src="${menuFace(m)}" onerror="this.style.opacity=.2"><div>
+                <div class="ui-panel__dname">${UIPanel.esc(m.name || 'カイト')} <span class="ui-panel__dmuted">/ ${roleLabel(m)}</span></div>
+                <div class="ui-panel__dmuted">Lv ${m.level || 1}</div>
+                ${menuBar('HP', m.hp || 0, m.maxHp || 1, 'hp')}${menuBar('MP', m.mp || 0, m.maxMp || 1, 'mp')}
+              </div></div>
+              <div class="ui-panel__stat">${st('こうげき(力)', m.attack || 0)}${st('まほう(魔力)', m.magic || 0)}${st('ぶつりぼうぎょ', m.defense || 0)}${st('まほうぼうぎょ', md)}${st('すばやさ', m.speed || 0)}${st('EXP', m.exp || 0)}</div>`;
+        }
+        function menuExec(val) {
+            switch (val) {
+                case 'items': UIPanel.close(); openItemMenu(); break;
+                case 'equipment': UIPanel.close(); openEquipmentMenu(); break;
+                case 'kamui': UIPanel.close(); openKamuiMenu(); break;
+                case 'status': openStatusScreen(); break;
+                case 'quest': UIPanel.close(); openQuestLog(); break;
+                case 'save': UIPanel.close(); openSaveScreen(true); break;
+                case 'close': closeMenu(); break;
             }
+        }
+        // ステータス画面（旧メニュー左ペインを独立画面化）。左=メンバー/右=ステータスシート。
+        function openStatusScreen() {
+            const ms = getMenuMembers();
+            const items = ms.map((m, i) => ({ label: m.name || 'カイト', sub: `Lv ${m.level || 1}  ${roleLabel(m)}`, value: i }));
+            UIPanel.open({
+                host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
+                title: 'ステータス', items, selectedIndex: 0,
+                detailFor: (it) => menuStatusHtml(ms[it ? it.value : 0]),
+                onSelect: () => {},
+                onCancel: () => openMenu(),
+                hint: '↑↓ 選択 / X もどる'
+            });
         }
 
         function closeMenu() {
+            if (window.UIPanel && UIPanel.isOpen()) UIPanel.close();
             const menuOverlay = document.getElementById('menuOverlay');
-            if (menuOverlay) {
-                menuOverlay.classList.remove('active');
-                console.log('Menu closed');
-            }
+            if (menuOverlay) menuOverlay.classList.remove('active');
         }
         
         function updateMenuSelection() {
@@ -5893,6 +5882,9 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
 
         // メニューのステータス表示を更新
         function updateMenuStats() {
+            // ★UI統一P1: 旧メニューHTML(#menuCharacterName等)は撤去済み。要素が無ければ何もしない(他画面の
+            //   selectPartyMember 経由呼び出しでのnullクラッシュ防止)。ステータスは UIPanel frame 側で描画。
+            if (!document.getElementById('menuCharacterName')) return;
             // 表示するメンバーを取得
             const allMembers = getMenuMembers();
             const member = allMembers[selectedPartyMemberIndex] || player;
