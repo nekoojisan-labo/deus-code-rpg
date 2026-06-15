@@ -3649,7 +3649,7 @@
     <script src="se-system.js?v=1"></script>
     <script src="ui-panel.js?v=3"></script>
     <script src="save-system.js?v=2"></script>
-    <script src="battle-system.js?v=72"></script>
+    <script src="battle-system.js?v=73"></script>
     <script src="map-walkability-data.js?v=12"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=27"></script>
@@ -7242,36 +7242,38 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
 
         let gameLoopCounter = 0;
         function gameLoop() {
-            if (!battleSystem.inBattle) {
-                // デバッグ: 最初の数フレームだけログ出力
-                if (gameLoopCounter < 3) {
-                    console.log('[DEBUG] gameLoop frame', gameLoopCounter, 'mapSystem:', mapSystem ? 'OK' : 'NULL');
-                    gameLoopCounter++;
-                }
+            // ★堅牢化: 描画/更新で例外が出ても requestAnimationFrame を必ず再スケジュールする。
+            //   従来は try/catch が無く、1度でも throw すると clearRect 後に loop が死に、
+            //   フィールドが真っ暗のまま固まる(入力listenerは別なのでメニューだけ開ける)失敗モードだった。
+            try {
+                if (!battleSystem.inBattle) {
+                    // クリア
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                // クリア
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    // プレイヤー更新（ワールド座標ベース）
+                    updatePlayer();
 
-                // プレイヤー更新（ワールド座標ベース）
-                updatePlayer();
+                    if (mapSystem && mapSystem.updateCamera) {
+                        mapSystem.updateCamera(player.x, player.y, canvas);
+                    }
 
-                if (mapSystem && mapSystem.updateCamera) {
-                    mapSystem.updateCamera(player.x, player.y, canvas);
-                }
-
-                // 2Dピクセル座標ベースのマップシステムで描画
-                if (mapSystem && mapSystem.drawCurrentMap) {
-                    mapSystem.updateNPCs();
-                    mapSystem.drawCurrentMap(ctx, canvas);
-                    if (mapSystem.isCurrentObjectLayerMap && mapSystem.isCurrentObjectLayerMap()) {
-                        mapSystem.drawWorldEntities(ctx, player, storyFlags, drawPlayer);
+                    // 2Dピクセル座標ベースのマップシステムで描画
+                    if (mapSystem && mapSystem.drawCurrentMap) {
+                        mapSystem.updateNPCs();
+                        mapSystem.drawCurrentMap(ctx, canvas);
+                        if (mapSystem.isCurrentObjectLayerMap && mapSystem.isCurrentObjectLayerMap()) {
+                            mapSystem.drawWorldEntities(ctx, player, storyFlags, drawPlayer);
+                        } else {
+                            mapSystem.drawNPCs(ctx, storyFlags);
+                            drawPlayer();
+                        }
                     } else {
-                        mapSystem.drawNPCs(ctx, storyFlags);
                         drawPlayer();
                     }
-                } else {
-                    drawPlayer();
                 }
+            } catch (err) {
+                // 描画例外でループを殺さない（黒画面固着の恒久対策）。原因はコンソールに出す。
+                console.error('[gameLoop] draw error (loop continues):', err);
             }
 
             requestAnimationFrame(gameLoop);

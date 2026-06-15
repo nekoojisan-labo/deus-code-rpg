@@ -673,8 +673,11 @@ class BattleSystem {
         }, 1000);
 
         // 戦闘BGM開始（新しいBGMシステムを使用）
+        // ★修正: 旧コードは未定義の `enemy` を参照(startBattle引数を enemyOrGroup に改名した際の取りこぼし)。
+        //   ReferenceError が startBattle 末尾で送出され、BGM未開始＋gameLoopへ例外伝播でフィールド描画停止
+        //   (戦闘後に画面真っ暗)の二重バグになっていた。isBossBattle フラグで判定する。
         if (window.bgmSystem) {
-            window.bgmSystem.startBattleBGM(enemy.boss || false);
+            window.bgmSystem.startBattleBGM(this.isBossBattle || false);
         }
     }
 
