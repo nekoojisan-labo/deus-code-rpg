@@ -5467,7 +5467,12 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
 
         // ===== セーブ/ロード（全状態シリアライズ） =====
         const SAVE_KEY = 'deusCodeSave';
-        const SAVE_VERSION = 2;
+        const SAVE_VERSION = 2;          // セーブ「形式」のバージョン（envelope互換）
+        // ★セーブ「仕様(バランス)」のバージョン。ゲームの計算式/曲線/ステータス基準を変えるたびに +1。
+        //   ロード時、保存仕様が古ければ migrateSaveSpec が「次回から影響・既存パラメータは保持」方針で
+        //   非破壊的に整合だけ取る（レベル/HP/攻撃等は一切初期化しない）。
+        //   gen 1 = 旧二次EXP曲線 / gen 2 = 線形EXP曲線(現行)。
+        const SAVE_SPEC_VERSION = 2;
 
         // player の恒久ステータスのみ抽出（x/y/facing/isMoving/animTime/stepCount は除外）
         function serializePlayer() {
@@ -5500,6 +5505,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         function serializeGameState() {
             return {
                 version: SAVE_VERSION,
+                specVersion: SAVE_SPEC_VERSION,   // 保存時点のゲーム仕様世代（ロード時の非破壊マイグレーションに使用）
                 timestamp: new Date().toISOString(),
                 currentMap: mapSystem.currentMap,
                 locationName: currentLocationName(),
@@ -5549,6 +5555,29 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         // 互換: 引数なし saveGame は SV2 でスロット選択UIに差し替える。SV1 では既定スロット1へ保存。
         function saveGame() { return writeSaveSlot(1); }
 
+        // セーブ仕様マイグレーション（★非破壊）。古い仕様世代のセーブを現行へ「整合だけ」合わせる。
+        // 大原則: レベル/HP/攻撃などの既存パラメータは絶対に初期化しない。
+        //         仕様変更(曲線/計算式)で破綻する値だけを、保持した現在値に矛盾しない範囲へ正規化する。
+        function migrateSaveSpec(data) {
+            const from = (data && typeof data.specVersion === 'number') ? data.specVersion : 1;
+            if (from >= SAVE_SPEC_VERSION) return;   // 現行以上 → 何もしない
+
+            // gen1→gen2: EXP曲線が二次→線形へ変更。旧expは新曲線の必要量を大きく超えるため、
+            // そのままだと次の戦闘で一気に多段レベルアップ＝セーブが狂う。
+            // レベル/ステータスは保持し、exp のみ「次レベル未満」へクランプ（初期化ではなく正規化）。
+            if (from < 2) {
+                const clampExp = (ch) => {
+                    if (!ch || typeof ch.level !== 'number') return;
+                    const gid = ch.characterId || ch.id;
+                    const curve = (window.CHARACTER_GROWTH && window.CHARACTER_GROWTH[gid] && window.CHARACTER_GROWTH[gid].expCurve) || 'normal';
+                    const need = window.calculateExpNeeded ? window.calculateExpNeeded(ch.level, curve) : Infinity;
+                    if ((ch.exp || 0) >= need) ch.exp = Math.max(0, need - 1);
+                };
+                clampExp(player);
+                if (partySystem && partySystem.getMembers) partySystem.getMembers().forEach(clampExp);
+            }
+        }
+
         // 全状態を現行 systems に適用（systems は startGame で new 済み前提）
         function applyGameState(data) {
             if (data.player) Object.assign(player, data.player);
@@ -5559,6 +5588,9 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             if (itemSystem) itemSystem.fromJSON(data.items);
             if (magicSystem) magicSystem.fromJSON(data.magic);
             if (partySystem) partySystem.fromJSON(data.party);
+            // ★セーブ仕様マイグレーション（非破壊・exp正規化のみ。レベル/ステータスは保持）。
+            //   party 復元後・スキル補完前に実行（クランプ後の exp で以降の処理が動くように）。
+            migrateSaveSpec(data);
             // ★ロード後にスキルを補完（古いセーブでヤミの初期スキル等が欠けていても復元・冪等）。
             //   現在Lv以下のskillLearningも再習得するのでレベルアップ習得スキルも復活する。
             if (typeof ensureMemberSkills === 'function') {
