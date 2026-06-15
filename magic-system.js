@@ -55,6 +55,31 @@ class MagicSystem {
                 requiredLevel: 10,
                 allowedRoles: ['all-rounder', 'mage', 'tank']
             },
+            // 闇魔法（メイジ＝ヤミの代名詞スキル。加入時から使える攻撃手段）
+            dark_pulse: {
+                id: 'dark_pulse',
+                name: 'ダークパルス',
+                emoji: '🌑',
+                type: 'offensive',
+                mpCost: 7,
+                power: 22,
+                description: '闇の波動で敵を撃つ',
+                price: 450,
+                requiredLevel: 1,
+                allowedRoles: ['mage', 'all-rounder']
+            },
+            curse: {
+                id: 'curse',
+                name: 'カース',
+                emoji: '💀',
+                type: 'offensive',
+                mpCost: 12,
+                power: 30,
+                description: '呪詛の刃で大きく削る',
+                price: 700,
+                requiredLevel: 1,
+                allowedRoles: ['mage']
+            },
 
             // 回復魔法
             heal: {

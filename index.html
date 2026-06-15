@@ -3645,7 +3645,7 @@
     <!-- 外部スクリプト読み込み -->
     <script src="item-system.js?v=48"></script>
     <script src="equipment-system.js?v=50"></script>
-    <script src="magic-system.js?v=48"></script>
+    <script src="magic-system.js?v=49"></script>
     <script src="se-system.js?v=1"></script>
     <script src="ui-panel.js?v=3"></script>
     <script src="save-system.js?v=2"></script>
@@ -5233,10 +5233,21 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             if (partySystem && data) {
                 partySystem.addMember({ ...data });
                 const member = partySystem.getMember(memberId);
-                if (window.magicSystem && member && data.skills) {
-                    data.skills.forEach(sk => { try { window.magicSystem.learnMagic(sk, member); } catch (e) {} });
+                if (member) applyMemberLoadout(memberId, member);  // 固定Lv＋初期装備（丸腰防止）。先にLvを確定
+                if (window.magicSystem && member) {
+                    // 初期スキル（CHARACTER_DATA.skills）
+                    (data.skills || []).forEach(sk => { try { window.magicSystem.learnMagic(sk, member); } catch (e) {} });
+                    // ★加入レベル以下の skillLearning を遡って習得（例: Lv6加入のヤミも Lv3/5 スキルを持つ＝
+                    //   メイジが加入時から使えるカムイ無しの丸腰にならない）
+                    const growth = window.CHARACTER_GROWTH && window.CHARACTER_GROWTH[memberId];
+                    if (growth && growth.skillLearning) {
+                        Object.keys(growth.skillLearning).forEach(lv => {
+                            if (parseInt(lv, 10) <= (member.level || 1)) {
+                                [].concat(growth.skillLearning[lv]).forEach(sk => { try { window.magicSystem.learnMagic(sk, member); } catch (e) {} });
+                            }
+                        });
+                    }
                 }
-                if (member) applyMemberLoadout(memberId, member);  // 固定Lv＋初期装備（丸腰防止）
             }
             storyFlags[joinedFlag] = true;
             if (memberId === 'yami') storyFlags.metYami = true;
