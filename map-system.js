@@ -49,7 +49,16 @@ class MapSystem {
             '宿屋の主人': 'assets/characters/sprites/innkeeper_walk.png',
             '銀行員': 'assets/characters/sprites/banker_walk.png',
             'ギルドマスター': 'assets/characters/sprites/guildmaster_walk.png',
-            '闇商人': 'assets/characters/sprites/dark_merchant_walk.png'
+            '闇商人': 'assets/characters/sprites/dark_merchant_walk.png',
+            // ★店の呼び込み・案内人: 絵文字でなく実スプライトで表示（汎用NPCを流用・店内の店主とは別絵・同一マップ内は重複回避）
+            '武器店の呼び込み': 'assets/characters/sprites/npc_worker_walk.png',
+            '防具店の呼び込み': 'assets/characters/sprites/npc_citizen_male_walk.png',
+            '道具店の呼び込み': 'assets/characters/sprites/npc_citizen_female_walk.png',
+            '魔法店の呼び込み': 'assets/characters/sprites/npc_priest_walk.png',
+            '宿屋の案内人': 'assets/characters/sprites/npc_citizen_male_walk.png',
+            '銀行の案内人': 'assets/characters/sprites/npc_worker_walk.png',
+            'ギルド案内人': 'assets/characters/sprites/npc_priest_walk.png',
+            '闇市の案内人': 'assets/characters/sprites/npc_worker_walk.png'
         };
         this.walkSprite = { frameWidth:72, frameHeight:92, frames:4, fps:7, frameSequence:[0,1,2,3], idleFrame:0, rows:{down:0,left:1,right:2,up:3} };
         this.tileSize = 32;
