@@ -60,9 +60,9 @@ const introOk = sf3.rikuTrialSeen === true && calls.timeouts >= 1;
 console.log(`リク前口上 onComplete → rikuTrialSeen＋戦闘予約: ${introOk ? '✅' : '❌'}`);
 pass = pass && introOk;
 
-// ---- アカリ専用加入（オープニング自動加入の廃止＋フラグ移譲の検証）----
-console.log('\n--- アカリ専用加入 ---');
-for (const id of ['recruit_akari', 'recruit_akari_join']) {
+// ---- アカリ: 第1章は再会のみ(単騎続行)→第2章Ω戦で乱入加入 ----
+console.log('\n--- アカリ 再会保留→Ω加入 ---');
+for (const id of ['recruit_akari_reunion', 'recruit_akari']) {
   const ok = sys.events.has(id);
   console.log(`イベント登録 ${id}: ${ok ? '✅' : '❌'}`);
   pass = pass && ok;
@@ -70,22 +70,23 @@ for (const id of ['recruit_akari', 'recruit_akari_join']) {
 // chapter1_start がもう加入もchapter1_startedセットもしないこと（オープニング自動加入の廃止）
 const c1 = sys.events.get('chapter1_start');
 const sfC1 = {};
-const before = calls.join.slice();
+const before0 = calls.join.slice();
 c1.onComplete(sfC1, {}, { addMember: () => {}, getMember: () => null });
-const c1NoJoin = calls.join.length === before.length && !sfC1.chapter1_started;
-console.log(`chapter1_start: アカリ非加入＆chapter1_started立てない（自動加入廃止）: ${c1NoJoin ? '✅' : '❌ まだ加入/フラグを立てている'}`);
+const c1NoJoin = calls.join.length === before0.length && !sfC1.chapter1_started;
+console.log(`chapter1_start: アカリ非加入＆chapter1_started立てない（自動加入廃止）: ${c1NoJoin ? '✅' : '❌'}`);
 pass = pass && c1NoJoin;
-// recruit_akari onComplete → akariTrialSeen＋試練予約
+// recruit_akari_reunion: 再会のみ(akariReunited+chapter1_started)・加入しない＝単騎続行
+const beforeR = calls.join.slice();
+const sfRe = {};
+sys.events.get('recruit_akari_reunion').onComplete(sfRe);
+const reunionOk = sfRe.akariReunited === true && sfRe.chapter1_started === true && calls.join.length === beforeR.length;
+console.log(`recruit_akari_reunion → akariReunited＋chapter1_started・加入しない(単騎続行): ${reunionOk ? '✅' : '❌'}`);
+pass = pass && reunionOk;
+// recruit_akari(Ω乱入): joinMember('akari')で正式加入
 const sfA = {};
 sys.events.get('recruit_akari').onComplete(sfA);
-const akariIntroOk = sfA.akariTrialSeen === true && calls.timeouts >= 2;
-console.log(`recruit_akari onComplete → akariTrialSeen＋試練予約: ${akariIntroOk ? '✅' : '❌'}`);
-pass = pass && akariIntroOk;
-// recruit_akari_join onComplete → joinMember('akari')＋★chapter1_started＋metAkari（soft-lock防止の核心）
-const sfJ = {};
-sys.events.get('recruit_akari_join').onComplete(sfJ);
-const akariJoinOk = calls.join.includes('akari') && sfJ.chapter1_started === true && sfJ.metAkari === true;
-console.log(`recruit_akari_join onComplete → joinMember('akari')＋chapter1_started＋metAkari: ${akariJoinOk ? '✅ フラグ移譲OK(soft-lock回避)' : '❌ chapter1_started立て忘れ=進行不能リスク'}`);
+const akariJoinOk = calls.join.includes('akari');
+console.log(`recruit_akari(Ω乱入) → joinMember('akari')で加入: ${akariJoinOk ? '✅' : '❌'}`);
 pass = pass && akariJoinOk;
 
-console.log(`\n${pass ? '✅ 全PASS: アカリ=専用イベント(前口上→試練→heal一幕→加入)／リク／ヤミ が配線済み。chapter1_started はrecruit_akari_joinへ移譲済み(進行不能回避)' : '❌ 不合格あり'}`);
+console.log(`\n${pass ? '✅ 全PASS: 第1章=アカリ再会のみで単騎続行／第2章Ω戦でアカリ乱入加入／リク・ヤミ配線OK' : '❌ 不合格あり'}`);

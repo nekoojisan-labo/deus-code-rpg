@@ -3204,7 +3204,7 @@ class MapSystem {
             case 'リク': return !!storyFlags.rikuJoined;
             case 'ヤミ': return !!storyFlags.yamiJoined;
             // 撃破したボスは消す
-            case '暴走ドローン': return !!(storyFlags.bossDefeated || storyFlags.chapter1_complete) || !storyFlags.rikuJoined;  // ★リク加入までボスを非表示=壁無しでhp150ボスに到達させない
+            case '暴走ドローン': return !!(storyFlags.bossDefeated || storyFlags.chapter1_complete) || !storyFlags.akariReunited;  // ★再会(単騎で地下鉄入り)後にΩ出現→そこでアカリ乱入加入
             // アーク・プライムは都庁入場(enteredGov=ヤミ加入後に解放)まで出現しない＋撃破後も消す
             case 'アーク・プライム': return !storyFlags.enteredGov || !!storyFlags.arcDefeated;
             default: return false;

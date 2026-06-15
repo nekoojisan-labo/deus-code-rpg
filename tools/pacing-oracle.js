@@ -32,9 +32,9 @@ chk('駅のパトロールドローンが非hostile（演出のみ）', stationD
 
 // 4) 暴走ドローン(ボス)はリク加入まで非表示
 const boss = (msys.maps['subway_concourse_a'].npcs || []).find(n => n.name === '暴走ドローン');
-chk('ボス: リク未加入では非表示（壁無し150ボス封じ）', msys.isNPCHidden(boss, {}) === true);
-chk('ボス: リク加入後は表示', msys.isNPCHidden(boss, { rikuJoined: true }) === false);
-chk('ボス: 撃破後は非表示', msys.isNPCHidden(boss, { rikuJoined: true, bossDefeated: true }) === true);
+chk('ボス: アカリ再会前は非表示（単騎で街を体感する間は出さない）', msys.isNPCHidden(boss, {}) === true);
+chk('ボス: アカリ再会後(単騎で地下鉄入り)は表示→Ωでアカリ乱入加入', msys.isNPCHidden(boss, { akariReunited: true }) === false);
+chk('ボス: 撃破後は非表示', msys.isNPCHidden(boss, { akariReunited: true, bossDefeated: true }) === true);
 
 // 5) 闇市ゲートが rikuJoined（metPriest単独では開かない）
 const sss = msys.maps['shopping_street_south'];

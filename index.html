@@ -3538,13 +3538,13 @@
     <script src="map-walkability-data.js?v=12"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=25"></script>
-    <script src="map-system.js?v=76"></script>
+    <script src="map-system.js?v=77"></script>
     <script src="map-system-grid.js"></script>
     <script src="player-grid-movement.js"></script>
     <script src="bgm-system.js?v=36"></script>
     <script src="party-system.js?v=47"></script>
-    <script src="quest-system.js?v=5"></script>
-    <script src="story-events.js?v=53"></script>
+    <script src="quest-system.js?v=6"></script>
+    <script src="story-events.js?v=54"></script>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -3709,7 +3709,8 @@
             visitedShrine: false,
             metPriest: false,
             exploredBiodome: false,
-            stationVisited: false,   // 新宿駅 初入場（アカリ加入劇の解禁ゲート）
+            stationVisited: false,   // 新宿駅 初入場（アカリ再会の解禁ゲート）
+            akariReunited: false,    // 駅でアカリと再会（同行はまだ＝第1章単騎続行。加入はΩ戦）
             yamiPactMade: false,     // 闇市でヤミと仮契約（都庁入場時に本加入）
             chapter: 1  // 現在のチャプター
         };
@@ -5127,8 +5128,8 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         // リク＝戦闘の試練。話しかける→（神託後）前口上→試練の戦闘→勝利で加入。
         function engageRiku(npc) {
             if (storyFlags.rikuJoined) { showMessage('リク：「共に行こう。アークを止めるまでな。」'); return; }
-            // ★神託より前＝アカリ加入(chapter1_started)後に解禁。第1章ボス手前で前衛を迎える
-            if (!storyFlags.chapter1_started) { showMessage('リク：「…誰だ。今は構っている場合ではない。下がっていろ。」'); return; }
+            // ★アカリ加入(Ω戦)後に解禁。Ω撃破後の地下でリクを迎える(party 2→3)
+            if (!storyFlags.akariJoined) { showMessage('リク：「…誰だ。今は構っている場合ではない。下がっていろ。」'); return; }
             if (storyFlags.rikuTrialSeen) { startRikuTrial(); return; }  // 敗北後の再挑戦は前口上を省略
             if (storyEventSystem) storyEventSystem.triggerEvent('recruit_riku', { storyFlags, player, partySystem, magicSystem });
             else startRikuTrial();
@@ -5153,15 +5154,12 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         window.startRikuTrial = startRikuTrial;
         window.onRikuTrialWin = onRikuTrialWin;
 
-        // アカリ＝最初の仲間。新宿駅で駆け寄り再会→専用イベント→試練の戦闘→勝利で加入。
+        // アカリ＝第1章は駅で「再会のみ」(同行保留＝単騎続行)。正式加入は第2章のΩ戦(checkInteractions側)。
         function engageAkari(npc) {
-            if (storyFlags.akariJoined) { showMessage('アカリ：「そばにいるよ。さあ、地下鉄の異変を確かめましょう、カイト。」'); return; }
-            // 駅に着く前は遠目の再会だけ（加入劇を始めない）。old-save互換: 既加入/chapter1_started なら真扱い
-            const reachedStation = storyFlags.stationVisited || storyFlags.akariJoined || storyFlags.chapter1_started;
-            if (!reachedStation) { showMessage('アカリ：「カイト…！無事だったの…？ ねえ、駅の方を確かめないと。」'); return; }
-            if (storyFlags.akariTrialSeen) { startAkariTrial(); return; }  // 敗北後の再挑戦は前口上を省略
-            if (storyEventSystem) storyEventSystem.triggerEvent('recruit_akari', { storyFlags, player, partySystem, magicSystem });
-            else { joinMember('akari'); showMessage('アカリが仲間に加わった！'); }
+            if (storyFlags.akariJoined) { showMessage('アカリ：「そばにいるよ。さあ、地下鉄の奥へ。」'); return; }
+            if (storyFlags.akariReunited) { showMessage('アカリ：「無茶だけはしないで。…私も、すぐ追いつくから。」'); return; }  // 再会済・単騎続行
+            if (storyEventSystem) storyEventSystem.triggerEvent('recruit_akari_reunion', { storyFlags, player, partySystem, magicSystem });
+            else { storyFlags.akariReunited = true; storyFlags.chapter1_started = true; showMessage('アカリと再会した。カイトは独り、地下鉄へ向かう。'); }
         }
         function startAkariTrial() {
             if (!battleSystem || battleSystem.inBattle) return;
@@ -5261,6 +5259,10 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 if (npc.name === '暴走ドローン') {
                     if (storyFlags.bossDefeated || storyFlags.chapter1_complete) {
                         showMessage('砕け散ったドローンの残骸が転がっている。');
+                    } else if (storyFlags.akariReunited && !storyFlags.akariJoined) {
+                        // ★第2章: 単騎で挑むカイトの所へアカリが乱入→加入。以後もう一度挑むと2人でΩ戦
+                        if (storyEventSystem) storyEventSystem.triggerEvent('recruit_akari', { storyFlags, player, partySystem, magicSystem });
+                        else { joinMember('akari'); showMessage('アカリが加わった。もう一度、ドローンに挑もう。'); }
                     } else {
                         startBossNpcBattle(npc, 'corrupted_drone');
                     }

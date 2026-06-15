@@ -9,35 +9,35 @@ const QUEST_STEPS = [
   // --- 第1章 覚醒 ---
   {
     id: 'meet_akari', chapter: 1, chapterTitle: '第1章 覚醒',
-    title: 'アカリと合流する',
+    title: 'アカリと再会する',
     where: '新宿 中央広場 → 西の新宿駅',
-    detail: '街を抜けて西の新宿駅へ。地下鉄の異変を確かめ、アカリと合流しよう。',
+    detail: '凍てついた街を抜け、西の新宿駅へ。幼馴染アカリと再会し、地下鉄の異変を聞こう。',
     target: 'shinjuku_station_gate',
     done: f => !!f.chapter1_started
   },
   {
     id: 'go_subway', chapter: 1,
-    title: '地下鉄で暴走の原因を調べる',
+    title: '独り、地下鉄の奥へ',
     where: '広場の西 → 新宿駅 → 改札の先（南）の地下コンコース',
-    detail: '機械兵が暴走しているという地下鉄へ向かおう。',
+    detail: 'カイトは単身、封鎖された地下へ。心を吸い上げる暴走監視ドローン・Ωが待つ。',
     target: 'subway_concourse_a',
     done: f => !!f.exploredSubway
   },
   {
-    id: 'recruit_riku', chapter: 1,
-    title: '地下に潜むリクを仲間にする',
-    where: '地下コンコースA',
-    detail: '暴走ドローンの手前に、元警備隊員リクがいる。話しかけ、力を示して仲間に加えよう。',
-    target: 'subway_concourse_a',
-    done: f => !!f.rikuJoined
-  },
-  {
     id: 'defeat_drone', chapter: 1,
-    title: '暴走したドローンを倒す',
+    title: '暴走ドローン・Ωを倒す',
     where: '地下コンコースA',
-    detail: '暴走ドローンに近づいて戦闘で撃破しよう。',
+    detail: '最奥のΩと対峙せよ。窮地にアカリが駆けつけ共闘で加わる。二人でΩを撃破しよう。',
     target: 'subway_concourse_a',
     done: f => !!f.chapter1_complete || !!f.bossDefeated
+  },
+  {
+    id: 'recruit_riku', chapter: 1,
+    title: '地下に残る元警備隊リクを仲間にする',
+    where: '地下コンコースA',
+    detail: 'Ωを倒した先に、元警備隊員リクがいる。話しかけ、力を示して仲間に加えよう。',
+    target: 'subway_concourse_a',
+    done: f => !!f.rikuJoined
   },
   {
     id: 'go_shrine', chapter: 1,

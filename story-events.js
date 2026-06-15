@@ -201,23 +201,43 @@ class StoryEventSystem {
             }
         });
 
-        // アカリ加入①: 広場で話しかけ→再会＋噂＋紋様→暴走ドローン乱入→onComplete で試練の戦闘へ
+        // アカリ再会(第1章・同行保留): 駅で再会するが『また失うのが怖い』と同行しない＝単騎続行のフック
+        this.registerEvent('recruit_akari_reunion', {
+            trigger: 'manual',
+            oneTime: true,
+            scenes: [
+                { character: 'アカリ', text: 'カイト…！無事だったのね。よかった…本当に。' },
+                { character: 'アカリ', text: '聞いて。地下鉄の奥で、アークの機械兵が暴走してるの。人の"心"が、地下へ吸い取られてる。' },
+                { character: 'カイト', text: '心が…？俺のこの手の紋様も、関係しているのか。' },
+                { character: 'カイト', text: 'アカリ、お前はここで待っていてくれ。この先は、何が起きるか分からない。' },
+                { character: 'アカリ', text: '……うん。ごめんね、こんな時に。私…また、大切な人を失うのが、怖いの。' },
+                { character: 'アカリ', text: 'だから——無茶だけは、しないで。きっと、追いつくから。' },
+                { character: 'システム', text: 'カイトは独り、封鎖された地下鉄へ向かう。' }
+            ],
+            onComplete: (storyFlags) => {
+                storyFlags.akariReunited = true;
+                storyFlags.metAkari = true;
+                storyFlags.chapter1_started = true;  // ★第1章進行ゲート。再会時に立てる(加入はまだ＝単騎続行)
+            }
+        });
+
+        // アカリ加入(第2章・Ω戦): 単騎のカイトが押し負ける所へアカリが乱入→ヒールで救い共闘加入
         this.registerEvent('recruit_akari', {
             trigger: 'manual',
             oneTime: true,
             scenes: [
-                { character: 'アカリ', text: 'カイト！無事だったのね…よかった。' },
-                { character: 'アカリ', text: 'ねえ、聞いて。地下鉄の奥で、アークの機械兵が暴走してるって噂があるの。' },
-                { character: 'カイト', text: '機械兵が暴走？でも、アークはすべてを完璧に管理しているはずじゃ…' },
-                { character: 'アカリ', text: '…カイト、あなたの手のその紋様。もしかして、神威の力…？' },
-                { character: 'カイト', text: '（俺にも分からない。だが——この先は危険だ。アカリを巻き込むわけには…）' },
-                { character: 'アカリ', text: 'きゃっ…！？な、何これ、急にこっちに——！' },
-                { character: 'カイト', text: '暴走した巡回ドローン…！下がってろ、アカリ！俺が止める！' },
-                { character: 'システム', text: '——巡回ドローンが暴走した！カイトが単身、アカリを庇って前に出る！' }
+                { character: 'システム', text: '暴走監視ドローン・Ωが、奪った心を吸い上げている。カイトは独り、その巨体の前に立つ。' },
+                { character: 'カイト', text: 'くっ…これが、心を奪う機械兵…！押し負ける…！' },
+                { character: 'アカリ', text: 'カイト——！！' },
+                { character: 'アカリ', text: 'やっぱり、置いていけない。あなたが無茶する時、隣にいるって決めたでしょ！' },
+                { character: 'システム', text: 'アカリの回復魔法がカイトを包む。傷が、塞がっていく。' },
+                { character: 'カイト', text: 'アカリ…。ああ。…二人なら、やれる。' },
+                { character: 'アカリ', text: 'うん。今度は、私も一緒に戦う。…行こう、カイト。' },
+                { character: 'システム', text: 'アカリが仲間に加わった！\n回復魔法で、あなたを支えてくれる。\nもう一度、ドローンに挑もう。' }
             ],
             onComplete: (storyFlags) => {
-                storyFlags.akariTrialSeen = true;
-                if (window.startAkariTrial) setTimeout(() => window.startAkariTrial(), 400);
+                if (window.joinMember) window.joinMember('akari');
+                storyFlags.metAkari = true;
             }
         });
 
@@ -251,22 +271,12 @@ class StoryEventSystem {
             requiredFlags: { chapter1_started: true },
             oneTime: true,
             scenes: [
-                {
-                    character: 'アカリ',
-                    text: 'この先が地下鉄よ...本当に行くの？'
-                },
-                {
-                    character: 'カイト',
-                    text: 'ああ。この力の意味を知るためにも、真実を確かめないと。'
-                },
-                {
-                    character: 'アカリ',
-                    text: 'わかった。私がサポートするから！気をつけて進みましょう。'
-                }
+                { character: 'カイト', text: '（封鎖された改札の、さらに奥…。空気が、重い）' },
+                { character: 'カイト', text: '（心が、この地下へ吸い上げられている…？ 独りでも、確かめないと）' }
             ],
             onComplete: (storyFlags) => {
                 storyFlags.subway_warning_seen = true;
-                console.log('✅ Subway entrance warning shown');
+                console.log('✅ Subway entrance warning shown (solo)');
             }
         });
 
