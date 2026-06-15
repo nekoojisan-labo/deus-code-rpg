@@ -173,14 +173,12 @@ const UIPanel = (() => {
             fh += (cfg.footHtml != null ? `<div class="ui-panel__foot">${cfg.footHtml}</div>` : '') + '</div>';
             fh += `<div class="ui-panel__pane-r" id="ui-panel-detail">${computeDetail()}</div>`;
             fh += '</div>';
-            fh += `<div class="ui-panel__hint">${esc(cfg.hint || defaultHint(selectable))}</div>`;
+            fh += `<div class="ui-panel__hint"><span>${esc(cfg.hint || defaultHint(selectable))}</span><span class="ui-panel__page">${pageLabel()}</span></div>`;
             state.host.innerHTML = fh;
             state.host.classList.add('ui-panel', 'ui-panel--frame');
             const listB = state.host.querySelector('.ui-panel__list');
-            if (listB && state.items.length) {
-                renderList(listB, decorateItems(state.items), { structured: true, selectedIndex: selectable ? state.index : -1, rowClass: 'ui-panel__row', selectedClass: 'is-selected' });
-                wireRowClicks(listB);
-            }
+            if (listB && state.items.length) paintList(listB, selectable);
+            updatePageLabel();
             return;
         }
         // ヘッダ/ヒントを内包する .ui-panel シェルへ描画
@@ -194,19 +192,12 @@ const UIPanel = (() => {
             html += `<div class="ui-panel__text">${esc(cfg.bodyText)}</div>`;
         }
         html += `<div class="ui-panel__list${selectable ? '' : ' ui-panel__list--readonly'}" style="--cols:${cols}"></div>`;
-        html += `<div class="ui-panel__hint">${esc(cfg.hint || defaultHint(selectable))}</div>`;
+        html += `<div class="ui-panel__hint"><span>${esc(cfg.hint || defaultHint(selectable))}</span><span class="ui-panel__page">${pageLabel()}</span></div>`;
         state.host.innerHTML = html;
         state.host.classList.add('ui-panel');
         const listEl = state.host.querySelector('.ui-panel__list');
-        if (listEl && state.items.length) {
-            renderList(listEl, decorateItems(state.items), {
-                structured: true,
-                selectedIndex: selectable ? state.index : -1,
-                rowClass: 'ui-panel__row',
-                selectedClass: 'is-selected'
-            });
-            wireRowClicks(listEl);
-        }
+        if (listEl && state.items.length) paintList(listEl, selectable);
+        updatePageLabel();
     }
 
     function decorateItems(items) {
@@ -233,6 +224,38 @@ const UIPanel = (() => {
         }
     }
 
+    // ★ページング: cfg.pageSize が設定され項目数が超える時、スクロールバーを出さずページ送り表示。
+    function pageSizeOf() { return (state && state.config.pageSize) || 0; }
+    function pageCount() { const ps = pageSizeOf(); return ps && state.items.length > ps ? Math.ceil(state.items.length / ps) : 1; }
+    function curPage() { const ps = pageSizeOf(); return ps ? Math.floor(state.index / ps) : 0; }
+    function pageLabel() {
+        const ps = pageSizeOf();
+        if (!ps || state.items.length <= ps) return '';
+        return `　◀ ${curPage() + 1}/${pageCount()} ▶`;
+    }
+    // ヒント右端のページ表示「◀ 1/2 ▶」だけを更新（ページ送り時）。
+    function updatePageLabel() {
+        if (!state) return;
+        const el = state.host.querySelector('.ui-panel__page');
+        if (el) el.innerHTML = pageLabel();
+    }
+    // リストを「現在ページの項目だけ」描画し、クリックはグローバルindexへ写像。
+    function paintList(listEl, selectable) {
+        if (!listEl || !state) return;
+        const ps = pageSizeOf();
+        let items = state.items, sel = state.index, offset = 0;
+        if (ps && state.items.length > ps) {
+            offset = curPage() * ps;
+            items = state.items.slice(offset, offset + ps);
+            sel = state.index - offset;
+        }
+        renderList(listEl, decorateItems(items), { structured: true, selectedIndex: selectable ? sel : -1, rowClass: 'ui-panel__row', selectedClass: 'is-selected' });
+        listEl.querySelectorAll('.ui-panel__row').forEach((row) => {
+            const li = parseInt(row.dataset.index, 10);
+            row.onclick = () => { state.index = offset + li; fireSelect(); };
+        });
+    }
+
     function wireRowClicks(listEl) {
         const rows = listEl.querySelectorAll('.ui-panel__row');
         rows.forEach((row) => {
@@ -257,13 +280,16 @@ const UIPanel = (() => {
 
     function move(delta) {
         if (!state || !state.items.length) return;
+        const oldPage = curPage();
         let i = state.index;
         for (let n = 0; n < state.items.length; n++) {
             i = (i + delta + state.items.length) % state.items.length;
             if (!state.items[i] || !state.items[i].disabled) break;
         }
         state.index = i;
-        setSelectedIndexIn(state.host.querySelector('.ui-panel__list'), state.index, 'ui-panel__row', 'is-selected');
+        const listEl = state.host.querySelector('.ui-panel__list');
+        if (curPage() !== oldPage) { paintList(listEl, state.config.selectable !== false); updatePageLabel(); }
+        else setSelectedIndexIn(listEl, state.index, 'ui-panel__row', 'is-selected');
         repaintDetail();   // ★frame: 選択追従で右ペイン更新
     }
 
@@ -314,8 +340,11 @@ const UIPanel = (() => {
     }
     function setSelectedIndex(i) {
         if (!state) return;
+        const oldPage = curPage();
         state.index = clampToSelectable(state.items, i, +1);
-        setSelectedIndexIn(state.host.querySelector('.ui-panel__list'), state.index, 'ui-panel__row', 'is-selected');
+        const listEl = state.host.querySelector('.ui-panel__list');
+        if (curPage() !== oldPage) { paintList(listEl, state.config.selectable !== false); updatePageLabel(); }
+        else setSelectedIndexIn(listEl, state.index, 'ui-panel__row', 'is-selected');
         repaintDetail();
     }
 

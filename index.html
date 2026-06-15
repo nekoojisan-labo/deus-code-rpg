@@ -137,7 +137,19 @@
             border-top: 1px solid var(--accent-soft);
             font-size: 11px;
             color: var(--text-sub);
-            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        /* ページ送り表示（◀ 1/2 ▶）。スクロールバーの代わり＝多項目はページで送る。 */
+        .ui-panel__page {
+            flex: 0 0 auto;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 1px;
+            white-space: nowrap;
         }
         /* ===== FF風 2ペイン master-detail（cfg.frame） ===== */
         .ui-panel--frame { --panel-w: min(760px, calc(100% - 16px)); pointer-events: auto; }
@@ -3660,7 +3672,7 @@
     <script src="equipment-system.js?v=52"></script>
     <script src="magic-system.js?v=51"></script>
     <script src="se-system.js?v=1"></script>
-    <script src="ui-panel.js?v=4"></script>
+    <script src="ui-panel.js?v=5"></script>
     <script src="save-system.js?v=2"></script>
     <script src="battle-system.js?v=78"></script>
     <script src="map-walkability-data.js?v=14"></script>
@@ -7143,30 +7155,119 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         // 神威メニュー（フィールド用）
         let kamuiSelectedIndex = 0;
 
-        function openKamuiMenu() {
-            console.log('[DEBUG] openKamuiMenu called');
-            closeMenu();
-            const kamuiMenuOverlay = document.getElementById('kamuiMenuOverlay');
-            console.log('[DEBUG] kamuiMenuOverlay:', kamuiMenuOverlay);
-
-            if (kamuiMenuOverlay) {
-                kamuiMenuOverlay.classList.add('active');
-                kamuiSelectedIndex = 0;
-
-                // 現在のキャラクター名を表示
-                const allMembers = [player];
-                if (window.partySystem) {
-                    allMembers.push(...window.partySystem.getMembers());
-                }
-                const currentMember = allMembers[selectedPartyMemberIndex] || player;
-                console.log('[DEBUG] Current member for Kamui:', currentMember.name);
-                document.getElementById('kamuiCharacterName').textContent = currentMember.name || 'カイト';
-
-                updateKamuiSkillDisplay();
-                console.log('✅ Kamui menu opened');
-            } else {
-                console.error('[ERROR] kamuiMenuOverlay not found!');
+        // ★神威(フィールド) — FF風2ペイン＋ページ送り(スクロールバー無し)へ刷新。
+        //   フィールドで意味のある「回復/蘇生/状態治療」スキルだけを、術者タグ付きで一覧化。
+        //   攻撃/戦闘専用バフは戦闘でのみ使うため非表示。回復は対象選択付き。
+        function kamuiFieldList() {
+            const members = (typeof getMenuMembers === 'function') ? getMenuMembers() : [player];
+            const out = [];
+            members.forEach((m, idx) => {
+                const learned = (window.magicSystem && magicSystem.getLearnedMagic) ? (magicSystem.getLearnedMagic(m) || {}) : {};
+                Object.values(learned).forEach(sk => {
+                    const fieldOK = sk.type === 'healing' || sk.type === 'revive' || sk.type === 'recovery' || sk.effect === 'cure_status';
+                    if (fieldOK) out.push({ casterIdx: idx, caster: m, skill: sk });
+                });
+            });
+            return out;
+        }
+        function kamuiTargetTag(sk) {
+            if (sk.target === 'allyAll') return '全体';
+            if (sk.type === 'revive') return '蘇生';
+            return '単体';
+        }
+        function kamuiSkillDetail(entry) {
+            if (!entry) return '<div class="ui-panel__dmuted" style="padding:8px;">フィールドで使える回復・蘇生スキルを選んでください。<br>攻撃や戦闘用の補助は戦闘中のみ使えます。</div>';
+            const { caster, skill } = entry;
+            const cost = skill.mpCost || 0;
+            const afford = (caster.mp || 0) >= cost;
+            let preview = '';
+            if (skill.type === 'healing' || skill.type === 'recovery') {
+                const amt = (magicSystem && magicSystem.computeHealAmount) ? magicSystem.computeHealAmount(caster, skill) : (skill.power || 0);
+                preview = `回復量 約 <b>${amt}</b>${skill.target === 'allyAll' ? '（全員）' : ''}`;
+            } else if (skill.type === 'revive') {
+                preview = `戦闘不能の味方を HP${Math.round((skill.reviveRatio || 0.5) * 100)}% で復活`;
+            } else if (skill.effect === 'cure_status') {
+                preview = `状態異常を浄化${skill.target === 'allyAll' ? '（全員）' : ''}`;
             }
+            return `<div class="ui-panel__dlead" style="align-items:center;">
+                  <div style="font-size:34px;width:50px;text-align:center;">${skill.emoji || '✨'}</div>
+                  <div><div class="ui-panel__dname">${UIPanel.esc(skill.name)}</div>
+                  <div class="ui-panel__dmuted">術者 ${UIPanel.esc(caster.name || 'カイト')} ・ 対象 ${kamuiTargetTag(skill)}</div>
+                  <div style="color:${afford ? 'var(--accent)' : '#ff6b6b'};font-size:13px;margin-top:2px;">消費 MP ${cost}　（残 ${caster.mp || 0}）</div></div></div>
+                <div class="ui-panel__stat" style="grid-template-columns:1fr;"><div><span>効果</span><b>${preview}</b></div></div>
+                <div class="ui-panel__dmuted" style="padding:4px 2px;line-height:1.6;">${UIPanel.esc(skill.description || '')}</div>`;
+        }
+        function openKamuiMenu() {
+            const list = kamuiFieldList();
+            let items;
+            if (!list.length) {
+                items = [{ label: 'フィールドで使えるスキルがありません', disabled: true }];
+            } else {
+                items = list.map((e, i) => ({
+                    icon: e.skill.emoji || '✨',
+                    label: e.skill.name,
+                    sub: `${e.caster.name || 'カイト'} ・ MP${e.skill.mpCost || 0}`,
+                    right: kamuiTargetTag(e.skill),
+                    value: i,
+                    disabled: (e.caster.mp || 0) < (e.skill.mpCost || 0)
+                }));
+            }
+            UIPanel.open({
+                host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
+                title: '✨ カムイ（回復）', items, selectedIndex: 0, columns: 1, pageSize: 7,
+                detailFor: (it) => kamuiSkillDetail(it && it.value != null ? list[it.value] : null),
+                onSelect: (v) => { if (list[v]) kamuiFieldSelect(list[v]); },
+                onCancel: () => openMenu(),
+                hint: '↑↓ 選択 / Z 決定 / X もどる'
+            });
+        }
+        function kamuiFieldSelect(entry) {
+            const { caster, skill } = entry;
+            if ((caster.mp || 0) < (skill.mpCost || 0)) { showMessage('MPが たりない！'); return; }
+            if (skill.target === 'allyAll') { kamuiFieldApply(entry, null); return; }
+            kamuiPickTarget(entry);   // 単体回復/蘇生/治療 → 対象を選ぶ
+        }
+        function kamuiPickTarget(entry) {
+            const members = (typeof getMenuMembers === 'function') ? getMenuMembers() : [player];
+            const isRevive = entry.skill.type === 'revive';
+            const items = members.map((m, i) => ({
+                icon: (m.hp || 0) <= 0 ? '💀' : '🙂',
+                label: m.name || 'カイト',
+                sub: `HP ${Math.max(0, Math.floor(m.hp || 0))}/${Math.floor(m.maxHp || 1)}`,
+                value: i,
+                // 蘇生は戦闘不能の味方のみ、通常回復は満タンでも一応選べる
+                disabled: isRevive ? (m.hp || 0) > 0 : false
+            }));
+            UIPanel.open({
+                host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
+                title: `${entry.skill.name} — 対象をえらぶ`, items, selectedIndex: 0, columns: 1,
+                detailFor: (it) => menuStatusHtml(members[it && it.value != null ? it.value : 0]),
+                onSelect: (v) => kamuiFieldApply(entry, members[v]),
+                onCancel: () => openKamuiMenu(),
+                hint: '↑↓ 対象 / Z 決定 / X もどる'
+            });
+        }
+        function kamuiFieldApply(entry, target) {
+            const { caster, skill } = entry;
+            const members = (typeof getMenuMembers === 'function') ? getMenuMembers() : [player];
+            caster.mp = Math.max(0, (caster.mp || 0) - (skill.mpCost || 0));
+            if (skill.target === 'allyAll') {
+                if (skill.type === 'healing' || skill.type === 'recovery') {
+                    const amt = (magicSystem.computeHealAmount) ? magicSystem.computeHealAmount(caster, skill) : (skill.power || 0);
+                    members.forEach(m => { if ((m.hp || 0) > 0) m.hp = Math.min(m.maxHp, (m.hp || 0) + amt); });
+                } else if (skill.effect === 'cure_status') {
+                    members.forEach(m => magicSystem.applySupportEffect(m, skill));
+                }
+            } else if (skill.type === 'revive') {
+                target.hp = Math.max(1, Math.floor((target.maxHp || 1) * (skill.reviveRatio || 0.5)));
+            } else if (skill.type === 'healing' || skill.type === 'recovery') {
+                const amt = (magicSystem.computeHealAmount) ? magicSystem.computeHealAmount(caster, skill) : (skill.power || 0);
+                target.hp = Math.min(target.maxHp, (target.hp || 0) + amt);
+            } else if (skill.effect === 'cure_status') {
+                magicSystem.applySupportEffect(target, skill);
+            }
+            if (window.updateUI) updateUI();
+            openKamuiMenu();   // メニューを開き直す＝HP/MPバーが更新され、続けて回復できる
         }
 
         function closeKamuiMenu() {
