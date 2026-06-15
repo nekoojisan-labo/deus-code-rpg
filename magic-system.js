@@ -81,6 +81,20 @@ class MagicSystem {
                 requiredLevel: 5,
                 allowedRoles: ['all-rounder', 'healer']
             },
+            // 蘇生魔法（戦闘不能の味方専用。通常回復では復帰できない）
+            revive: {
+                id: 'revive',
+                name: 'リザレクト',
+                emoji: '✨',
+                type: 'revive',
+                mpCost: 20,
+                power: 0,
+                reviveRatio: 0.5,
+                description: '戦闘不能の味方を ふっかつさせる（HP50%）',
+                price: 1500,
+                requiredLevel: 8,
+                allowedRoles: ['healer']
+            },
 
             // 補助魔法
             protect: {
@@ -229,9 +243,24 @@ class MagicSystem {
             case 'healing':
                 // 回復魔法（対象が明示されていれば対象を、なければ自分を回復）
                 const healTarget = (target && target !== character && typeof target.maxHp === 'number') ? target : character;
+                // ★戦闘不能には通常の回復魔法は効かない（蘇生スキルが必要）
+                if (healTarget.hp <= 0) {
+                    return { success: false, message: 'せんとうふのうには かいふくまほうは きかない！（そせいスキルが ひつよう）' };
+                }
                 const healAmount = Math.min(magic.power, healTarget.maxHp - healTarget.hp);
                 healTarget.hp = Math.min(healTarget.maxHp, healTarget.hp + magic.power);
                 message = `${magic.name}！\n${healTarget.name || character.name}の HPが ${healAmount} 回復した！`;
+                break;
+
+            case 'revive':
+                // 蘇生魔法（戦闘不能の味方のみ復活。生存中は無効）
+                const reviveTarget = (target && target !== character && typeof target.maxHp === 'number') ? target : character;
+                if (reviveTarget.hp > 0) {
+                    return { success: false, message: 'その なかまは せんとうふのうではない！' };
+                }
+                const reviveRatio = magic.reviveRatio || 0.5;
+                reviveTarget.hp = Math.max(1, Math.floor(reviveTarget.maxHp * reviveRatio));
+                message = `${magic.name}！\n${reviveTarget.name || character.name}が せんとうふのうから ふっかつした！`;
                 break;
 
             case 'support':

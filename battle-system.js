@@ -353,7 +353,7 @@ class BattleSystem {
                 hp: 44, maxHp: 44, mp: 38, attack: 12, defense: 9, exp: 50, gold: 60,
                 type: 'spirit', skills: ['shadow_bind', 'drain', 'curse'],
                 description: '闇市の影に巣食う存在。呪詛と魔法を操る。',
-                dropTable: [ { id: 'mega_heal_potion', rate: 0.22 }, { id: 'mana_amulet', rate: 0.08 } ],
+                dropTable: [ { id: 'mega_heal_potion', rate: 0.22 }, { id: 'mana_amulet', rate: 0.08 }, { id: 'revival_stone', rate: 0.04 } ],
                 aiPattern: { lowHpThreshold: 0.3, lowHpAction: 'skill', normalAction: 'attack', skillChance: 0.4 }
             },
             guard_robo: {
@@ -377,7 +377,7 @@ class BattleSystem {
                 hp: 85, maxHp: 85, mp: 22, attack: 19, defense: 15, exp: 95, gold: 110,
                 type: 'construct', skills: ['summon_brood', 'venom_fang', 'rush'],
                 description: '深層に君臨する母蜘蛛。深層トンネルの精鋭。',
-                dropTable: [ { id: 'full_heal_potion', rate: 0.15 }, { id: 'power_gloves', rate: 0.05 } ],
+                dropTable: [ { id: 'full_heal_potion', rate: 0.15 }, { id: 'power_gloves', rate: 0.05 }, { id: 'revival_stone', rate: 0.05 } ],
                 aiPattern: { lowHpThreshold: 0.3, lowHpAction: 'attack', normalAction: 'attack', skillChance: 0.4 }
             },
             // ボスエネミー
@@ -1090,8 +1090,8 @@ class BattleSystem {
         this.pendingMagic = skill;
 
         // 対象選択が必要な種別か判定
-        if (skill.type === 'healing') {
-            // 味方を選ぶ
+        if (skill.type === 'healing' || skill.type === 'revive') {
+            // 味方を選ぶ（蘇生は戦闘不能の味方が対象）
             this.availableTargets = this.getPartyMembers().map((m, i) => ({ member: m, index: i, scope: 'ally' }));
             this.commandPhase = 'target';
             this.selectedCommand = 0;

@@ -215,7 +215,24 @@ class ItemSystem {
         // アイテムの効果を適用
         let message = '';
         let effectApplied = false;
-        
+
+        // ★戦闘不能(HP0)には専用の蘇生アイテム(effect.revive)以外は効かない。
+        //   通常の回復アイテムで戦闘不能から復帰させない（蘇生の意味を持たせる）。
+        const isReviveItem = !!(item.effect && item.effect.revive);
+        if (!isReviveItem && player.hp <= 0) {
+            return { success: false, message: 'せんとうふのうには つうじょうの どうぐは きかない！（ふっかつの石が ひつよう）' };
+        }
+        // 蘇生アイテム: 戦闘不能の仲間のみ復活（生存中は無効）
+        if (isReviveItem) {
+            if (player.hp > 0) {
+                return { success: false, message: 'その なかまは せんとうふのうではない！' };
+            }
+            const ratio = (typeof item.effect.revive === 'number') ? item.effect.revive : 0.5;
+            player.hp = Math.max(1, Math.floor(player.maxHp * ratio));
+            message += `${player.name || 'なかま'}が せんとうふのうから ふっかつした！\n`;
+            effectApplied = true;
+        }
+
         if (item.effect.hp) {
             if (item.effect.hp === 'full') {
                 const healed = player.maxHp - player.hp;
