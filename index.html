@@ -5762,6 +5762,16 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
               </div></div>
               <div class="ui-panel__stat">${st('こうげき(力)', m.attack || 0)}${st('まほう(魔力)', m.magic || 0)}${st('ぶつりぼうぎょ', m.defense || 0)}${st('まほうぼうぎょ', md)}${st('すばやさ', m.speed || 0)}${st('EXP', m.exp || 0)}</div>`;
         }
+        // ★対象選択用のコンパクト詳細（右ペイン）: 顔＋名前＋Lv＋HP/MPバーのみ。
+        //   回復スキル/アイテムの対象選びでは「誰のHP/MPか」が分かれば十分（ステータス表は出さない）。
+        function targetDetailHtml(m) {
+            if (!m) return '';
+            return `<div class="ui-panel__dlead"><img src="${menuFace(m)}" onerror="this.style.opacity=.2"><div>
+                <div class="ui-panel__dname">${UIPanel.esc(m.name || 'カイト')}</div>
+                <div class="ui-panel__dmuted">Lv ${m.level || 1}${(m.hp || 0) <= 0 ? '　<span style="color:#ff6b6b;">戦闘不能</span>' : ''}</div>
+                ${menuBar('HP', m.hp || 0, m.maxHp || 1, 'hp')}${menuBar('MP', m.mp || 0, m.maxMp || 1, 'mp')}
+              </div></div>`;
+        }
         function menuExec(val) {
             switch (val) {
                 case 'items': UIPanel.close(); openItemMenu(); break;
@@ -7209,10 +7219,9 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 const skills = casterFieldSkills(m);
                 return {
                     icon: (m.hp || 0) <= 0 ? '💀' : '🙂',
-                    label: m.name || 'カイト',
-                    sub: `Lv${m.level || 1} ・ MP${m.mp || 0}/${m.maxMp || 0}`,
+                    label: m.name || 'カイト',   // ★左は名前のみ。Lv/HP/MPは右の詳細ペインで見せる
                     value: i,
-                    disabled: skills.length === 0   // 回復スキルなしは選択不可（個数表示は出さない）
+                    disabled: skills.length === 0   // 回復スキルなしは選択不可
                 };
             });
             UIPanel.open({
@@ -7255,8 +7264,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             const isRevive = skill.type === 'revive';
             const items = members.map((m, i) => ({
                 icon: (m.hp || 0) <= 0 ? '💀' : '🙂',
-                label: m.name || 'カイト',
-                sub: `HP ${Math.max(0, Math.floor(m.hp || 0))}/${Math.floor(m.maxHp || 1)}`,
+                label: m.name || 'カイト',   // ★左は名前のみ。対象のHP/MPは右ペインで見せる
                 value: i,
                 // 蘇生は戦闘不能の味方のみ、通常回復は満タンでも一応選べる
                 disabled: isRevive ? (m.hp || 0) > 0 : false
@@ -7264,7 +7272,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             UIPanel.open({
                 host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
                 title: `${skill.name} — 対象をえらぶ`, items, selectedIndex: 0, columns: 1,
-                detailFor: (it) => menuStatusHtml(members[it && it.value != null ? it.value : 0]),
+                detailFor: (it) => targetDetailHtml(members[it && it.value != null ? it.value : 0]),
                 onSelect: (v) => kamuiFieldApply(casterIdx, skill, members[v]),
                 onCancel: () => openKamuiSkills(casterIdx),
                 hint: '↑↓ 対象 / Z 決定 / X もどる'
