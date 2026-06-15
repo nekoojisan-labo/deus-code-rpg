@@ -4498,7 +4498,11 @@ class ShopSystem {
         this.shopkeeper = shopkeeper;
         this.selectedItemIndex = 0;
 
-        // 全画面UIレイヤーにオーバーレイを追加（uiLayer 未実装環境では viewport にフォールバック）
+        // ★全画面FF風(UIPanel)へ委譲。商品データ/購入(buyItem)/宿屋(stayAtInn)は本クラスを流用。
+        //   入力は中央ルータの UIPanel.handleKey が isShopOpen の旧ハンドラより先に処理する。
+        if (typeof window.openShopMenu === 'function') { window.openShopMenu(shopType, shopkeeper); return; }
+
+        // 旧フォールバック（UIPanel未ロード環境）: 独自オーバーレイUI
         const viewport = document.getElementById('uiLayer') || document.querySelector('.game-viewport');
         if (!viewport) {
             console.error('[ShopSystem] #uiLayer / .game-viewport not found');
@@ -4764,7 +4768,7 @@ class ShopSystem {
 
         if (player.gold < itemDetails.price) {
             this.showShopNotice('ゴールドが足りません');
-            return;
+            return { success: false, message: 'ゴールドが足りません' };
         }
 
         // 武器/防具/アイテムの購入レベル制限は撤廃（所持金が足りれば購入可）。
@@ -4777,7 +4781,7 @@ class ShopSystem {
             const result = window.magicSystem.buyMagic(shopItem.magicId, player);
             if (!result.success) {
                 this.showShopNotice(result.message);
-                return;
+                return { success: false, message: result.message };
             }
             success = true;
             message = result.message;
@@ -4800,7 +4804,9 @@ class ShopSystem {
             this.showShopNotice(message);
             if (window.updateUI) window.updateUI();
             this.renderShopUI();
+            return { success: true, message };
         }
+        return { success: false, message: message || '購入できなかった' };
     }
 
     // 宿屋に泊まる

@@ -3684,7 +3684,7 @@
     <script src="map-walkability-data.js?v=15"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=27"></script>
-    <script src="map-system.js?v=84"></script>
+    <script src="map-system.js?v=85"></script>
     <script src="map-system-grid.js"></script>
     <script src="player-grid-movement.js"></script>
     <script src="bgm-system.js?v=36"></script>
@@ -5827,6 +5827,140 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 hint: '↑↓ スキル / X もどる'
             });
         }
+        // ★ショップ(購入/売却/宿屋) — 全画面FF風・一覧表に統合。商品データ/購入は gameShop(ShopSystem)流用、売却は新規。
+        function shopGold() { return (window.player && player.gold) || 0; }
+        function shopGoldFoot() { return `<span class="lbl">所持金</span><span class="val">${shopGold().toLocaleString()} G</span>`; }
+        function shopItemIcon(d) { return d ? (d.emoji || (d.isEquipment ? '🛡️' : d.isMagic ? '✨' : '🧪')) : '📦'; }
+        function closeShopMenu() {
+            if (window.UIPanel && UIPanel.isOpen()) UIPanel.close();
+            const ov = document.getElementById('menuOverlay'); if (ov) ov.classList.remove('active');
+            if (window.gameShop && typeof gameShop.closeShop === 'function') gameShop.closeShop();
+        }
+        function openShopMenu(shopType, shopkeeper) {
+            if (shopType === 'inn') { openInnMenu(shopkeeper); return; }
+            window._shopCtx = { shopType, shopkeeper };
+            const items = [
+                { icon: '🛒', label: '買う', value: 'buy' },
+                { icon: '💰', label: '売る', value: 'sell' },
+                { icon: '🚪', label: 'みせを出る', value: 'leave' }
+            ];
+            UIPanel.open({
+                host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
+                title: `🏪 ${(shopkeeper && shopkeeper.name) || 'ショップ'}`, items, selectedIndex: 0, columns: 1,
+                footHtml: shopGoldFoot(),
+                detailFor: (it) => `<div class="ui-panel__dmuted" style="padding:10px;line-height:1.9;">${it && it.value === 'buy' ? '商品を購入します。' : it && it.value === 'sell' ? '持ち物を売ってゴールドにします。' : '店を出ます。'}</div>`,
+                onSelect: (v) => { if (v === 'buy') openShopBuy(); else if (v === 'sell') openShopSell(); else closeShopMenu(); },
+                onCancel: () => closeShopMenu(),
+                hint: '↑↓ 選択 / Z 決定 / X 出る'
+            });
+        }
+        function shopBuyDetail(shopType, idx) {
+            const shop = window.gameShop;
+            const d = (idx != null && shop) ? shop.getItemDetails(shopType, idx) : null;
+            if (!d) return '<div class="ui-panel__dmuted" style="padding:8px;">買う物を選んでください。</div>';
+            const afford = shopGold() >= (d.price || 0);
+            let body = '';
+            if (d.isEquipment) body = equipStatSummary(d) || '';
+            else if (d.isItem) body = itemEffectSummary(d) || '';
+            else if (d.isMagic) body = `${skillTypeLabel(d)}　消費MP ${d.mpCost || 0}${d.alreadyLearned ? '　<span style="color:#7CFC9A;">習得済み</span>' : ''}`;
+            return `<div class="ui-panel__dlead" style="align-items:center;">
+                  <div style="font-size:34px;width:50px;text-align:center;">${shopItemIcon(d)}</div>
+                  <div><div class="ui-panel__dname">${UIPanel.esc(d.name)}</div>
+                  <div style="font-size:13px;margin-top:2px;">${body}</div>
+                  <div style="font-size:14px;font-weight:700;color:${afford ? 'var(--accent)' : '#ff6b6b'};margin-top:3px;">${(d.price || 0).toLocaleString()} G${afford ? '' : '　(所持金不足)'}</div></div></div>
+                <div class="ui-panel__dmuted" style="padding:6px 2px;line-height:1.7;">${UIPanel.esc(d.description || '')}</div>`;
+        }
+        function openShopBuy(notice) {
+            const ctx = window._shopCtx || {}; const shopType = ctx.shopType;
+            const shop = window.gameShop;
+            const list = (shop && shop.shopData[shopType]) || [];
+            const items = list.map((si, i) => {
+                const d = shop.getItemDetails(shopType, i);
+                const afford = shopGold() >= (d ? (d.price || 0) : 0);
+                return { icon: shopItemIcon(d), label: d ? d.name : '?', right: d ? `${(d.price || 0).toLocaleString()} G` : '', value: i, disabled: !d || !afford || d.alreadyLearned };
+            });
+            if (!items.length) items.push({ label: '商品がありません', disabled: true });
+            UIPanel.open({
+                host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
+                title: '🛒 買う', items, selectedIndex: 0, columns: 1, pageSize: 9,
+                footHtml: notice ? `<span style="color:#ff6b6b;font-weight:700;">${UIPanel.esc(notice)}</span>` : shopGoldFoot(),
+                detailFor: (it) => shopBuyDetail(shopType, it && it.value != null ? it.value : null),
+                onSelect: (i) => { let msg = ''; if (shop) { const r = shop.buyItem(shopType, i); if (r && !r.success) msg = r.message; } openShopBuy(msg); },
+                onCancel: () => openShopMenu(shopType, ctx.shopkeeper),
+                hint: '↑↓ 選択 / Z 買う / X もどる'
+            });
+        }
+        function shopSellableList() {
+            const out = [];
+            if (window.itemSystem && itemSystem.getInventory) {
+                itemSystem.getInventory().forEach(it => {
+                    if (it.type === 'key' || it.category === 'key') return;
+                    const sp = it.sellPrice || Math.floor((it.price || 0) / 2) || 0;
+                    if (sp > 0) out.push({ kind: 'item', id: it.id, name: it.name, icon: it.emoji || '🧪', qty: it.quantity || 1, sellPrice: sp, description: it.description });
+                });
+            }
+            if (window.equipmentSystem && equipmentSystem.getEquipmentInventory) {
+                equipmentSystem.getEquipmentInventory().forEach(e => {
+                    const sp = e.sellPrice || Math.floor((e.price || 0) / 2) || 0;
+                    if (sp > 0) out.push({ kind: 'equip', id: e.id, name: e.name, icon: '🛡️', qty: e.quantity || 1, sellPrice: sp, description: e.description, _eq: e });
+                });
+            }
+            return out;
+        }
+        function shopSellDetail(s) {
+            if (!s) return '<div class="ui-panel__dmuted" style="padding:8px;">売る物を選んでください。</div>';
+            const body = s.kind === 'equip' ? (equipStatSummary(s._eq) || '') : '';
+            return `<div class="ui-panel__dlead" style="align-items:center;">
+                  <div style="font-size:34px;width:50px;text-align:center;">${s.icon}</div>
+                  <div><div class="ui-panel__dname">${UIPanel.esc(s.name)}</div>
+                  <div style="font-size:13px;margin-top:2px;">${body}　所持 ×${s.qty}</div>
+                  <div style="font-size:14px;font-weight:700;color:var(--accent);margin-top:3px;">売値 ${s.sellPrice.toLocaleString()} G</div></div></div>
+                <div class="ui-panel__dmuted" style="padding:6px 2px;line-height:1.7;">${UIPanel.esc(s.description || '')}</div>`;
+        }
+        function shopSellOne(s) {
+            if (!s) return;
+            if (s.kind === 'item' && window.itemSystem && itemSystem.removeItem) itemSystem.removeItem(s.id, 1);
+            else if (s.kind === 'equip' && window.equipmentSystem && equipmentSystem.inventory && equipmentSystem.inventory[s.id]) {
+                equipmentSystem.inventory[s.id].quantity--;
+                if (equipmentSystem.inventory[s.id].quantity <= 0) delete equipmentSystem.inventory[s.id];
+            }
+            if (window.player) player.gold = (player.gold || 0) + s.sellPrice;
+            if (window.updateUI) updateUI();
+        }
+        function openShopSell() {
+            const ctx = window._shopCtx || {};
+            const list = shopSellableList();
+            const items = list.length
+                ? list.map((s, i) => ({ icon: s.icon, label: s.name, right: `${s.sellPrice.toLocaleString()}G ×${s.qty}`, value: i }))
+                : [{ label: '売れる物がありません', disabled: true }];
+            UIPanel.open({
+                host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
+                title: '💰 売る', items, selectedIndex: 0, columns: 1, pageSize: 9,
+                footHtml: shopGoldFoot(),
+                detailFor: (it) => shopSellDetail(list[it && it.value != null ? it.value : 0]),
+                onSelect: (i) => { shopSellOne(list[i]); openShopSell(); },
+                onCancel: () => openShopMenu(ctx.shopType, ctx.shopkeeper),
+                hint: '↑↓ 選択 / Z 売る / X もどる'
+            });
+        }
+        function openInnMenu(shopkeeper) {
+            window._shopCtx = { shopType: 'inn', shopkeeper };
+            const cost = 50;
+            const items = [
+                { icon: '🛏️', label: `泊まる（${cost} G）`, value: 'stay', disabled: shopGold() < cost },
+                { icon: '🚪', label: 'やめる', value: 'leave' }
+            ];
+            UIPanel.open({
+                host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
+                title: `🏨 ${(shopkeeper && shopkeeper.name) || '宿屋'}`, items, selectedIndex: 0, columns: 1,
+                footHtml: shopGoldFoot(),
+                detailFor: () => `<div class="ui-panel__dmuted" style="padding:10px;line-height:1.9;">泊まると ${cost} G で パーティ全員のHP/MPが 全回復します。</div>`,
+                onSelect: (v) => { if (v === 'stay') { if (window.gameShop) gameShop.stayAtInn(); closeShopMenu(); if (window.showMessage) showMessage('宿屋に泊まった。HP/MPが ぜんかいふくした！'); } else closeShopMenu(); },
+                onCancel: () => closeShopMenu(),
+                hint: '↑↓ 選択 / Z 決定 / X 出る'
+            });
+        }
+        window.openShopMenu = openShopMenu;
 
         function closeMenu() {
             if (window.UIPanel && UIPanel.isOpen()) UIPanel.close();
