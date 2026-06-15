@@ -1060,7 +1060,8 @@ class MapSystem {
                 ],
                 npcs: [
                     // 街の異変の演出。非hostile（アカリ加入前にカイト単騎の強制戦を起こさない）
-                    { x: 400, y: 240, emoji: '🤖', name: 'パトロールドローン', dialogue: '警告…エラー…感情反応を…検知…システム…不安定…' },
+                    // 故障した巡視ドローンが構内をふらつく演出（有界roam・可動域内で棄却サンプリング）
+                    { x: 400, y: 240, emoji: '🤖', name: 'パトロールドローン', dialogue: '警告…エラー…感情反応を…検知…システム…不安定…', move: { type: 'roam', radius: 45, wait: [500, 1400] } },
                     // アカリ（駆け寄り型）。駅の西寄りに居て、近づくとカイトへ走り寄る
                     { x: 180, y: 300, emoji: '🧙‍♀️', name: 'アカリ', dialogue: 'カイト…無事だったのね。この子たち、様子がおかしいの。', questFlag: 'metAkari', questDialogue: 'カイト！来てくれたのね。地下鉄の異変、一緒に確かめましょう。' }
                 ]
@@ -1553,7 +1554,8 @@ class MapSystem {
                     // ※ 東 (764, 198) は隣接マップ未定義のため一旦保留
                 ],
                 npcs: [
-                    { x: 380, y: 240, emoji: '👵', name: 'おばあさん', dialogue: '昔はもっと賑やかな街だったのよ...' },
+                    // 公園を散歩するおばあさん（小さな有界roam・高齢者らしく長め休憩）
+                    { x: 380, y: 240, emoji: '👵', name: 'おばあさん', dialogue: '昔はもっと賑やかな街だったのよ...', move: { type: 'roam', radius: 22, wait: [1400, 3000] } },
                     { x: 540, y: 250, emoji: '📮', name: '郵便ポスト', dialogue: '手紙を出しますか？（まだ実装されていません）', static: true }
                 ],
                 savePoint: { x: 320, y: 260, emoji: '💤', name: '公園のベンチ' }
@@ -2215,18 +2217,24 @@ class MapSystem {
         if (map.buildings) map.buildings = map.buildings.map(scaleRect);
         if (map.exits) map.exits = map.exits.map(scaleRect);
         if (map.npcs) {
-            map.npcs = map.npcs.map(npc => ({
-                ...npc,
-                x: Math.round(npc.x * scale),
-                y: Math.round(npc.y * scale),
-                originX: Math.round(npc.x * scale),
-                originY: Math.round(npc.y * scale),
-                wanderRadius: npc.static ? 0 : Math.round((npc.hostile ? 18 : 12) * scale),
-                wanderPhase: Math.random() * Math.PI * 2,
-                wanderSpeed: npc.hostile ? 0.0007 : 0.00045,
-                facing: npc.facing || 'down',
-                animTime: 0
-            }));
+            map.npcs = map.npcs.map(npc => {
+                const sx = Math.round(npc.x * scale);
+                const sy = Math.round(npc.y * scale);
+                return {
+                    ...npc,
+                    x: sx,
+                    y: sy,
+                    originX: sx,
+                    originY: sy,
+                    wanderPhase: Math.random() * Math.PI * 2, // 停止時の呼吸bob(drawSingleNPC)用の位相
+                    facing: npc.facing || 'down',
+                    animTime: 0,
+                    isMoving: false,
+                    // 宣言的 move フィールド(BASE座標)から徘徊コントローラを構築。
+                    // move 無し/static は null=静止（既存NPCの挙動を完全維持）。
+                    _patrol: this.buildPatrolController(npc, scale, sx, sy)
+                };
+            });
             this.constrainMapNPCsToWalkable(map);
         }
         if (map.savePoint) {
@@ -2906,6 +2914,122 @@ class MapSystem {
     }
 
     // ==========================================
+    // NPC徘徊コントローラ（意図駆動・歩行アニメ恒常化）
+    // ------------------------------------------
+    // 設計: 「移動量を測って isMoving を推定」する旧方式を廃し、
+    // 駆け寄りNPC(updateApproachNPCs)/プレイヤーと同じ「意図で駆動」へ統一する。
+    // 1歩 commit したら無条件で isMoving=true & animTime+=16 → 脚スプライトが必ず循環。
+    // 全パターン(pingpong/patrol/roam)を stepTowards 1関数に集約し可動域ゲートを一元化。
+    // ==========================================
+
+    // 宣言データ move:{type,...}（BASE座標）→ ランタイム徘徊コントローラ。
+    // move 無し/static/不正 は null（=静止）。pingpong終点・patrol各点・roam半径を ×scale。
+    buildPatrolController(npc, scale, sx, sy) {
+        const mv = npc.move;
+        if (npc.static || !mv || !mv.type || mv.type === 'static') return null;
+        const sp = p => ({ x: Math.round(p.x * scale), y: Math.round(p.y * scale) });
+        if (mv.type === 'pingpong' && mv.to) {
+            return { type: 'pingpong', b: sp(mv.to), toB: true, wait: mv.wait || 0, mode: 'walk', timer: 0 };
+        }
+        if (mv.type === 'patrol' && Array.isArray(mv.points) && mv.points.length) {
+            return { type: 'patrol', points: mv.points.map(sp), idx: 0, dir: 1, loop: mv.loop !== false, wait: mv.wait || 0, mode: 'walk', timer: 0 };
+        }
+        if (mv.type === 'roam') {
+            const radius = Math.round((mv.radius != null ? mv.radius : (npc.hostile ? 18 : 12)) * scale);
+            return { type: 'roam', radius, target: { x: sx, y: sy }, wait: mv.wait != null ? mv.wait : [800, 2200], mode: 'pick', timer: 0 };
+        }
+        return null;
+    }
+
+    // 現在の目標点。pingpongのA端とpatrolのフォールバックは「補正後の原点」を生で参照し、
+    // 安全網が origin を動かしても自動追従する（origin単一ソース）。
+    currentPatrolTarget(npc, pat) {
+        if (pat.type === 'pingpong') return pat.toB ? pat.b : { x: npc.originX, y: npc.originY };
+        if (pat.type === 'patrol') return pat.points[pat.idx] || { x: npc.originX, y: npc.originY };
+        return pat.target; // roam
+    }
+
+    // pingpong=反転 / patrol=次waypoint(loop循環 or 非loopバウンス)。roamは呼ばない（pause→pick経路）。
+    advancePatrol(npc, pat) {
+        if (pat.type === 'pingpong') { pat.toB = !pat.toB; return; }
+        if (pat.type === 'patrol') {
+            const n = pat.points.length;
+            if (n <= 1) return;
+            if (pat.loop) { pat.idx = (pat.idx + 1) % n; return; }
+            let next = pat.idx + pat.dir;
+            if (next >= n || next < 0) { pat.dir = -pat.dir; next = pat.idx + pat.dir; }
+            pat.idx = Math.max(0, Math.min(n - 1, next));
+        }
+    }
+
+    rollWait(wait) {
+        if (Array.isArray(wait)) { const a = wait[0] || 0, b = wait[1] || a; return a + Math.random() * Math.max(0, b - a); }
+        return wait || 0;
+    }
+
+    // origin中心・半径内の歩行可能点を棄却サンプリングで1点。遠方ドリフトを構造的に防ぐ。
+    pickRoamTarget(map, ox, oy, radius) {
+        for (let i = 0; i < 12; i++) {
+            const ang = Math.random() * Math.PI * 2;
+            const r = radius * (0.35 + Math.random() * 0.65);
+            const x = Math.round(ox + Math.cos(ang) * r);
+            const y = Math.round(oy + Math.sin(ang) * r);
+            if (this.isMapPositionWalkable(map, x, y, 22)) return { x, y };
+        }
+        return { x: ox, y: oy };
+    }
+
+    // 目標へ固定速度(px/frame)で1歩。歩けた時だけ npc.x/y を更新。
+    // 戻り: {arrived:到達, moved:今フレーム移動した, blocked:壁で進めない, vx/vy:目標方向(向き用)}。
+    stepTowards(npc, target, speed, map) {
+        const dx = target.x - npc.x, dy = target.y - npc.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist <= Math.max(speed, 1.0)) {
+            if (this.isMapPositionWalkable(map, target.x, target.y, 22)) { npc.x = target.x; npc.y = target.y; }
+            return { arrived: true, moved: false, blocked: false, vx: dx, vy: dy };
+        }
+        const nx = npc.x + (dx / dist) * speed;
+        const ny = npc.y + (dy / dist) * speed;
+        if (this.isMapPositionWalkable(map, nx, ny, 22)) {
+            npc.x = nx; npc.y = ny;
+            return { arrived: false, moved: true, blocked: false, vx: dx, vy: dy };
+        }
+        return { arrived: false, moved: false, blocked: true, vx: dx, vy: dy };
+    }
+
+    // 1体ぶんの徘徊状態機械を進める。移動⇔歩行フレーム、到達/壁で目標切替（+任意pause）。
+    tickPatrol(npc, pat, map, speed, dt) {
+        if (pat.mode === 'pause') {
+            npc.isMoving = false;
+            pat.timer -= dt; // 待機はリアルtimeで減算（壁時計に一致）
+            if (pat.timer <= 0) pat.mode = (pat.type === 'roam') ? 'pick' : 'walk';
+            return;
+        }
+        if (pat.type === 'roam' && pat.mode === 'pick') {
+            pat.target = this.pickRoamTarget(map, npc.originX, npc.originY, pat.radius);
+            pat.mode = 'walk';
+        }
+        const tgt = this.currentPatrolTarget(npc, pat);
+        const res = this.stepTowards(npc, tgt, speed, map);
+        if (res.moved) {
+            npc.isMoving = true;
+            npc.animTime = (npc.animTime || 0) + 16; // フレーム固定（player/approachと一致・tab復帰時のテレポート防止）
+            this.updateFacingFromDelta(npc, res.vx, res.vy);
+        } else {
+            npc.isMoving = false;
+        }
+        if (res.arrived || res.blocked) {
+            if (pat.type === 'roam') {
+                pat.mode = 'pause';
+                pat.timer = this.rollWait(pat.wait);
+            } else {
+                this.advancePatrol(npc, pat);
+                if (pat.wait) { pat.mode = 'pause'; pat.timer = this.rollWait(pat.wait); }
+            }
+        }
+    }
+
+    // ==========================================
     // ショップ建物から内部への遷移を追加
     // ==========================================
 
@@ -3446,7 +3570,9 @@ class MapSystem {
             return;
         }
 
+        const CITIZEN_SPEED = 1.2, HOSTILE_SPEED = 1.6; // px/frame（プレイヤー3より遅い徘徊速度・閾値0.2は余裕で超える）
         map.npcs.forEach(npc => {
+            // 安全網: 何らかの理由で可動域外にいるNPCを最近傍の可動域へ戻し原点を再設定
             if (!this.isMapPositionWalkable(map, npc.x, npc.y, 22)) {
                 const corrected = this.findNearestWalkablePoint(map, npc.x, npc.y, 22);
                 npc.x = corrected.x;
@@ -3455,38 +3581,11 @@ class MapSystem {
                 npc.originY = corrected.y;
             }
 
-            if (!npc.wanderRadius || npc.static) {
-                npc.isMoving = false;
-                return;
-            }
+            const pat = npc._patrol;
+            if (!pat || npc.static) { npc.isMoving = false; return; } // move 無し=静止（呼吸bobのみ）
 
-            const t = now * npc.wanderSpeed + npc.wanderPhase;
-            const candidateX = npc.originX + Math.sin(t) * npc.wanderRadius;
-            const candidateY = npc.originY + Math.cos(t * 0.72) * npc.wanderRadius * 0.45;
-            const oldX = npc.x;
-            const oldY = npc.y;
-
-            // 可動域チェック: 候補位置が歩行可能かつ建物・collision矩形に重ならない場合のみ移動
-            if (this.isMapPositionWalkable(map, candidateX, candidateY, 22)) {
-                npc.x = candidateX;
-                npc.y = candidateY;
-            } else if (this.isMapPositionWalkable(map, npc.originX, npc.originY, 22)) {
-                // 候補が不可なら原点へ寄せる（原点が可動域内の場合）
-                npc.x = npc.originX;
-                npc.y = npc.originY;
-            } else {
-                const corrected = this.findNearestWalkablePoint(map, npc.originX, npc.originY, 22);
-                npc.x = corrected.x;
-                npc.y = corrected.y;
-                npc.originX = corrected.x;
-                npc.originY = corrected.y;
-            }
-
-            const dx = npc.x - oldX;
-            const dy = npc.y - oldY;
-            npc.isMoving = Math.hypot(dx, dy) > 0.2;
-            this.updateFacingFromDelta(npc, dx, dy);
-            if (npc.isMoving) { npc.animTime = (npc.animTime || 0) + dt; }
+            const speed = npc.hostile ? HOSTILE_SPEED : CITIZEN_SPEED;
+            this.tickPatrol(npc, pat, map, speed, dt);
         });
     }
 
