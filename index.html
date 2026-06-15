@@ -5740,6 +5740,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             if (itemMenuOverlay) {
                 itemMenuOverlay.classList.add('active');
                 itemSelectedIndex = 0;
+                itemTargetMode = false;  // 対象選択モードをリセット
                 updateItemList();
                 console.log('Item menu opened');
             }
@@ -5789,6 +5790,18 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         }
         
         function handleItemMenuInput(key) {
+            // 対象選択中はメンバーリストを操作
+            if (itemTargetMode) {
+                const members = getFieldPartyMembers();
+                const total = members.length + 1; // +もどる
+                if (key === 'ArrowUp' || key === 'w' || key === 'W') { itemTargetIndex = (itemTargetIndex - 1 + total) % total; renderItemTargetList(); }
+                else if (key === 'ArrowDown' || key === 's' || key === 'S') { itemTargetIndex = (itemTargetIndex + 1) % total; renderItemTargetList(); }
+                else if (key === 'Enter' || key === ' ' || key === 'z' || key === 'Z') {
+                    if (itemTargetIndex < members.length) applyFieldItem(pendingItemId, members[itemTargetIndex]);
+                    else { itemTargetMode = false; updateItemList(); }
+                } else if (key === 'Escape' || key === 'x' || key === 'X') { itemTargetMode = false; updateItemList(); }
+                return;
+            }
             const inventory = itemSystem.getInventory();
             if (inventory.length === 0) {
                 if (key === 'Escape' || key === 'x' || key === 'X') {
@@ -5812,21 +5825,52 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             }
         }
         
+        // フィールドのアイテム使用も対象(味方)を選べるように（カイト固定を解消）
+        let itemTargetMode = false;
+        let pendingItemId = null;
+        let itemTargetIndex = 0;
+
+        function getFieldPartyMembers() {
+            return [player, ...(window.partySystem ? window.partySystem.getMembers() : [])];
+        }
+
         function useItemFromMenu(itemId) {
-            const result = itemSystem.useItem(itemId, player, false);
-            
+            pendingItemId = itemId;
+            itemTargetIndex = 0;
+            itemTargetMode = true;
+            renderItemTargetList();
+        }
+
+        function renderItemTargetList() {
+            const itemList = document.getElementById('itemList');
+            const members = getFieldPartyMembers();
+            itemList.innerHTML = '<div style="color:#9fe7ff;font-size:13px;margin-bottom:8px;">だれに つかう？</div>';
+            members.forEach((m, index) => {
+                const entry = document.createElement('div');
+                entry.className = 'item-entry' + (index === itemTargetIndex ? ' selected' : '');
+                entry.innerHTML = `<div class="item-info"><div class="item-name">${m.name || 'カイト'}</div>` +
+                    `<div class="item-description">HP ${m.hp}/${m.maxHp}　MP ${m.mp}/${m.maxMp}</div></div>`;
+                entry.onclick = () => { itemTargetIndex = index; applyFieldItem(pendingItemId, m); };
+                itemList.appendChild(entry);
+            });
+            const back = document.createElement('div');
+            back.className = 'item-entry' + (itemTargetIndex === members.length ? ' selected' : '');
+            back.innerHTML = '<div class="item-info"><div class="item-name" style="color:#ff8888;">↩ もどる</div></div>';
+            back.onclick = () => { itemTargetMode = false; updateItemList(); };
+            itemList.appendChild(back);
+        }
+
+        function applyFieldItem(itemId, member) {
+            itemTargetMode = false;
+            const result = itemSystem.useItem(itemId, member, false);  // ★対象=選んだメンバー
             if (result.success) {
-                showMessage(result.message);
+                showMessage(`${member.name || 'カイト'}に ${result.item.name}を つかった。\n${result.message}`);
                 updateUI();
-                updateItemList(); // アイテムリストを更新
-                
-                // アイテムがなくなったらメニューを閉じる
-                if (itemSystem.getInventory().length === 0) {
-                    setTimeout(() => closeItemMenu(), 1000);
-                }
+                if (itemSystem.getInventory().length === 0) { setTimeout(() => closeItemMenu(), 1000); return; }
             } else {
                 showMessage(result.message);
             }
+            updateItemList();  // アイテムリストへ戻る
         }
 
         // 神威（フィールド）- MP回復
@@ -6381,24 +6425,43 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             battleSystem.waitingForCommand = true;
         }
         
+        // アイテム選択 → 対象(味方)を選ぶ → 適用（カイト固定だったのを対象選択可に）
         function useBattleItem(itemId) {
+            const members = battleSystem.getPartyMembers ? battleSystem.getPartyMembers() : [player];
+            const targets = members.map((m) => ({
+                html: `${m.name || 'カイト'} <span style="color:#88ff88;font-size:11px;">HP:${m.hp}/${m.maxHp} MP:${m.mp}/${m.maxMp}</span>`,
+                onClick: () => applyBattleItem(itemId, m)
+            }));
+            targets.push({
+                html: '↩ もどる',
+                color: '#ff8888',
+                onClick: () => { showBattleItemMenu(); }
+            });
+            window.BattlePanel.renderCommands(targets, {
+                headerLabel: 'だれに つかう',
+                title: 'たいしょうを えらぶ',
+                selectedIndex: 0
+            });
+            battleItemSelectedIndex = 0;
+            battleSystem.selectedCommand = 0;
+            showingBattleItems = true;        // handleBattleInput のアイテム経路で上下移動＋決定
+            battleSystem.waitingForCommand = true;
+        }
+
+        function applyBattleItem(itemId, member) {
             showingBattleItems = false;
             battleSystem.waitingForCommand = false;
-            // アイテム使用：パネルをログモードに切り替え
-            leavePanelCommandMode();
+            leavePanelCommandMode();          // パネルをログモードに切り替え
 
-            const result = itemSystem.useItem(itemId, player, true);
+            const result = itemSystem.useItem(itemId, member, true);  // ★対象=選んだメンバー
 
             if (result.success) {
                 battleSystem.addBattleLog(`${result.item.name}を つかった！`);
+                battleSystem.addBattleLog(`${member.name || 'カイト'}に つかった。`);
                 battleSystem.addBattleLog(result.message);
                 updateUI();
                 battleSystem.updateBattleUI();
-
-                // アイテムを使ったらターン消費して敵のターンへ
-                setTimeout(() => {
-                    battleSystem.enemyTurn(player);
-                }, 2000);
+                setTimeout(() => { battleSystem.enemyTurn(player); }, 2000);
             } else {
                 battleSystem.addBattleLog(result.message);
                 setTimeout(() => {
