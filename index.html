@@ -3680,7 +3680,7 @@
     <script src="se-system.js?v=1"></script>
     <script src="ui-panel.js?v=5"></script>
     <script src="save-system.js?v=2"></script>
-    <script src="battle-system.js?v=80"></script>
+    <script src="battle-system.js?v=81"></script>
     <script src="map-walkability-data.js?v=15"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=27"></script>
@@ -7060,8 +7060,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 headerLabel: 'どうぐ を えらぶ',
                 title: 'アイテム',
                 selectedIndex: 0,
-                grid: true,    // ★2列グリッドで一覧性UP
-                listMode: true // ★枠を外し平文行で名前を読みやすく
+                listMode: true // ★1列の「一覧表」スタイル（枠なし密な行）。2列は名前が潰れるため不可
             });
 
             battleItemSelectedIndex = 0;
