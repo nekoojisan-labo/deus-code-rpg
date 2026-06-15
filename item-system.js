@@ -262,9 +262,9 @@ class ItemSystem {
         }
         
         if (item.effect.escape) {
-            message = 'ダンジョンから脱出した！';
+            message = 'ダンジョンから脱出して 街へ もどった！';
             effectApplied = true;
-            // TODO: マップ遷移処理
+            // 実際のマップ遷移は呼び出し側(index.html itemApply)が戻り値の escape を見て実行する
         }
         
         // バフ効果（戦闘中のみ）
@@ -302,10 +302,11 @@ class ItemSystem {
                 window.updateUI();
             }
             
-            return { 
-                success: true, 
+            return {
+                success: true,
                 message: message || `${item.name}を使った！`,
-                item: item
+                item: item,
+                escape: !!(item.effect && item.effect.escape)
             };
         } else {
             return { success: false, message: 'このアイテムは今は使えない' };

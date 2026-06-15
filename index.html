@@ -196,6 +196,17 @@
         .ui-panel__dmuted { color: var(--text-sub); font-size: 12px; }
         .ui-panel__dlead { display: flex; gap: 11px; align-items: center; margin-bottom: 9px; }
         .ui-panel__dlead img { width: 60px; height: 60px; border-radius: 9px; object-fit: cover; object-position: top center; border: 1px solid var(--accent-soft); background: #0b1626; }
+        /* ★顔アイコン: 立ち絵(240x320)から顔へズームした共通クロップ(検証済 50% 22% / 150%)。
+           object-fit:cover は拡大できず顔が下端に切れる(=すみっこ)為、背景画像でズーム指定する。 */
+        .menu-face { display: inline-block; flex: 0 0 auto; vertical-align: middle; border-radius: 9px; border: 1px solid var(--accent-soft); background-color: #0b1626; background-repeat: no-repeat; background-position: 50% 22%; background-size: 150% auto; }
+        /* ★数量ステッパ(売却の個数など): 左ペインに ▲ 数値 ▼。 */
+        .ui-panel__stepper { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 180px; }
+        .ui-panel__step-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+        .ui-panel__step-arrow { font-size: 24px; color: var(--accent); cursor: pointer; line-height: 1; padding: 6px 24px; border-radius: 10px; background: rgba(0, 229, 255, 0.08); border: 1px solid var(--accent-soft); user-select: none; }
+        .ui-panel__step-arrow:hover { background: rgba(0, 229, 255, 0.18); }
+        .ui-panel__step-num { display: flex; align-items: baseline; gap: 8px; }
+        .ui-panel__step-num > span:first-child { font-size: 52px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; min-width: 64px; text-align: center; }
+        .ui-panel__step-lbl { font-size: 15px; color: var(--text-sub); }
         .ui-panel__dname { font-size: 16px; font-weight: 700; }
         .ui-panel__stat { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 18px; margin-top: 6px; }
         .ui-panel__stat > div { display: flex; justify-content: space-between; border-bottom: 1px dotted rgba(0,229,255,.14); padding-bottom: 2px; font-size: 12px; }
@@ -3674,11 +3685,11 @@
     </div><!-- /.game-container -->
 
     <!-- 外部スクリプト読み込み -->
-    <script src="item-system.js?v=48"></script>
+    <script src="item-system.js?v=49"></script>
     <script src="equipment-system.js?v=52"></script>
     <script src="magic-system.js?v=51"></script>
     <script src="se-system.js?v=1"></script>
-    <script src="ui-panel.js?v=6"></script>
+    <script src="ui-panel.js?v=7"></script>
     <script src="save-system.js?v=2"></script>
     <script src="battle-system.js?v=81"></script>
     <script src="map-walkability-data.js?v=15"></script>
@@ -5736,6 +5747,8 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         }
 
         function menuFace(m) { const id = m.characterId || m.id || 'kaito'; return `assets/characters/${id}_portrait.webp`; }
+        // ★顔アイコン共通マークアップ: 立ち絵から顔へズームクロップ(.menu-face)。サイズだけ可変。
+        function menuFaceHtml(m, size) { const s = size || 50; return `<span class="menu-face" style="width:${s}px;height:${s}px;background-image:url('${encodeURI(menuFace(m))}')"></span>`; }
         function roleLabel(m) { return ({ healer: 'ヒーラー', tank: 'タンク', mage: 'メイジ', 'all-rounder': '万能' })[m.role || ''] || ''; }
         function menuBar(k, c, mx, cls) {
             const r = mx ? Math.max(0, Math.min(100, Math.round(c / mx * 100))) : 0;
@@ -5745,7 +5758,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             const ms = getMenuMembers();
             return `<div class="ui-panel__dtitle">パーティ</div>` + ms.map(m => `
               <div style="display:grid;grid-template-columns:50px 1fr;gap:10px;align-items:center;background:rgba(255,255,255,.025);border:1px solid rgba(0,229,255,.18);border-radius:9px;padding:7px 11px 7px 7px;margin-bottom:8px;">
-                <img src="${menuFace(m)}" style="width:50px;height:50px;border-radius:8px;object-fit:cover;object-position:top center;border:1px solid var(--accent-soft);" onerror="this.style.opacity=.2">
+                ${menuFaceHtml(m, 50)}
                 <div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;"><b style="font-size:14px;">${UIPanel.esc(m.name || 'カイト')}</b><span class="ui-panel__dmuted">Lv ${m.level || 1}</span></div>
                 ${menuBar('HP', m.hp || 0, m.maxHp || 1, 'hp')}${menuBar('MP', m.mp || 0, m.maxMp || 1, 'mp')}</div></div>`).join('');
         }
@@ -5753,7 +5766,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             if (!m) return '';
             const st = (l, v) => `<div><span>${l}</span><b>${v}</b></div>`;
             const md = (m.magicDefense != null) ? m.magicDefense : Math.floor((m.defense || 0) * 0.5);
-            return `<div class="ui-panel__dlead"><img src="${menuFace(m)}" onerror="this.style.opacity=.2"><div>
+            return `<div class="ui-panel__dlead">${menuFaceHtml(m, 60)}<div>
                 <div class="ui-panel__dname">${UIPanel.esc(m.name || 'カイト')} <span class="ui-panel__dmuted">/ ${roleLabel(m)}</span></div>
                 <div class="ui-panel__dmuted">Lv ${m.level || 1}</div>
                 ${menuBar('HP', m.hp || 0, m.maxHp || 1, 'hp')}${menuBar('MP', m.mp || 0, m.maxMp || 1, 'mp')}
@@ -5764,7 +5777,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         //   回復スキル/アイテムの対象選びでは「誰のHP/MPか」が分かれば十分（ステータス表は出さない）。
         function targetDetailHtml(m) {
             if (!m) return '';
-            return `<div class="ui-panel__dlead"><img src="${menuFace(m)}" onerror="this.style.opacity=.2"><div>
+            return `<div class="ui-panel__dlead">${menuFaceHtml(m, 60)}<div>
                 <div class="ui-panel__dname">${UIPanel.esc(m.name || 'カイト')}</div>
                 <div class="ui-panel__dmuted">Lv ${m.level || 1}${(m.hp || 0) <= 0 ? '　<span style="color:#ff6b6b;">戦闘不能</span>' : ''}</div>
                 ${menuBar('HP', m.hp || 0, m.maxHp || 1, 'hp')}${menuBar('MP', m.mp || 0, m.maxMp || 1, 'mp')}
@@ -5870,22 +5883,24 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                   <div style="font-size:14px;font-weight:700;color:${afford ? 'var(--accent)' : '#ff6b6b'};margin-top:3px;">${(d.price || 0).toLocaleString()} G${afford ? '' : '　(所持金不足)'}</div></div></div>
                 <div class="ui-panel__dmuted" style="padding:6px 2px;line-height:1.7;">${UIPanel.esc(d.description || '')}</div>`;
         }
-        function openShopBuy(notice) {
+        function openShopBuy(notice, keepIndex) {
             const ctx = window._shopCtx || {}; const shopType = ctx.shopType;
             const shop = window.gameShop;
             const list = (shop && shop.shopData[shopType]) || [];
             const items = list.map((si, i) => {
                 const d = shop.getItemDetails(shopType, i);
                 const afford = shopGold() >= (d ? (d.price || 0) : 0);
-                return { icon: shopItemIcon(d), label: d ? d.name : '?', right: d ? `${(d.price || 0).toLocaleString()} G` : '', value: i, disabled: !d || !afford || d.alreadyLearned };
+                // ★所持金不足でもカーソルは合わせられる（中身を確認できる）。購入しようとした時だけ弾く。
+                //   買えない物は右端に ⚠ を出して一目で分かるようにする。習得済み魔法のみ選択不可のまま。
+                return { icon: shopItemIcon(d), label: d ? d.name : '?', right: d ? `${(d.price || 0).toLocaleString()} G${afford ? '' : ' ⚠'}` : '', value: i, disabled: !d || d.alreadyLearned };
             });
             if (!items.length) items.push({ label: '商品がありません', disabled: true });
             UIPanel.open({
                 host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
-                title: '🛒 買う', items, selectedIndex: 0, columns: 1, pageSize: 9,
+                title: '🛒 買う', items, selectedIndex: keepIndex || 0, columns: 1,
                 footHtml: notice ? `<span style="color:#ff6b6b;font-weight:700;">${UIPanel.esc(notice)}</span>` : shopGoldFoot(),
                 detailFor: (it) => shopBuyDetail(shopType, it && it.value != null ? it.value : null),
-                onSelect: (i) => { let msg = ''; if (shop) { const r = shop.buyItem(shopType, i); if (r && !r.success) msg = r.message; } openShopBuy(msg); },
+                onSelect: (i) => { let msg = ''; if (shop) { const r = shop.buyItem(shopType, i); if (r && !r.success) msg = r.message || 'ゴールドが足りません'; } openShopBuy(msg, i); },
                 onCancel: () => openShopMenu(shopType, ctx.shopkeeper),
                 hint: '↑↓ 選択 / Z 買う / X もどる'
             });
@@ -5944,18 +5959,16 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 hint: '↑↓ 選択 / Z きめる / X もどる'
             });
         }
-        // ★個数選択（1〜所持数＋「ぜんぶ」）。1個しかない物は確認へ直行。
+        // ★個数選択: ↑↓キーで増減するステッパ(UIPanel stepper)。1個しかない物は確認へ直行。
         function shopSellPickQty(s) {
             if (!s) return;
             if ((s.qty || 1) <= 1) { shopSellConfirm(s, 1); return; }
-            const items = [];
-            for (let q = 1; q <= s.qty; q++) items.push({ icon: '🔹', label: `${q} 個`, right: `${(s.sellPrice * q).toLocaleString()} G`, value: q });
-            items.push({ icon: '🔷', label: `ぜんぶ（${s.qty}個）`, right: `${(s.sellPrice * s.qty).toLocaleString()} G`, value: s.qty });
             UIPanel.open({
                 host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
-                title: `${s.name} — 何個 売る？`, items, selectedIndex: 0, columns: 1,
+                title: `${s.name} — 何個 売る？`,
+                stepper: { min: 1, max: s.qty, value: 1, step: 1, label: `／ ${s.qty}` },
                 footHtml: shopGoldFoot(),
-                detailFor: (it) => { const q = (it && it.value) || 1; return `<div class="ui-panel__dlead" style="align-items:center;"><div style="font-size:34px;width:50px;text-align:center;">${s.icon}</div><div><div class="ui-panel__dname">${UIPanel.esc(s.name)}</div><div class="ui-panel__dmuted">所持 ×${s.qty}</div><div style="font-size:14px;font-weight:700;color:var(--accent);margin-top:3px;">${q}個 → +${(s.sellPrice * q).toLocaleString()} G</div></div></div>`; },
+                detailFor: (q) => { const n = q || 1; return `<div class="ui-panel__dlead" style="align-items:center;"><div style="font-size:34px;width:50px;text-align:center;">${s.icon}</div><div><div class="ui-panel__dname">${UIPanel.esc(s.name)}</div><div class="ui-panel__dmuted">所持 ×${s.qty}</div><div style="font-size:15px;font-weight:700;color:var(--accent);margin-top:4px;">${n}個 → +${(s.sellPrice * n).toLocaleString()} G</div></div></div>`; },
                 onSelect: (q) => shopSellConfirm(s, q),
                 onCancel: () => openShopSell(),
                 hint: '↑↓ 個数 / Z きめる / X もどる'
@@ -6570,11 +6583,34 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 hint: '↑↓ 対象 / Z 決定 / X もどる'
             });
         }
+        // ★脱出系が意味を持つ危険エリア(ダンジョン/地下)のみ脱出可。
+        //   map.area の実値は dungeon/subway/town/city/market/shop/house/shrine/garden(map-system.js)。
+        //   街(town/city/…)で空振り消費させないため、危険エリアのホワイトリストで判定する。
+        const ESCAPABLE_AREAS = ['dungeon', 'subway'];
+        function canEscapeHere() {
+            const map = window.mapSystem && mapSystem.maps && mapSystem.maps[mapSystem.currentMap];
+            return !!(map && ESCAPABLE_AREAS.includes(map.area));
+        }
+        // ★エスケープロープ等: メニューを閉じて新宿中央広場へ帰還。runMapTransition がフェード＋スポーン配置を担当。
+        //   spawn座標は手書きせず getSpawnPoint のマップ中央＋findSafeSpawnPoint に任せる(手書き座標は可動域外/壁抜けの危険)。
+        function escapeToTown(message) {
+            if (window.UIPanel && UIPanel.isOpen()) UIPanel.close();
+            const ov = document.getElementById('menuOverlay'); if (ov) ov.classList.remove('active');
+            if (typeof runMapTransition === 'function') {
+                runMapTransition({ nextMap: 'shinjuku_center_plaza', exit: { to: 'shinjuku_center_plaza' } });
+            }
+            if (message && typeof showMessage === 'function') showMessage(message);
+        }
         function itemApply(itemId, target) {
             const m = target || ((typeof getMenuMembers === 'function') ? getMenuMembers()[0] : player);
+            // ★脱出系は危険エリア(ダンジョン/地下)以外では使わせない（無駄な消費を防ぐ）。
+            const db = (window.itemSystem && itemSystem.itemDatabase) ? itemSystem.itemDatabase[itemId] : null;
+            const isEscape = !!(db && db.effect && db.effect.escape);
+            if (isEscape && !canEscapeHere()) { showMessage('ここでは脱出する必要はない。'); return; }
             const r = (window.itemSystem && itemSystem.useItem) ? itemSystem.useItem(itemId, m, false) : null;
             if (!r || !r.success) { showMessage((r && r.message) || 'つかえなかった'); return; }
             if (window.updateUI) updateUI();
+            if (r.escape) { escapeToTown(r.message); return; }   // ★街へ帰還（メニューは閉じる・一覧は開き直さない）
             openItemMenu();   // 一覧を開き直す＝個数/HP更新・続けて使える
         }
         

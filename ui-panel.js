@@ -127,8 +127,11 @@ const UIPanel = (() => {
             items: config.items || [],
             index: clampToSelectable(config.items || [], typeof config.selectedIndex === 'number' ? config.selectedIndex : 0, +1),
             host,
-            overlay: config.overlay ? resolveHost(config.overlay) : null
+            overlay: config.overlay ? resolveHost(config.overlay) : null,
+            // ★数量ステッパ(↑↓で増減・Zで確定)。frame画面で左ペインをリストの代わりに数値ウィジェットにする。
+            stepper: config.stepper ? Object.assign({ min: 0, max: 99, step: 1, value: 0, label: '' }, config.stepper) : null
         };
+        if (state.stepper) state.stepper.value = Math.max(state.stepper.min, Math.min(state.stepper.max, state.stepper.value));
         render();
         if (state.overlay) state.overlay.classList.add('active');
     }
@@ -169,15 +172,17 @@ const UIPanel = (() => {
             else if (cfg.headerExtra) fh += `<span class="ui-panel__header-extra">${esc(cfg.headerExtra)}</span>`;
             fh += '</div>';
             fh += '<div class="ui-panel__frame">';
-            fh += `<div class="ui-panel__pane-l"><div class="ui-panel__list${selectable ? '' : ' ui-panel__list--readonly'}" style="--cols:${cols}"></div>`;
+            fh += '<div class="ui-panel__pane-l">';
+            if (cfg.stepper) fh += `<div class="ui-panel__stepper" id="ui-panel-stepper">${stepperHtml()}</div>`;
+            else fh += `<div class="ui-panel__list${selectable ? '' : ' ui-panel__list--readonly'}" style="--cols:${cols}"></div>`;
             fh += (cfg.footHtml != null ? `<div class="ui-panel__foot">${cfg.footHtml}</div>` : '') + '</div>';
             fh += `<div class="ui-panel__pane-r" id="ui-panel-detail">${computeDetail()}</div>`;
             fh += '</div>';
             fh += `<div class="ui-panel__hint"><span>${esc(cfg.hint || defaultHint(selectable))}</span><span class="ui-panel__page">${pageLabel()}</span></div>`;
             state.host.innerHTML = fh;
             state.host.classList.add('ui-panel', 'ui-panel--frame');
-            const listB = state.host.querySelector('.ui-panel__list');
-            if (listB && state.items.length) paintList(listB, selectable);
+            if (cfg.stepper) { wireStepper(); }
+            else { const listB = state.host.querySelector('.ui-panel__list'); if (listB && state.items.length) paintList(listB, selectable); }
             updatePageLabel();
             return;
         }
@@ -210,9 +215,36 @@ const UIPanel = (() => {
         if (!state) return '';
         const cfg = state.config;
         if (typeof cfg.detailFor === 'function') {
-            try { return cfg.detailFor(state.items[state.index], state.index) || ''; } catch (e) { return ''; }
+            try {
+                // ★ステッパ時は detailFor に現在の数値を渡す（合計金額表示など）。
+                if (state.stepper) return cfg.detailFor(state.stepper.value, state.stepper.value) || '';
+                return cfg.detailFor(state.items[state.index], state.index) || '';
+            } catch (e) { return ''; }
         }
         return cfg.detailHtml || '';
+    }
+
+    // ★数量ステッパ: 左ペインに ▲ 数値 ▼ を描く。↑↓/クリックで増減、Zで確定。
+    function stepperHtml() {
+        const st = state.stepper;
+        return `<div class="ui-panel__step-wrap">
+            <div class="ui-panel__step-arrow" data-step="up">▲</div>
+            <div class="ui-panel__step-num"><span id="ui-panel-stepval">${st.value}</span><span class="ui-panel__step-lbl">${esc(st.label || '')}</span></div>
+            <div class="ui-panel__step-arrow" data-step="down">▼</div>
+        </div>`;
+    }
+    function wireStepper() {
+        state.host.querySelectorAll('.ui-panel__step-arrow').forEach(el => {
+            el.onclick = () => stepperAdjust(el.dataset.step === 'up' ? +1 : -1);
+        });
+    }
+    function stepperAdjust(dir) {
+        if (!state || !state.stepper) return;
+        const st = state.stepper;
+        st.value = Math.max(st.min, Math.min(st.max, st.value + dir * (st.step || 1)));
+        const v = state.host.querySelector('#ui-panel-stepval');
+        if (v) v.textContent = st.value;
+        repaintDetail();
     }
     // 右ペインだけ再描画（左リストは触らない＝フォーカス維持・ちらつき無し）
     function repaintDetail() {
@@ -301,6 +333,14 @@ const UIPanel = (() => {
     function handleKey(e) {
         if (!state) return false;
         const k = e.key;
+        // ★ステッパ画面: ↑↓(←→)で数値を増減、Zで現在値を確定、Xで戻る。
+        if (state.stepper) {
+            if (CONFIRM.includes(k)) { e.preventDefault(); const cb = state.config.onSelect; if (typeof cb === 'function') cb(state.stepper.value); return true; }
+            if (CANCEL.includes(k)) { e.preventDefault(); fireCancel(); return true; }
+            if (ARROW.up.includes(k) || ARROW.right.includes(k)) { e.preventDefault(); stepperAdjust(+1); return true; }
+            if (ARROW.down.includes(k) || ARROW.left.includes(k)) { e.preventDefault(); stepperAdjust(-1); return true; }
+            e.preventDefault(); return true;
+        }
         const cols = state.config.columns || 1;
         const selectable = state.config.selectable !== false;
         // read-only画面は決定もキャンセルも「閉じる」に倒す（読み物のz/x両方で戻る）
