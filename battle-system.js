@@ -2470,6 +2470,13 @@ class BattleSystem {
         this.waitingForCommand = true;
         this.selectedCommand = 0;
 
+        // ★保留中の「○○の こうどう」ヘッダフラッシュ復元タイマを確定キャンセル。
+        //   これをしないと、メンバー交代で正しく更新したヘッダ(例 リク のコマンド)を、
+        //   1800ms後にフラッシュ復元が古いラベル(カイト のコマンド)で上書きしてズレる。
+        if (this._flashTimer) { clearTimeout(this._flashTimer); this._flashTimer = null; }
+        const hdrEl = document.getElementById('gameMessageCharacter');
+        if (hdrEl && hdrEl.dataset) { delete hdrEl.dataset.battleFlashing; delete hdrEl.dataset.battleOriginalLabel; }
+
         // 現在行動中のメンバー名をヘッダに表示
         const partyMembers = this.getPartyMembers();
         const currentMember = partyMembers[this.currentMemberIndex] || partyMembers[0];
