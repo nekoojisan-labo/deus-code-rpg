@@ -118,6 +118,36 @@ chk('CHAIN: メンバーBのビートはAがクリアされてから開始', saw
 chk('CHAIN: Bビートは結果行「たおした！」を最後に含む（撃破=行動ビート）', shownLines().indexOf('スライムを たおした！') >= 0 || chainDone);
 chk('CHAIN: 連鎖の最終進行(次ターン相当)が発火', chainDone);
 
+// ---------- (c3) VICTORY-CHAIN: 勝利→ドロップ→レベルアップ(4行) が1ビートずつ非混在 ----------
+reset();
+const VIC = ['せんとうに しょうり！', '10 の けいけんちを かくとく！', '5 ゴールドを てにいれた！'];
+const DROP = ['やくそうを てにいれた！'];
+const LVUP = ['アカリが レベルアップ！', 'レベル 5 になった！', 'HP+20 MP+10 攻撃+3 防御+2', 'アカリは ヒールを おぼえた！'];
+let vEnd = false;
+battle.presentBeat(VIC);
+battle.afterBattleMessages(() => {
+  battle.presentBeat(DROP);
+  battle.afterBattleMessages(() => {
+    battle.presentBeat(LVUP);
+    battle.afterBattleMessages(() => { vEnd = true; });
+  });
+});
+let vMixed = false, lvupMaxLen = 0, lvupFinal = [];
+const known = [VIC, DROP, LVUP];
+const recV = () => {
+  const s = shownLines();
+  if (s.length === 0) return;
+  const matchesOne = known.some(b => isPrefixOf(s, b));
+  if (!matchesOne) vMixed = true;
+  if (isPrefixOf(s, LVUP)) { if (s.length > lvupMaxLen) { lvupMaxLen = s.length; lvupFinal = s; } }
+};
+recV();
+for (let i = 0; i < 50 && timers.length; i++) { tick(); recV(); }
+chk('VICTORY-CHAIN: どのフレームも単一ビートのprefix（勝利/ドロップ/Lvが混ざらない）', !vMixed);
+chk('VICTORY-CHAIN: レベルアップは4行すべてが1ビート（途中分割されない）', lvupMaxLen === 4, `maxLen=${lvupMaxLen}`);
+chk('VICTORY-CHAIN: 習得スキル行がレベルアップビートの最後', lvupFinal[3] === 'アカリは ヒールを おぼえた！');
+chk('VICTORY-CHAIN: 最終進行(endBattle相当)が全ビート完了後に発火', vEnd === true);
+
 // ---------- (d) DRAINED-IMMEDIATE: 空＆idleでは afterBattleMessages 即発火 ----------
 reset();
 let imm = false;

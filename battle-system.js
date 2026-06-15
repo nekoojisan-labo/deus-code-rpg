@@ -911,16 +911,17 @@ class BattleSystem {
         return { skipAction: false };
     }
 
-    // ターン終了時のステータス異常処理
+    // ターン終了時のステータス異常処理（メッセージ行の配列を返す。表示は呼び出し側が1ビートで）
     processStatusAilmentsEndTurn(character) {
-        if (!character.statusAilments) return;
+        const lines = [];
+        if (!character.statusAilments) return lines;
 
         // 毒ダメージ
         if (character.statusAilments.poison > 0) {
             const poisonDamage = Math.floor(character.maxHp * 0.1);
             character.hp = Math.max(0, character.hp - poisonDamage);
-            this.addBattleLog(`${character.name}は どくの ダメージを うけた！`);
-            this.addBattleLog(`${character.name}に ${poisonDamage}の ダメージ！`);
+            lines.push(`${character.name}は どくの ダメージを うけた！`);
+            lines.push(`${character.name}に ${poisonDamage}の ダメージ！`);
         }
 
         // ステータス異常の持続ターンを減らす
@@ -937,11 +938,12 @@ class BattleSystem {
                     curse: 'のろい'
                 };
 
-                this.addBattleLog(`${character.name}の ${ailmentNames[ailment]}が なおった！`);
+                lines.push(`${character.name}の ${ailmentNames[ailment]}が なおった！`);
             }
         });
 
         this.updateBattleUI();
+        return lines;
     }
 
     // メンバーのカムイ
@@ -1673,7 +1675,7 @@ class BattleSystem {
         });
     }
 
-    // 全メンバーのステータス異常処理
+    // 全メンバーのステータス異常処理（1メンバー=1ビート。固定タイマー廃止・ビート完了で次へ）
     processAllMembersStatusAilments(callback) {
         const allMembers = this.getPartyMembers();
         let index = 0;
@@ -1684,13 +1686,14 @@ class BattleSystem {
                 return;
             }
 
-            this.processStatusAilmentsEndTurn(allMembers[index]);
+            const member = allMembers[index];
             index++;
-
-            if (index < allMembers.length) {
-                setTimeout(processNext, 500);
+            const lines = this.processStatusAilmentsEndTurn(member);
+            if (lines.length) {
+                this.presentBeat(lines);                          // そのメンバーの異常処理を1ビートで
+                this.afterBattleMessages(processNext);            // 表示完了後に次メンバー
             } else {
-                callback();
+                processNext();                                    // メッセージ無し＝即次
             }
         };
 
@@ -1726,15 +1729,16 @@ class BattleSystem {
         allMembers.forEach(member => { member.exp = (member.exp || 0) + expGained; });
         const droppedItems = this.processItemDrops();
 
-        // ★一気出しをやめ、1メッセージずつ間隔をあけて表示（何が起きたか追える）→最後にレベルアップ
-        const victoryMsgs = [
-            `${this.currentEnemy.name}を たおした！`,
+        // ビート化: 勝利+報酬を1ビート、ドロップを1ビート、完了後にレベルアップ。
+        // 「○○を たおした！」は撃破した行動ビートで既出のため、ここでは重複させない。
+        this.presentBeat([
             `せんとうに しょうり！`,
             `${expGained} の けいけんちを かくとく！`,
-            `${goldGained} ゴールドを てにいれた！`,
-            ...droppedItems.map(item => `${item.name}を てにいれた！`)
-        ];
-        victoryMsgs.forEach(m => this.addBattleLog(m));
+            `${goldGained} ゴールドを てにいれた！`
+        ]);
+        if (droppedItems.length) {
+            this.presentBeat(droppedItems.map(item => `${item.name}を てにいれた！`));
+        }
         this.afterBattleMessages(() => this.processLevelUps(allMembers, 0));
     }
 
@@ -1777,11 +1781,11 @@ class BattleSystem {
         return droppedItems;
     }
 
-    // レベルアップ処理を順番に実行
+    // レベルアップ処理を順番に実行（1メンバーのレベルアップ = 1ビート。固定タイマー廃止）
     processLevelUps(members, index) {
         if (index >= members.length) {
-            // 全員のレベルアップ処理完了
-            setTimeout(() => this.endBattle(true), 1500);
+            // 全員のレベルアップ処理完了（直前ビート表示後に戦闘終了へ同期）
+            this.afterBattleMessages(() => this.endBattle(true));
             return;
         }
 
@@ -1791,13 +1795,12 @@ class BattleSystem {
         const expNeeded = window.calculateExpNeeded ? window.calculateExpNeeded(member.level, expCurve) : member.level * 100;
 
         if (member.exp >= expNeeded) {
-            setTimeout(() => {
-                this.levelUpCharacter(member);
-                // 次のメンバーのレベルアップチェック
-                this.processLevelUps(members, index);
-            }, 1000);
+            // レベルアップ行(成長3行＋習得)を1ビートにまとめて表示→同memberを再チェック(多段Lv)
+            const lines = this.levelUpCharacter(member);
+            this.presentBeat(lines);
+            this.afterBattleMessages(() => this.processLevelUps(members, index));
         } else {
-            // 次のメンバーへ
+            // 次のメンバーへ（メッセージ無し＝即時）
             this.processLevelUps(members, index + 1);
         }
     }
@@ -1845,26 +1848,30 @@ class BattleSystem {
         character.hp = character.maxHp;
         character.mp = character.maxMp;
 
-        // レベルアップメッセージ
-        this.addBattleLog(`${character.name}が レベルアップ！`);
-        this.addBattleLog(`レベル ${character.level} になった！`);
-        this.addBattleLog(`HP+${hpGain} MP+${mpGain} 攻撃+${attackGain} 防御+${defenseGain}`);
+        // レベルアップメッセージ（addBattleLogせず行を返し、呼び出し側が1ビートに畳む）
+        const lines = [
+            `${character.name}が レベルアップ！`,
+            `レベル ${character.level} になった！`,
+            `HP+${hpGain} MP+${mpGain} 攻撃+${attackGain} 防御+${defenseGain}`
+        ];
 
-        // 新規スキル習得チェック
-        this.checkSkillLearning(character, oldLevel);
+        // 新規スキル習得チェック（習得行も同じビートに連結）
+        lines.push(...this.checkSkillLearning(character, oldLevel));
 
         // UIを更新
         if (window.updateUI) {
             window.updateUI();
         }
+        return lines;
     }
 
-    // スキル習得チェック
+    // スキル習得チェック（習得メッセージ行の配列を返す。表示は呼び出し側がビートで行う）
     checkSkillLearning(character, oldLevel) {
+        const lines = [];
         const characterId = character.characterId || 'kaito';
         const skillLearning = window.CHARACTER_GROWTH?.[characterId]?.skillLearning;
 
-        if (!skillLearning || !window.magicSystem) return;
+        if (!skillLearning || !window.magicSystem) return lines;
 
         const newLevel = character.level;
 
@@ -1877,12 +1884,13 @@ class BattleSystem {
                     if (learned) {
                         const magic = window.magicSystem.magicDatabase[skillId];
                         if (magic) {
-                            this.addBattleLog(`${character.name}は ${magic.name}を おぼえた！`);
+                            lines.push(`${character.name}は ${magic.name}を おぼえた！`);
                         }
                     }
                 });
             }
         }
+        return lines;
     }
     
     // 防御
@@ -2011,7 +2019,8 @@ class BattleSystem {
     
     // ゲームオーバー
     gameOver() {
-        this.addBattleLog('カイトは たおれた...');
+        // 全滅の結果をビートで表示（個々の「○○は たおれた！」は直前の敵攻撃ビートで既出）
+        this.presentBeat(['パーティは ぜんめつした…']);
         // 戦闘UI状態を解除
         this.kamuiSkillMenuActive = false;
         this.kamuiPlanning = false;
@@ -2040,7 +2049,9 @@ class BattleSystem {
             if (typeof window.resetBattleUIState === 'function') window.resetBattleUIState();
         };
 
-        setTimeout(() => {
+        // 死亡ビートの表示完了後にゲームオーバーUIを開く（固定2sタイマーの競合を解消）。
+        // ※ SV3 で showGameModal をロード画面(openGameOverScreen)＋フィールド凍結に置換する。
+        this.afterBattleMessages(() => {
             if (typeof window.showGameModal === 'function') {
                 window.showGameModal({
                     title: 'GAME OVER',
@@ -2064,7 +2075,7 @@ class BattleSystem {
             } else {
                 teardownToField();
             }
-        }, 2000);
+        });
     }
     
     // ===== バトルメッセージ部品（行動ごと「ビート」表示・自動送り＋明確な区切り） =====
