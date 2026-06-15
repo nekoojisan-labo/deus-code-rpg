@@ -3637,6 +3637,7 @@
     <script src="magic-system.js?v=47"></script>
     <script src="se-system.js?v=1"></script>
     <script src="ui-panel.js?v=2"></script>
+    <script src="save-system.js?v=1"></script>
     <script src="battle-system.js?v=64"></script>
     <script src="map-walkability-data.js?v=12"></script>
     <script src="object-catalog.js?v=2"></script>
@@ -4425,6 +4426,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
 
         // タイトルでセーブの有無を判定し「つづきから」を出す
         function refreshContinueButton() {
+            if (typeof migrateLegacySaveOnce === 'function') migrateLegacySaveOnce(); // 旧単一セーブ→スロット1（冪等）
             const btn = document.getElementById('continueButton');
             if (btn) btn.style.display = (typeof hasSaveData === 'function' && hasSaveData()) ? 'inline-block' : 'none';
         }
@@ -5436,11 +5438,30 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             };
         }
 
+        // 現在地の表示名・章（スロット一覧のラベル用メタ）
+        function currentLocationName() {
+            const m = mapSystem.maps[mapSystem.currentMap];
+            return (m && m.name) || mapSystem.currentMap || '？？？';
+        }
+        function currentChapterLabel() {
+            try {
+                if (questSystem && questSystem.getCurrent) {
+                    const cur = questSystem.getCurrent(storyFlags);
+                    if (cur && questSystem.getChapterTitle) return questSystem.getChapterTitle(cur);
+                }
+            } catch (e) {}
+            return '';
+        }
+
         function serializeGameState() {
             return {
                 version: SAVE_VERSION,
                 timestamp: new Date().toISOString(),
                 currentMap: mapSystem.currentMap,
+                locationName: currentLocationName(),
+                chapter: currentChapterLabel(),
+                // playerPos は追加フィールド（serializePlayer は従来通り x/y を含まない＝二重スケール無し）
+                playerPos: { x: player.x, y: player.y, facing: player.facing },
                 player: serializePlayer(),
                 storyFlags: { ...storyFlags },
                 items: itemSystem ? itemSystem.toJSON() : {},
@@ -5450,25 +5471,39 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             };
         }
 
-        function hasSaveData() {
+        // ストレージ配線（SaveSystem は純関数。ここで localStorage を渡す）
+        function _saveStorage() { return window.localStorage; }
+        function writeSaveSlot(i) {
             try {
-                const raw = localStorage.getItem(SAVE_KEY);
-                if (!raw) return false;
-                const d = JSON.parse(raw);
-                return !!(d && d.version === SAVE_VERSION);
-            } catch (e) { return false; }
-        }
-
-        function saveGame() {
-            try {
-                localStorage.setItem(SAVE_KEY, JSON.stringify(serializeGameState()));
+                SaveSystem.writeSlot(_saveStorage(), i, serializeGameState());
                 if (window.playSE) window.playSE('save');
-                showMessage('ゲームを セーブしました');
+                showMessage(`スロット${i} に セーブしました`);
+                return true;
             } catch (e) {
                 console.error('[Save] failed:', e);
                 showMessage('セーブに失敗しました');
+                return false;
             }
         }
+        function loadSaveSlot(i) {
+            const s = SaveSystem.readSlot(_saveStorage(), i);
+            if (!s) return false;          // 空/壊れ/版違い → ロード不可
+            applyGameState(s.state);
+            return true;
+        }
+        function listSaveSlots() { return SaveSystem.listSlots(_saveStorage()); }
+
+        // 旧単一セーブの移行（起動時に一度だけ・スロット1が空の時のみ）
+        function migrateLegacySaveOnce() {
+            try { return SaveSystem.migrateLegacySave(_saveStorage()); } catch (e) { return false; }
+        }
+
+        function hasSaveData() {
+            try { return SaveSystem.anyOccupied(_saveStorage()); } catch (e) { return false; }
+        }
+
+        // 互換: 引数なし saveGame は SV2 でスロット選択UIに差し替える。SV1 では既定スロット1へ保存。
+        function saveGame() { return writeSaveSlot(1); }
 
         // 全状態を現行 systems に適用（systems は startGame で new 済み前提）
         function applyGameState(data) {
@@ -5487,11 +5522,26 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 if (partySystem && equipmentSystem.recalcAll) equipmentSystem.recalcAll(partySystem.getMembers());
             }
 
-            // マップ復元: currentMap を直接セットしスポーン地点へ
+            // 防御的に戦闘状態を解除（将来 teardown 無しでのロードでも安全に）
+            if (window.battleSystem) { battleSystem.inBattle = false; battleSystem.currentEnemy = null; }
+
+            // マップ復元: currentMap を直接セット。playerPos があれば保存位置へ（可動域へスナップ）、
+            // 無ければ従来の getSpawnPoint（旧セーブ互換）。
             const mapId = mapSystem.normalizeMapId(data.currentMap);
             mapSystem.currentMap = mapId;
-            const spawn = mapSystem.getSpawnPoint({ to: mapId, spawnX: 400, spawnY: 380 }, canvas);
-            player.x = spawn.x; player.y = spawn.y;
+            const map = mapSystem.maps[mapId];
+            if (data.playerPos && typeof data.playerPos.x === 'number') {
+                let px = data.playerPos.x, py = data.playerPos.y;
+                if (map && mapSystem.findSafeSpawnPoint) {
+                    const safe = mapSystem.findSafeSpawnPoint(map, px, py, 24); // 保存後に可動域が変わっても壁埋まり防止
+                    if (safe) { px = safe.x; py = safe.y; }
+                }
+                player.x = px; player.y = py;
+                if (data.playerPos.facing) player.facing = data.playerPos.facing;
+            } else {
+                const spawn = mapSystem.getSpawnPoint({ to: mapId, spawnX: 400, spawnY: 380 }, canvas);
+                player.x = spawn.x; player.y = spawn.y;
+            }
             if (mapSystem.updateCamera) mapSystem.updateCamera(player.x, player.y, canvas);
 
             updateMapInfo();
@@ -5501,18 +5551,18 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             if (typeof refreshObjective === 'function') refreshObjective();
         }
 
+        // 起動時ロード: pendingLoadSlot(ロードUIが設定) → 指定スロット、無ければ最新スロット。
+        // 旧単一キー(SAVE_KEY)は直接読まない（起動時 migrate でスロット1へ移行済）。
         function loadGame() {
             try {
-                const raw = localStorage.getItem(SAVE_KEY);
-                if (!raw) return false;
-                const data = JSON.parse(raw);
-                if (!data || data.version !== SAVE_VERSION) {
-                    console.warn('[Load] incompatible save version, ignoring');
-                    return false;
-                }
-                applyGameState(data);
-                console.log('[Load] game state restored');
-                return true;
+                migrateLegacySaveOnce();
+                let slot = window.pendingLoadSlot;
+                if (!slot) slot = SaveSystem.latestSlot(_saveStorage());
+                if (!slot) return false;
+                window.pendingLoadSlot = null;
+                const ok = loadSaveSlot(slot);
+                if (ok) console.log('[Load] game state restored from slot', slot);
+                return ok;
             } catch (e) {
                 console.error('[Load] failed:', e);
                 return false;
