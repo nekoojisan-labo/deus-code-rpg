@@ -157,6 +157,26 @@ function buildModel() {
   return m;
 }
 function zoneOf(m, id) { try { m.mapSys.currentMap = id; return m.mapSys.getEncounterZone(); } catch (e) { return null; } }
+function normId(m, id) { try { return m.mapSys.normalizeMapId(id) || id; } catch (e) { return id; } }
+function areaOf(m, id) { id = normId(m, id);
+  if (/^deep_tunnel/.test(id)) return 'ダンジョン(深層)';
+  if (/^subway/.test(id)) return '地下鉄';
+  if (/^tokyo_gov/.test(id)) return '都庁';
+  if (/^shrine/.test(id)) return '神社';
+  if (/biodome/.test(id)) return '植物園';
+  if (/^shop_/.test(id)) return '店内';
+  if (/^house|residential/.test(id)) return '住宅街';
+  if (/shinjuku|shopping|black_market/.test(id)) return '街';
+  return 'その他';
+}
+function buildEdges(m) {
+  const edges = [];
+  Object.keys(m.maps).forEach(id => (m.maps[id].exits || []).forEach(ex => {
+    if (!ex.to) return; const to = normId(m, ex.to);
+    edges.push({ from: id, to, dir: ex.direction || '', flag: ex.requiredFlag || '', auto: !!ex.autoEnter, fromArea: areaOf(m, id), toArea: areaOf(m, to) });
+  }));
+  return edges;
+}
 
 function analyze(m) {
   const enemyIds = new Set(Object.keys(m.enemies)); const enemyToTables = {}; const broken = [];
@@ -231,6 +251,39 @@ VIEWS['マップ'] = (m) => {
     <span class="sub2">　緑=可動域 赤=建物/障害 黄破線=出口 🚶=NPC（base座標を編集→変更リクエストへ）</span></div>
     <div id="mapHost"></div>`;
   return h;
+};
+
+VIEWS['相関図'] = (m) => {
+  const edges = buildEdges(m);
+  const byArea = {}; Object.keys(m.maps).forEach(id => (byArea[areaOf(m, id)] = byArea[areaOf(m, id)] || []).push(id));
+  const order = ['街','店内','住宅街','地下鉄','神社','植物園','都庁','ダンジョン(深層)','その他'];
+  const areas = Object.keys(byArea).sort((a, b) => (order.indexOf(a) + 99 * (order.indexOf(a) < 0)) - (order.indexOf(b) + 99 * (order.indexOf(b) < 0)));
+  // 診断
+  const jumps = [], crossNoGate = [], asym = [];
+  edges.forEach(e => {
+    const zf = zoneOf(m, e.from), zt = zoneOf(m, e.to);
+    if (!e.flag && zf && zt) { const a = (zf.levelRange || [])[1] || 0, b = (zt.levelRange || [])[1] || 0; if (b - a >= 3) jumps.push(`${e.from}(〜Lv${a}) → ${e.to}(〜Lv${b}) +${b - a}`); }
+    if (!e.flag && e.fromArea !== e.toArea && e.fromArea !== '店内' && e.toArea !== '店内' && !((e.fromArea === '街' && e.toArea === '住宅街') || (e.fromArea === '住宅街' && e.toArea === '街'))) crossNoGate.push(`${e.from} → ${e.to}`);
+    if (!edges.find(x => x.from === e.to && x.to === e.from)) asym.push(`${e.from} → ${e.to}（戻り無し）`);
+  });
+  const diag = (cls, t, list) => `<div class="h-item ${cls}"><h3>${t}（${list.length}）</h3><div class="d">${list.length ? list.map(esc).join('、') : 'なし'}</div></div>`;
+  let h = `<p class="sub2">エリアごとにマップを並べ、各出口の行き先・方向・🔒ゲート・⚠️エリア跨ぎ・🚪自動侵入 を表示。これで「どこからどこへ繋がるか」「ダンジョン↔街の不正接続」を一望できます。</p>`;
+  h += diag(jumps.length ? 'err' : 'ok', `${jumps.length ? '❌' : '✅'} 難易度が跳ねる無ゲート接続`, jumps);
+  h += diag(crossNoGate.length ? '' : 'ok', `${crossNoGate.length ? '⚠️' : '✅'} エリア跨ぎ無ゲート接続`, crossNoGate);
+  h += diag(asym.length ? '' : 'ok', `${asym.length ? '⚠️' : '✅'} 戻れない接続`, asym);
+  h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:14px">';
+  areas.forEach(area => {
+    h += `<div class="card" style="padding:12px"><h3 style="margin:0 0 8px;color:var(--accent2);font-size:13px">🗺️ ${esc(area)}</h3>`;
+    byArea[area].forEach(id => {
+      const z = zoneOf(m, id); const out = edges.filter(e => e.from === id);
+      h += `<div style="margin:6px 0;padding:6px 8px;background:var(--panel2);border-radius:6px"><div style="font-weight:600">${esc(m.maps[id].name || id)} <span class="sub2">${z ? `T${z.tier} Lv${(z.levelRange || []).join('-')}` : ''}</span></div>`;
+      out.forEach(e => { const cross = e.toArea !== e.fromArea; h += `<div class="sub2" style="padding-left:10px">→ ${esc(e.to)} <span style="color:var(--sub)">${esc(e.dir)}</span>${e.flag ? ` <span class="pill warn">🔒${esc(e.flag)}</span>` : ''}${e.auto ? ' 🚪' : ''}${cross ? ` <span class="pill ${e.flag ? '' : 'err'}">⚠️${esc(e.toArea)}</span>` : ''}</div>`; });
+      if (!out.length) h += `<div class="sub2" style="padding-left:10px">（出口なし）</div>`;
+      h += '</div>';
+    });
+    h += '</div>';
+  });
+  return h + '</div>';
 };
 
 VIEWS['敵'] = (m) => tbl(entries(m.enemies).map(e => ({ e, isBoss: !m.analysis.enemyToTables[e._id] })), [
