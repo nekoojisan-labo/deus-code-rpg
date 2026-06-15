@@ -161,6 +161,28 @@ const UIPanel = (() => {
             }
             return;
         }
+        // ★frame: FF風2ペイン master-detail（左=コマンド/リスト・右=詳細）。右は selection 追従で再描画。
+        if (cfg.frame) {
+            let fh = '<div class="ui-panel__head">';
+            fh += `<span class="ui-panel__title">${esc(cfg.title || '')}</span>`;
+            if (cfg.headerHtml != null) fh += `<span class="ui-panel__header-extra">${cfg.headerHtml}</span>`;
+            else if (cfg.headerExtra) fh += `<span class="ui-panel__header-extra">${esc(cfg.headerExtra)}</span>`;
+            fh += '</div>';
+            fh += '<div class="ui-panel__frame">';
+            fh += `<div class="ui-panel__pane-l"><div class="ui-panel__list${selectable ? '' : ' ui-panel__list--readonly'}" style="--cols:${cols}"></div>`;
+            fh += (cfg.footHtml != null ? `<div class="ui-panel__foot">${cfg.footHtml}</div>` : '') + '</div>';
+            fh += `<div class="ui-panel__pane-r" id="ui-panel-detail">${computeDetail()}</div>`;
+            fh += '</div>';
+            fh += `<div class="ui-panel__hint">${esc(cfg.hint || defaultHint(selectable))}</div>`;
+            state.host.innerHTML = fh;
+            state.host.classList.add('ui-panel', 'ui-panel--frame');
+            const listB = state.host.querySelector('.ui-panel__list');
+            if (listB && state.items.length) {
+                renderList(listB, decorateItems(state.items), { structured: true, selectedIndex: selectable ? state.index : -1, rowClass: 'ui-panel__row', selectedClass: 'is-selected' });
+                wireRowClicks(listB);
+            }
+            return;
+        }
         // ヘッダ/ヒントを内包する .ui-panel シェルへ描画
         let html = '<div class="ui-panel__head">';
         html += `<span class="ui-panel__title">${esc(cfg.title || '')}</span>`;
@@ -189,6 +211,26 @@ const UIPanel = (() => {
 
     function decorateItems(items) {
         return items.map(it => (typeof it === 'string' ? { label: it } : it));
+    }
+
+    // ★frame: 現在ハイライト中の項目から右ペイン(詳細)のHTMLを算出。
+    //   cfg.detailFor(item, index) があればそれ、無ければ cfg.detailHtml。
+    function computeDetail() {
+        if (!state) return '';
+        const cfg = state.config;
+        if (typeof cfg.detailFor === 'function') {
+            try { return cfg.detailFor(state.items[state.index], state.index) || ''; } catch (e) { return ''; }
+        }
+        return cfg.detailHtml || '';
+    }
+    // 右ペインだけ再描画（左リストは触らない＝フォーカス維持・ちらつき無し）
+    function repaintDetail() {
+        if (!state || !state.config.frame) return;
+        const el = state.host.querySelector('#ui-panel-detail');
+        if (el) el.innerHTML = computeDetail();
+        if (typeof state.config.onHighlight === 'function') {
+            try { state.config.onHighlight(state.items[state.index], state.index); } catch (e) {}
+        }
     }
 
     function wireRowClicks(listEl) {
@@ -222,6 +264,7 @@ const UIPanel = (() => {
         }
         state.index = i;
         setSelectedIndexIn(state.host.querySelector('.ui-panel__list'), state.index, 'ui-panel__row', 'is-selected');
+        repaintDetail();   // ★frame: 選択追従で右ペイン更新
     }
 
     function fireSelect() {
@@ -273,6 +316,14 @@ const UIPanel = (() => {
         if (!state) return;
         state.index = clampToSelectable(state.items, i, +1);
         setSelectedIndexIn(state.host.querySelector('.ui-panel__list'), state.index, 'ui-panel__row', 'is-selected');
+        repaintDetail();
+    }
+
+    // ★frame: 右ペインを手動で差し替える（ドリル中の固定表示など）
+    function setDetail(html) {
+        if (!state) return;
+        const el = state.host.querySelector('#ui-panel-detail');
+        if (el) el.innerHTML = html;
     }
 
     return {
@@ -280,7 +331,7 @@ const UIPanel = (() => {
         renderList, renderText, setSelectedIndexIn, esc,
         // オーバーレイ状態機械
         open, update, render, close, isOpen, handleKey,
-        getSelectedIndex, getSelectedValue, setSelectedIndex
+        getSelectedIndex, getSelectedValue, setSelectedIndex, setDetail
     };
 })();
 if (typeof window !== 'undefined') window.UIPanel = UIPanel;
