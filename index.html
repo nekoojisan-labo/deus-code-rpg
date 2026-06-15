@@ -3685,7 +3685,7 @@
     </div><!-- /.game-container -->
 
     <!-- 外部スクリプト読み込み -->
-    <script src="item-system.js?v=49"></script>
+    <script src="item-system.js?v=50"></script>
     <script src="equipment-system.js?v=52"></script>
     <script src="magic-system.js?v=51"></script>
     <script src="se-system.js?v=1"></script>
@@ -5481,15 +5481,31 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                     refreshObjective();
                 }
             } else if (treasure) {
-                // 宝箱を開く
+                // 宝箱を開く → 中身を実際にインベントリへ追加（旧: TODOのままで空振りしていた）
                 const item = mapSystem.openTreasure(treasure);
                 if (item) {
-                    showMessage(`宝箱を開けた！\n${item}を手に入れた！`);
-                    // TODO: アイテムをインベントリに追加
+                    const granted = grantTreasureItem(item);
+                    showMessage(granted ? `宝箱を開けた！\n${item}を手に入れた！` : `宝箱を開けた！\nしかし ${item} は持ちきれなかった…`);
+                    if (granted && window.updateUI) updateUI();
                 } else {
                     showMessage('この宝箱は既に開けられている...');
                 }
             }
+        }
+
+        // ★宝箱の中身(表示名)を ID に解決して付与。アイテム優先→装備。未登録名は警告ログ(空振りを表面化)。
+        function grantTreasureItem(name) {
+            if (!name) return false;
+            if (window.itemSystem && itemSystem.itemDatabase) {
+                const id = Object.keys(itemSystem.itemDatabase).find(k => itemSystem.itemDatabase[k].name === name);
+                if (id) { itemSystem.addItem(id, 1); return true; }
+            }
+            if (window.equipmentSystem && equipmentSystem.equipmentDatabase) {
+                const id = Object.keys(equipmentSystem.equipmentDatabase).find(k => equipmentSystem.equipmentDatabase[k].name === name);
+                if (id) { equipmentSystem.addEquipment(id, 1); return true; }
+            }
+            console.warn('[treasure] 未登録のアイテム名:', name);
+            return false;
         }
 
         function checkSavePoint() {

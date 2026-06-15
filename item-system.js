@@ -155,6 +155,18 @@ class ItemSystem {
                 effect: {},
                 price: 0,
                 sellPrice: 0
+            },
+            // ★深淵の玉座の宝箱が与える稀少遺物（旧: itemDB未登録で宝箱が空振りしていた）
+            kamui_fragment: {
+                id: 'kamui_fragment',
+                name: '神威の欠片',
+                emoji: '🔱',
+                type: 'key',
+                category: 'key',
+                description: '八百万の神々の力が宿るという欠片。最深部でのみ見つかる遺物。',
+                effect: {},
+                price: 0,
+                sellPrice: 0
             }
         };
         
