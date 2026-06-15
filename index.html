@@ -3544,7 +3544,7 @@
     <script src="bgm-system.js?v=36"></script>
     <script src="party-system.js?v=47"></script>
     <script src="quest-system.js?v=6"></script>
-    <script src="story-events.js?v=54"></script>
+    <script src="story-events.js?v=55"></script>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -5161,26 +5161,8 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             if (storyEventSystem) storyEventSystem.triggerEvent('recruit_akari_reunion', { storyFlags, player, partySystem, magicSystem });
             else { storyFlags.akariReunited = true; storyFlags.chapter1_started = true; showMessage('アカリと再会した。カイトは独り、地下鉄へ向かう。'); }
         }
-        function startAkariTrial() {
-            if (!battleSystem || battleSystem.inBattle) return;
-            const base = battleSystem.enemyDatabase.security_drone;
-            const hp = Math.round(base.hp * 1.5);  // リクの試練(×1.7)より弱め。Lv1カイト単騎で勝てる調整
-            const trial = {
-                ...base, name: '暴走した巡回ドローン',
-                hp: hp, maxHp: hp, currentHp: hp,
-                attack: Math.round(base.attack * 1.15), defense: base.defense,
-                exp: 0, gold: 0, dropTable: []
-            };
-            storyFlags.akariTrialStarted = true;
-            battleSystem.startBattle(trial, true, () => onAkariTrialWin());  // 勝利時のみ（敗北=通常GO）
-        }
-        function onAkariTrialWin() {
-            if (storyEventSystem) storyEventSystem.triggerEvent('recruit_akari_join', { storyFlags, player, partySystem, magicSystem });
-            else { joinMember('akari'); showMessage('アカリが仲間に加わった！'); }
-        }
+        // ※旧 startAkariTrial/onAkariTrialWin(駅での試練戦闘) は廃止。アカリは第2章Ω戦で乱入加入に統合。
         window.engageAkari = engageAkari;
-        window.startAkariTrial = startAkariTrial;
-        window.onAkariTrialWin = onAkariTrialWin;
 
         // ヤミ＝説得。神託(metPriest)＋リク加入後に解禁。話しかけ→選択肢で動機を示す→仮契約(本加入は都庁直前)。
         function engageYami(npc) {

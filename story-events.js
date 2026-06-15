@@ -241,28 +241,7 @@ class StoryEventSystem {
             }
         });
 
-        // アカリ加入②: 試練に勝利（onAkariTrialWin から発火）→heal で市民を救う一幕→志願→加入
-        this.registerEvent('recruit_akari_join', {
-            trigger: 'manual',
-            oneTime: true,
-            scenes: [
-                { character: 'カイト', text: 'はぁ…っ、止めた。アカリ、無事か？' },
-                { character: '市民', text: 'うっ…足が…誰か…' },
-                { character: 'アカリ', text: '動かないで！――いま、癒やすから。' },
-                { character: 'システム', text: 'アカリが回復魔法を唱えた。淡い光が、市民の傷を包んでいく。' },
-                { character: '市民', text: '…もう、痛くない。ありがとう、お嬢さん…' },
-                { character: 'カイト', text: '（傷が…塞がっていく。これが、アカリの力か）' },
-                { character: 'アカリ', text: 'カイト。やっぱり、あなたを一人で行かせられない。回復魔法なら、私にもできる。' },
-                { character: 'アカリ', text: 'あなたが無茶する時、隣にいるって決めてるの。…連れて行って。' },
-                { character: 'カイト', text: '…ああ。頼りにしてる、アカリ。' },
-                { character: 'システム', text: 'アカリが仲間に加わった！\n回復魔法で、あなたを支えてくれる。' }
-            ],
-            onComplete: (storyFlags) => {
-                if (window.joinMember) window.joinMember('akari');
-                storyFlags.metAkari = true;
-                storyFlags.chapter1_started = true;  // ★第1章進行の最重要ゲート。加入完了時にここで立てる
-            }
-        });
+        // ※旧 recruit_akari_join(駅でheal一幕→加入)・startAkariTrial は廃止。アカリは第2章Ω戦で乱入加入(recruit_akari)に統合。
 
         // イベント2: 地下鉄入口での警告
         this.registerEvent('subway_entrance_warning', {
@@ -286,22 +265,9 @@ class StoryEventSystem {
             requiredFlags: { chapter1_started: true },
             oneTime: true,
             scenes: [
-                {
-                    character: 'カイト',
-                    text: '（この力...体の奥底から湧き上がってくる）'
-                },
-                {
-                    character: 'アカリ',
-                    text: 'カイト、あなたの体が光ってる！'
-                },
-                {
-                    character: 'カイト',
-                    text: 'これが...神威の力！'
-                },
-                {
-                    character: 'システム',
-                    text: '神威スキル「炎神の息吹」を習得した！'
-                }
+                { character: 'カイト', text: '（この力…体の奥底から湧き上がってくる。熱い…！）' },
+                { character: 'カイト', text: '（これが、神威の力か。…独りでも、進める）' },
+                { character: 'システム', text: '神威スキル「炎神の息吹」を習得した！' }
             ],
             onComplete: (storyFlags, player, partySystem, magicSystem) => {
                 storyFlags.kamui_awakened = true;
@@ -542,9 +508,25 @@ class StoryEventSystem {
             this.vnLeftKey = keysInOrder[0];
             this.vnRightKey = keysInOrder[1] || null;
         }
-        this._applyPortrait(this.vnLeft, this.vnLeftKey);
-        this._applyPortrait(this.vnRight, this.vnRightKey);
+        // ★立ち絵は「そのシーンまでに登場(発話)した人物だけ」を出す＝未加入/未登場の仲間が先に映らない。
+        // ここでは配役(左右スロット)だけ決め、各シーンで初発話時に revealPortraitFor() が立てる。
+        this._portraitRevealed = { left: false, right: false };
+        this.vnLeft.classList.remove('shown', 'speaking');
+        this.vnRight.classList.remove('shown', 'speaking');
+        this.vnLeft.removeAttribute('src');
+        this.vnRight.removeAttribute('src');
         this.vnPortraits.classList.add('active');
+    }
+
+    // そのシーンの話者が配役スロットなら、その時点で初めて立ち絵を出す（登場の整合）
+    revealPortraitFor(characterName) {
+        const key = this.PORTRAIT_KEYS[characterName];
+        if (!key || !this._portraitRevealed) return;
+        if (key === this.vnLeftKey && !this._portraitRevealed.left) {
+            this._applyPortrait(this.vnLeft, this.vnLeftKey); this._portraitRevealed.left = true;
+        } else if (key === this.vnRightKey && !this._portraitRevealed.right) {
+            this._applyPortrait(this.vnRight, this.vnRightKey); this._portraitRevealed.right = true;
+        }
     }
 
     _applyPortrait(imgEl, key) {
@@ -604,7 +586,8 @@ class StoryEventSystem {
         } else {
             this.headerEl.classList.remove('active');
         }
-        // VNポートレート: 現在の話者をハイライト
+        // VNポートレート: そのシーンで初登場なら立て、現在の話者をハイライト
+        this.revealPortraitFor(characterName);
         this.updateSpeaker(characterName);
 
         // 選択肢をクリア
