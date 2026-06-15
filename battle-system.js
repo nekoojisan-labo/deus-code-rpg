@@ -800,6 +800,12 @@ class BattleSystem {
                     this.executeActionsSequentially(actions, actionIndex + 1);
                 });
                 break;
+            case 'item':
+                // アイテム使用も行動フェーズで実行（攻撃等と同じ並び・速度順）
+                this.memberUseItem(member, () => {
+                    this.executeActionsSequentially(actions, actionIndex + 1);
+                }, action.itemId, action.targetIndex);
+                break;
             case 'skip':
                 // 行動不能などスキップ（スキップ告知ビートの表示完了後に次へ）
                 this.afterBattleMessages(() => {
@@ -1163,6 +1169,44 @@ class BattleSystem {
 
         this.currentMemberIndex++;
         setTimeout(() => this.showNextMemberCommand(), 200);
+    }
+
+    // 戦闘中のアイテム使用を「このメンバーのコマンド」として積む（攻撃/カムイと同じ＝即時実行しない）。
+    // 実際の効果適用は executeActionsSequentially → memberUseItem で、全員のコマンド選択が終わってから。
+    commitItemCommand(itemId, targetIndex) {
+        const member = this.getPartyMembers()[this.currentMemberIndex];
+        this.partyCommands[this.currentMemberIndex] = {
+            member: member,
+            command: 'item',
+            itemId: itemId,
+            targetIndex: targetIndex
+        };
+        this.waitingForCommand = false;
+        const commands = document.getElementById('battleCommands');
+        if (commands) commands.style.display = 'none';
+        const body = document.getElementById('gameMessageBody');
+        if (body) body.classList.remove('battle-cmd-mode', 'battle-cmd-grid');
+        this.currentMemberIndex++;
+        setTimeout(() => this.showNextMemberCommand(), 200);
+    }
+
+    // アイテム使用の実行（行動フェーズ）。効果適用＋消費はここ＝選択時ではなく実行時。
+    memberUseItem(member, callback, itemId, targetIndex) {
+        const members = this.getPartyMembers();
+        const target = (typeof targetIndex === 'number' && members[targetIndex]) ? members[targetIndex] : member;
+        let result = { success: false, message: 'アイテムを つかえなかった' };
+        if (window.itemSystem) result = window.itemSystem.useItem(itemId, target, true);
+        if (result && result.success) {
+            const itemName = (result.item && result.item.name) || 'どうぐ';
+            const msgs = [`${member.name}は ${itemName}を つかった！`];
+            if (result.message) msgs.push(result.message);
+            // 回復のHPバー更新は結果行の表示と同時に
+            const fx = []; fx[msgs.length - 1] = () => { this.updateBattleUI(); if (window.updateUI) window.updateUI(); };
+            this.presentBeat(msgs, { fx });
+        } else {
+            this.presentBeat([(result && result.message) || 'アイテムを つかえなかった']);
+        }
+        this.afterBattleMessages(() => { if (callback) callback(); });
     }
 
     confirmKamuiPlanning(magicId) {

@@ -3649,7 +3649,7 @@
     <script src="se-system.js?v=1"></script>
     <script src="ui-panel.js?v=3"></script>
     <script src="save-system.js?v=2"></script>
-    <script src="battle-system.js?v=66"></script>
+    <script src="battle-system.js?v=67"></script>
     <script src="map-walkability-data.js?v=12"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=26"></script>
@@ -3659,7 +3659,7 @@
     <script src="bgm-system.js?v=36"></script>
     <script src="party-system.js?v=47"></script>
     <script src="quest-system.js?v=7"></script>
-    <script src="story-events.js?v=57"></script>
+    <script src="story-events.js?v=58"></script>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -6627,7 +6627,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 return;
             }
 
-            // アイテムと逃走は即座に実行（全体コマンド）
+            // アイテム: このメンバーのコマンドとして選ぶ（選択後 commitItemCommand で積む→次メンバーへ）
             if (command === 'item') {
                 showBattleItemMenu();
                 return;
@@ -6851,28 +6851,15 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             battleSystem.waitingForCommand = true;
         }
 
+        // ★戦闘中のアイテム使用は「このメンバーのコマンド」として積む（即時適用＝敵ターン直行を廃止）。
+        //   攻撃/カムイと同じく一巡のコマンド選択に乗り、全員選択後の行動フェーズで効果適用される。
+        //   フィールドのアイテム使用(applyFieldItem)とは別定義（こちらは戦闘コマンドキュー経由）。
         function applyBattleItem(itemId, member) {
             showingBattleItems = false;
-            battleSystem.waitingForCommand = false;
             leavePanelCommandMode();          // パネルをログモードに切り替え
-
-            const result = itemSystem.useItem(itemId, member, true);  // ★対象=選んだメンバー
-
-            if (result.success) {
-                battleSystem.addBattleLog(`${result.item.name}を つかった！`);
-                battleSystem.addBattleLog(`${member.name || 'カイト'}に つかった。`);
-                battleSystem.addBattleLog(result.message);
-                updateUI();
-                battleSystem.updateBattleUI();
-                setTimeout(() => { battleSystem.enemyTurn(player); }, 2000);
-            } else {
-                battleSystem.addBattleLog(result.message);
-                setTimeout(() => {
-                    battleSystem.waitingForCommand = true;
-                    battleSystem.showCommands();
-                    setupBattleCommands();
-                }, 1500);
-            }
+            const members = battleSystem.getPartyMembers ? battleSystem.getPartyMembers() : [player];
+            const targetIndex = members.indexOf(member);
+            battleSystem.commitItemCommand(itemId, targetIndex >= 0 ? targetIndex : 0);
         }
         
         // 装備メニュー

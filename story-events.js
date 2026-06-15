@@ -516,47 +516,50 @@ class StoryEventSystem {
     // このイベントの話者からポートレートの左右を決めて立てる
     setupPortraits(event) {
         if (!this.vnPortraits || !this.vnLeft || !this.vnRight) return;
+        // スロットは固定割り当てしない。話者が出るたび assignSpeakerSlot で動的に確保する
+        // （3人以上のイベントでも“今喋っている人物”の立ち絵が必ず出る＝話者とキャラグラのズレ防止）。
         this.vnLeftKey = null;
         this.vnRightKey = null;
-        const keysInOrder = [];
-        for (const sc of (event.scenes || [])) {
-            const k = this.PORTRAIT_KEYS[sc.character];
-            if (k && !keysInOrder.includes(k)) keysInOrder.push(k);
-        }
-        if (keysInOrder.length === 0) {
-            // 立ち絵が無いイベント（システム/NPCのみ）はポートレート非表示
-            this.vnPortraits.classList.remove('active');
-            this.vnLeft.classList.remove('shown', 'speaking');
-            this.vnRight.classList.remove('shown', 'speaking');
-            return;
-        }
-        // 主人公(kaito)は左固定、相手は右。kaitoが居なければ先頭を左に。
-        if (keysInOrder.includes('kaito')) {
-            this.vnLeftKey = 'kaito';
-            this.vnRightKey = keysInOrder.find(k => k !== 'kaito') || null;
-        } else {
-            this.vnLeftKey = keysInOrder[0];
-            this.vnRightKey = keysInOrder[1] || null;
-        }
-        // ★立ち絵は「そのシーンまでに登場(発話)した人物だけ」を出す＝未加入/未登場の仲間が先に映らない。
-        // ここでは配役(左右スロット)だけ決め、各シーンで初発話時に revealPortraitFor() が立てる。
-        this._portraitRevealed = { left: false, right: false };
+        this._eventHasKaito = (event.scenes || []).some(sc => this.PORTRAIT_KEYS[sc.character] === 'kaito');
+        const hasAnyPortrait = (event.scenes || []).some(sc => this.PORTRAIT_KEYS[sc.character]);
         this.vnLeft.classList.remove('shown', 'speaking');
         this.vnRight.classList.remove('shown', 'speaking');
         this.vnLeft.removeAttribute('src');
         this.vnRight.removeAttribute('src');
+        if (!hasAnyPortrait) {
+            // 立ち絵が無いイベント（システム/NPCのみ）はポートレート非表示
+            this.vnPortraits.classList.remove('active');
+            return;
+        }
         this.vnPortraits.classList.add('active');
     }
 
-    // そのシーンの話者が配役スロットなら、その時点で初めて立ち絵を出す（登場の整合）
-    revealPortraitFor(characterName) {
-        const key = this.PORTRAIT_KEYS[characterName];
-        if (!key || !this._portraitRevealed) return;
-        if (key === this.vnLeftKey && !this._portraitRevealed.left) {
-            this._applyPortrait(this.vnLeft, this.vnLeftKey); this._portraitRevealed.left = true;
-        } else if (key === this.vnRightKey && !this._portraitRevealed.right) {
-            this._applyPortrait(this.vnRight, this.vnRightKey); this._portraitRevealed.right = true;
+    // 話者を左右スロットへ動的に割り当て、その立ち絵を出す（登場の整合：話した人だけ映る）。
+    // kaito は常に左を予約。非kaito話者は右に置き、別の非kaitoが話したら右を差し替える。
+    assignSpeakerSlot(key) {
+        if (!key) return;
+        if (this.vnLeftKey === key || this.vnRightKey === key) return; // 既に在席
+        if (key === 'kaito') {
+            this.vnLeftKey = 'kaito';
+            this._applyPortrait(this.vnLeft, 'kaito');
+            return;
         }
+        if (this._eventHasKaito) {
+            // 左はkaito予約 → 非kaitoは右（差し替え）
+            this.vnRightKey = key;
+            this._applyPortrait(this.vnRight, key);
+        } else if (this.vnLeftKey === null) {
+            this.vnLeftKey = key;
+            this._applyPortrait(this.vnLeft, key);
+        } else {
+            this.vnRightKey = key;
+            this._applyPortrait(this.vnRight, key);
+        }
+    }
+
+    // そのシーンの話者の立ち絵を確保する（初発話で出す／別話者なら差し替える）
+    revealPortraitFor(characterName) {
+        this.assignSpeakerSlot(this.PORTRAIT_KEYS[characterName]);
     }
 
     _applyPortrait(imgEl, key) {
