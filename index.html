@@ -6295,16 +6295,93 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             return html;
         }
 
+        // ★どうぐ(フィールド) — 一覧表→選択→(回復系は)対象選択→使用、のFF全画面フロー。
+        function itemEffectSummary(item) {
+            const e = (item && item.effect) || {};
+            const p = [];
+            if (e.hp) p.push(e.hp === 'full' ? 'HP全回復' : `HP+${e.hp}`);
+            if (e.mp) p.push(e.mp === 'full' ? 'MP全回復' : `MP+${e.mp}`);
+            if (e.revive) p.push('蘇生');
+            if (e.escape) p.push('脱出');
+            if (item && item.category === 'buff') p.push('戦闘用');
+            return p.join(' ');
+        }
+        function itemFieldInfo(item) {
+            const e = (item && item.effect) || {};
+            const heal = !!(e.hp || e.mp || e.revive);
+            const escape = !!e.escape;
+            const battleOnly = item && item.category === 'buff';
+            const key = item && (item.type === 'key' || item.category === 'key');
+            return { usable: heal || escape, needsTarget: heal,
+                reason: battleOnly ? '戦闘中のみ使える' : (key ? 'だいじなもの' : 'ここでは使えない') };
+        }
         function openItemMenu() {
-            closeMenu();
-            const itemMenuOverlay = document.getElementById('itemMenuOverlay');
-            if (itemMenuOverlay) {
-                itemMenuOverlay.classList.add('active');
-                itemSelectedIndex = 0;
-                itemTargetMode = false;  // 対象選択モードをリセット
-                updateItemList();
-                console.log('Item menu opened');
+            const inv = (window.itemSystem && itemSystem.getInventory) ? (itemSystem.getInventory() || []) : [];
+            let items;
+            if (!inv.length) {
+                items = [{ label: 'どうぐを 持っていない', disabled: true }];
+            } else {
+                items = inv.map(it => ({
+                    icon: it.emoji || '📦',
+                    label: it.name,
+                    right: `×${it.quantity || 1}　${itemEffectSummary(it)}`,
+                    value: it.id,
+                    disabled: !itemFieldInfo(it).usable
+                }));
             }
+            UIPanel.open({
+                host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
+                title: '🎒 どうぐ', items, selectedIndex: 0, columns: 1, pageSize: 9,
+                detailFor: (it) => itemDetailHtml(inv.find(x => x.id === (it && it.value))),
+                onSelect: (id) => itemUseSelect(id),
+                onCancel: () => openMenu(),
+                hint: '↑↓ 選択 / Z つかう / X もどる'
+            });
+        }
+        function itemDetailHtml(item) {
+            if (!item) return '<div class="ui-panel__dmuted" style="padding:8px;">つかう道具を選んでください。</div>';
+            const fi = itemFieldInfo(item);
+            return `<div class="ui-panel__dlead" style="align-items:center;">
+                  <div style="font-size:34px;width:50px;text-align:center;">${item.emoji || '📦'}</div>
+                  <div><div class="ui-panel__dname">${UIPanel.esc(item.name)}</div>
+                  <div class="ui-panel__dmuted">所持 ×${item.quantity || 1}</div>
+                  <div style="font-size:13px;margin-top:2px;color:var(--accent);">${itemEffectSummary(item)}</div></div></div>
+                <div class="ui-panel__dmuted" style="padding:6px 2px;line-height:1.7;">${UIPanel.esc(item.description || '')}</div>
+                ${!fi.usable ? `<div style="color:#ff8c8c;font-size:13px;">${fi.reason}</div>` : ''}`;
+        }
+        function itemUseSelect(itemId) {
+            const inv = (window.itemSystem && itemSystem.getInventory) ? (itemSystem.getInventory() || []) : [];
+            const item = inv.find(x => x.id === itemId);
+            if (!item) return;
+            const fi = itemFieldInfo(item);
+            if (!fi.usable) { showMessage(fi.reason); return; }
+            if (fi.needsTarget) itemPickTarget(item);
+            else itemApply(itemId, null);   // 脱出など対象不要
+        }
+        function itemPickTarget(item) {
+            const members = (typeof getMenuMembers === 'function') ? getMenuMembers() : [player];
+            const isRevive = !!(item.effect && item.effect.revive);
+            const items = members.map((m, i) => ({
+                icon: (m.hp || 0) <= 0 ? '💀' : '🙂',
+                label: m.name || 'カイト',
+                value: i,
+                disabled: isRevive ? (m.hp || 0) > 0 : false   // 蘇生は戦闘不能のみ
+            }));
+            UIPanel.open({
+                host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
+                title: `${item.name} — 対象をえらぶ`, items, selectedIndex: 0, columns: 1,
+                detailFor: (it) => targetDetailHtml(members[it && it.value != null ? it.value : 0]),
+                onSelect: (v) => itemApply(item.id, members[v]),
+                onCancel: () => openItemMenu(),
+                hint: '↑↓ 対象 / Z 決定 / X もどる'
+            });
+        }
+        function itemApply(itemId, target) {
+            const m = target || ((typeof getMenuMembers === 'function') ? getMenuMembers()[0] : player);
+            const r = (window.itemSystem && itemSystem.useItem) ? itemSystem.useItem(itemId, m, false) : null;
+            if (!r || !r.success) { showMessage((r && r.message) || 'つかえなかった'); return; }
+            if (window.updateUI) updateUI();
+            openItemMenu();   // 一覧を開き直す＝個数/HP更新・続けて使える
         }
         
         function closeItemMenu() {
