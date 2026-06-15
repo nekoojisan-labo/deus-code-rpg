@@ -1,0 +1,2474 @@
+{
+  "summary": "戦闘v2のスキル/装備/敵の数値を実成長ベースラインで再較正し、実装可能な最終値を出す(属性1.5倍+深み/大回復+敵バースト/全部一括)",
+  "agentCount": 7,
+  "logs": [
+    "再較正完了: 6/6",
+    "最終検証: flawed"
+  ],
+  "result": {
+    "skills": {
+      "healer": {
+        "role": "healer",
+        "skills": [
+          {
+            "id": "heal",
+            "name": "ヒール",
+            "emoji": "💚",
+            "type": "healing",
+            "target": "single",
+            "element": "light",
+            "basePower": 0.7,
+            "scalingStat": "magic",
+            "mpCost": 6,
+            "requiredLevel": 1,
+            "allowedRoles": [
+              "all-rounder",
+              "healer"
+            ],
+            "damageAt": "回復=floor(magic*0.7): Lv10 magic53→37, Lv35 165→115, Lv50 233→163 (maxHpでクランプ)",
+            "description": "味方ひとりのHPを回復する基本の癒し術。"
+          },
+          {
+            "id": "light_arrow",
+            "name": "ライトアロー",
+            "emoji": "🏹",
+            "type": "offensive",
+            "target": "single",
+            "element": "light",
+            "basePower": 0.8,
+            "scalingStat": "magic",
+            "mpCost": 7,
+            "requiredLevel": 1,
+            "allowedRoles": [
+              "all-rounder",
+              "healer"
+            ],
+            "damageAt": "魔法=floor(magic*0.8*elemMul*(1-resist))+variance-floor(magDef/3): Lv10 42/Lv35 132/Lv50 186(無属性敵)、光弱点なら×1.5でLv35 198/Lv50 279。加入時の攻撃手段(丸腰回避)",
+            "description": "光の矢を放つ。アカリ加入時からの攻撃手段。闇属性の敵に刺さる。"
+          },
+          {
+            "id": "cure_status",
+            "name": "キュアラ",
+            "emoji": "🌿",
+            "type": "support",
+            "target": "single",
+            "element": "light",
+            "basePower": 0,
+            "scalingStat": "magic",
+            "mpCost": 8,
+            "requiredLevel": 3,
+            "allowedRoles": [
+              "all-rounder",
+              "healer"
+            ],
+            "damageAt": "状態異常治療(毒/麻痺/睡眠などstatusAilmentsを除去)。ダメージ/回復なし(basePower=0)。少量HP回復はせず純粋な状態治療",
+            "description": "味方ひとりの状態異常をすべて取り除く。毒・麻痺・睡眠を浄化。"
+          },
+          {
+            "id": "protect_shell",
+            "name": "プロテス",
+            "emoji": "🛡️",
+            "type": "support",
+            "target": "single",
+            "element": "light",
+            "basePower": 1.5,
+            "scalingStat": "magic",
+            "mpCost": 9,
+            "requiredLevel": 5,
+            "allowedRoles": [
+              "all-rounder",
+              "healer"
+            ],
+            "damageAt": "物理防御UP(physDef×1.5を3ターン)。被物理通常= max(1, attack+variance-floor(physDef/2)) のphysDefが1.5倍に。ダメージ非依存(倍率効果)",
+            "description": "味方ひとりの物理防御を1.5倍に高める(3ターン)。前衛の被弾を軽減。"
+          },
+          {
+            "id": "regen_field",
+            "name": "リジェネ",
+            "emoji": "🍃",
+            "type": "healing",
+            "target": "single",
+            "element": "light",
+            "basePower": 0.45,
+            "scalingStat": "magic",
+            "mpCost": 8,
+            "requiredLevel": 7,
+            "allowedRoles": [
+              "all-rounder",
+              "healer"
+            ],
+            "damageAt": "毎ターン継続回復tick=floor(magic*0.45)を3ターン: Lv10 23×3=69, Lv35 74×3=222, Lv50 104×3=312(各tickをmaxHpでクランプ)。即時より総量で勝る持続型",
+            "description": "味方ひとりに再生の力を宿し、数ターンかけてHPを回復し続ける。"
+          },
+          {
+            "id": "revive",
+            "name": "リザレクト",
+            "emoji": "✨",
+            "type": "revive",
+            "target": "ally",
+            "element": "light",
+            "basePower": 0,
+            "scalingStat": "magic",
+            "mpCost": 18,
+            "requiredLevel": 9,
+            "allowedRoles": [
+              "healer"
+            ],
+            "damageAt": "蘇生(reviveRatio=0.5): 戦闘不能の味方をmaxHpの50%で復活。akari maxHp~815→約407、riku~1345→約672、kaito~1100→約550で復帰。生存者には無効",
+            "description": "戦闘不能の味方をHP50%で復活させる。通常の回復術では復帰できない。"
+          },
+          {
+            "id": "holy_ray",
+            "name": "ホーリーレイ",
+            "emoji": "🌟",
+            "type": "offensive",
+            "target": "single",
+            "element": "light",
+            "basePower": 1.3,
+            "scalingStat": "magic",
+            "mpCost": 12,
+            "requiredLevel": 11,
+            "allowedRoles": [
+              "healer"
+            ],
+            "damageAt": "魔法=floor(magic*1.3*elemMul*(1-resist))-floor(magDef/3): Lv35 214/Lv50 302(無属性)、光弱点×1.5でLv35 321/Lv50 453。ヒーラー専用の中核光術",
+            "description": "聖なる光線で敵を撃つ。闇や不浄な敵に大きなダメージ。"
+          },
+          {
+            "id": "shell_barrier",
+            "name": "シェル",
+            "emoji": "🔮",
+            "type": "support",
+            "target": "single",
+            "element": "light",
+            "basePower": 1.5,
+            "scalingStat": "magic",
+            "mpCost": 11,
+            "requiredLevel": 13,
+            "allowedRoles": [
+              "all-rounder",
+              "healer"
+            ],
+            "damageAt": "魔法防御UP(magicDefense×1.5を3ターン)。被魔法= ...-floor(magDef/3) のmagDefが1.5倍→魔法被ダメ減。ボスの大魔法対策。ダメージ非依存",
+            "description": "味方ひとりの魔法防御を1.5倍に高める(3ターン)。敵の大魔法に備える。"
+          },
+          {
+            "id": "group_heal",
+            "name": "エリアヒール",
+            "emoji": "💞",
+            "type": "healing",
+            "target": "allyAll",
+            "element": "light",
+            "basePower": 1,
+            "scalingStat": "magic",
+            "mpCost": 16,
+            "requiredLevel": 15,
+            "allowedRoles": [
+              "all-rounder",
+              "healer"
+            ],
+            "damageAt": "全体回復=floor(magic*1.0)を生存全員に: Lv10 53, Lv35 165, Lv50 233(各maxHpでクランプ)。単体omega792の0.29/人で、釣り合い(全体は単体ピーク未満)",
+            "description": "パーティ全員のHPをまとめて回復する。全体攻撃への立て直しに。"
+          },
+          {
+            "id": "purify_wave",
+            "name": "エスナ・ウェーブ",
+            "emoji": "🌀",
+            "type": "support",
+            "target": "allyAll",
+            "element": "light",
+            "basePower": 0,
+            "scalingStat": "magic",
+            "mpCost": 14,
+            "requiredLevel": 18,
+            "allowedRoles": [
+              "healer"
+            ],
+            "damageAt": "全体状態治療(全員のstatusAilmentsを除去)。ダメージ/回復なし(basePower=0)。ボスの全体状態異常技への解除手段",
+            "description": "浄化の波動でパーティ全員の状態異常を一掃する。"
+          },
+          {
+            "id": "holy_nova",
+            "name": "ホーリーノヴァ",
+            "emoji": "💫",
+            "type": "offensive",
+            "target": "all",
+            "element": "light",
+            "basePower": 0.6,
+            "scalingStat": "magic",
+            "mpCost": 20,
+            "requiredLevel": 22,
+            "allowedRoles": [
+              "healer"
+            ],
+            "damageAt": "全体魔法=floor(magic*0.6*elemMul*(1-resist))-floor(magDef/3): Lv50 神=139/光弱点=208。3体総ダメ(光弱点)≈624で単体ピークholy_lance628を超えない(全体bp=単体0.6/3制約)",
+            "description": "聖光を爆ぜさせ敵全体を焼く。闇属性の群れに有効。"
+          },
+          {
+            "id": "haste_boon",
+            "name": "ヘイスト",
+            "emoji": "💨",
+            "type": "support",
+            "target": "single",
+            "element": "light",
+            "basePower": 0,
+            "scalingStat": "magic",
+            "mpCost": 12,
+            "requiredLevel": 25,
+            "allowedRoles": [
+              "all-rounder",
+              "healer"
+            ],
+            "damageAt": "素早さUP(speed_up効果を3ターン)。行動順が早まる。ダメージ/回復非依存。回復役の手番を増やし耐久戦を支える",
+            "description": "味方ひとりの素早さを高め、行動を早める(3ターン)。"
+          },
+          {
+            "id": "mega_heal",
+            "name": "メガヒール",
+            "emoji": "💚",
+            "type": "healing",
+            "target": "single",
+            "element": "light",
+            "basePower": 1.4,
+            "scalingStat": "magic",
+            "mpCost": 14,
+            "requiredLevel": 28,
+            "allowedRoles": [
+              "all-rounder",
+              "healer"
+            ],
+            "damageAt": "回復=floor(magic*1.4): Lv10 74, Lv35 230, Lv50 326(maxHpクランプ)。単体大回復。前衛の被大ダメージ一撃を1手で戻す主力",
+            "description": "味方ひとりのHPを大きく回復する。前衛の被弾を素早く立て直す。"
+          },
+          {
+            "id": "sanctuary",
+            "name": "サンクチュアリ",
+            "emoji": "🕊️",
+            "type": "support",
+            "target": "allyAll",
+            "element": "light",
+            "basePower": 1.4,
+            "scalingStat": "magic",
+            "mpCost": 22,
+            "requiredLevel": 34,
+            "allowedRoles": [
+              "healer"
+            ],
+            "damageAt": "全体物理+魔法防御UP(physDef×1.4 & magicDefense×1.4を3ターン)。被物理/魔法の両defが1.4倍。ダメージ非依存。Lv35ボスの全体多段に対する立ち回りの軸",
+            "description": "聖域を展開し、パーティ全員の物理・魔法防御を1.4倍に(3ターン)。"
+          },
+          {
+            "id": "holy_lance",
+            "name": "ホーリーランス",
+            "emoji": "⚜️",
+            "type": "offensive",
+            "target": "single",
+            "element": "light",
+            "basePower": 1.8,
+            "scalingStat": "magic",
+            "mpCost": 18,
+            "requiredLevel": 38,
+            "allowedRoles": [
+              "healer"
+            ],
+            "damageAt": "魔法=floor(magic*1.8*elemMul*(1-resist))-floor(magDef/3): Lv50 神=419/光弱点=628。ヒーラーの単体ピーク光術。yami任せにせずアカリも闇敵を割れる二択を提供",
+            "description": "極大の光槍で敵ひとりを貫く。アカリの単体最大火力。"
+          },
+          {
+            "id": "omega_heal",
+            "name": "オメガヒール",
+            "emoji": "🌈",
+            "type": "healing",
+            "target": "single",
+            "element": "light",
+            "basePower": 3.4,
+            "scalingStat": "magic",
+            "mpCost": 26,
+            "requiredLevel": 44,
+            "allowedRoles": [
+              "healer"
+            ],
+            "damageAt": "回復=floor(magic*3.4): Lv10 180, Lv35 561, Lv50 792(maxHpクランプ)。akari maxHp~815の約97%=ほぼ全快を1手で。大回復許容。ただし回復>総被ダメで自動化しないようボスは全体/多段/大一撃を標準装備",
+            "description": "虹の癒光で味方ひとりをほぼ全快させる。アカリの究極回復術。"
+          }
+        ],
+        "skillLearning": "akari.skillLearning (CHARACTER_GROWTH.akari.skillLearning へ反映。Lv1初期スキルは CHARACTER_DATA.akari.skills=['heal','light_arrow'] が正本): { 3:['cure_status'], 5:['protect_shell'], 7:['regen_field'], 9:['revive'], 11:['holy_ray'], 13:['shell_barrier'], 15:['group_heal'], 18:['purify_wave'], 22:['holy_nova'], 25:['haste_boon'], 28:['mega_heal'], 34:['sanctuary'], 38:['holy_lance'], 44:['omega_heal'] }",
+        "rationale": "設計根拠(akari magic実値 Lv10 53 / Lv35 165 / Lv50 233、maxHp~815 を全数値の基準にbp再算定): 【回復の階段】heal(bp0.7)→mega_heal(bp1.4)→omega_heal(bp3.4)で単体回復が37/115→74/230→180/792と滑らかに上昇。omegaはLv50で792=maxHp~815の約97%(ほぼ全快)でユーザー決定2の大回復許容を満たす。group_heal(全体bp1.0=233/人)はLv44解禁の単体ピーク792の約0.29/人に抑え「全体は単体ピーク未満」を厳守。regen_field(bp0.45 tick×3)は即時より総量(312)で勝る持続型で住み分け。【攻撃光術=healer中心の二択提供】light_arrow(bp0.8、加入時=丸腰回避でallowedRoles['all-rounder','healer'])→holy_ray(bp1.3)→holy_lance(bp1.8)。holy_lanceは光弱点でLv50 628、ホーリーノヴァ(全体bp0.6)は3体総ダメ624で単体ピーク628を超えず、ユーザー必須修正「全体bp=単体0.5〜0.6」を満たす。yami単独で全敵を割れない構成のため、ヒーラーも光弱点(闇/不浄系)を担い属性パズルの深みに寄与。攻撃光術はlight_arrow以外healer専用。【状態/防御/補助の完備】cure_status(単体)・purify_wave(全体)でボスの状態異常技に対応、protect_shell(物理def×1.5)・shell_barrier(魔法def×1.5)・sanctuary(全体物理+魔法def×1.4)でボスの全体/多段/大一撃に立ち回りで耐え、回復>総被ダメの自動化を防ぐ(ユーザー決定2の釣り合い)。haste_boonで回復役の手番を増やす。【allowedRoles正本】全スキルからtank/mageを機械除外。回復・補助・防御UP・蘇生は原則['all-rounder','healer']、攻撃光術と高度補助(holy_ray/holy_lance/holy_nova/revive/purify_wave/shell_barrier→sanctuaryはhealer専用)はhealer中心。【宙吊り参照の解消】開始スキルlight_arrowを実装IDとして必ず用意(damageAt明記)。revive/mega_healは既存ID踏襲で衝突なし。【element】全16スキルをlight属性で統一し、属性システム(elemMul/elementalResistance)が回復役の攻撃でも発火。【skillLearning】Lv1初期(heal/light_arrow)はCHARACTER_DATA側、Lv3〜44を1段ずつ配置しLv35クリア時点でholy_nova/mega_heal/sanctuaryまで揃いボス戦を支え、Lv38 holy_lance・Lv44 omega_healを上限近くの到達報酬に。各スキルのbasePowerは目標値÷実magicで逆算済(power/30一律換算は不使用)。"
+      },
+      "mage": {
+        "role": "mage",
+        "skills": [
+          {
+            "id": "dark_pulse",
+            "name": "ダークパルス",
+            "emoji": "🌑",
+            "type": "offensive",
+            "target": "single",
+            "element": "dark",
+            "basePower": 0.85,
+            "scalingStat": "magic",
+            "mpCost": 6,
+            "requiredLevel": 1,
+            "allowedRoles": [
+              "mage"
+            ],
+            "damageAt": "魔法=floor(magic*0.85*elemMul)-floor(magDef/3)。Lv10:闇弱点82/無属性53(magic68,md12)、Lv35:闇弱点246/無190(magic205,md45)、Lv50:闇弱点341/無218(magic288,md80)。旧power22(≈26実感)→低Lv帯で同等以上、加入直後の主力。闇はmage独占。",
+            "description": "闇の波動で敵を撃つ低燃費の連射術。ヤミの代名詞で加入時から使える。"
+          },
+          {
+            "id": "curse",
+            "name": "カース",
+            "emoji": "💀",
+            "type": "offensive",
+            "target": "single",
+            "element": "dark",
+            "basePower": 1.15,
+            "scalingStat": "magic",
+            "mpCost": 11,
+            "requiredLevel": 1,
+            "allowedRoles": [
+              "mage"
+            ],
+            "damageAt": "Lv10:闇弱点113/無74(magic68,md12)、Lv35:闇弱点338/無220(magic205,md45)、Lv50:闇弱点470/無305(magic288,md80)。旧power30(≈36)据え置き調整＝闇の中威力単体。dark系mage独占。",
+            "description": "呪詛の刃で深く抉る闇の単体術。耐性持ちにも無属性として安定して通る。"
+          },
+          {
+            "id": "fire_bolt",
+            "name": "ファイアボルト",
+            "emoji": "🔥",
+            "type": "offensive",
+            "target": "single",
+            "element": "fire",
+            "basePower": 1,
+            "scalingStat": "magic",
+            "mpCost": 8,
+            "requiredLevel": 2,
+            "allowedRoles": [
+              "mage",
+              "all-rounder"
+            ],
+            "damageAt": "Lv10:火弱点98/無64(md12)、Lv35:火弱点292/無190(md45)、Lv50:火弱点406/無262(md80)。旧power20の一律power/30換算をやめ個別bp1.0付与＝旧威力感±20%内。rikuは物理術から機械除外。",
+            "description": "火炎の矢を放つ基本攻撃術。氷耐性の敵を炙る火属性の入り口。"
+          },
+          {
+            "id": "ice_lance",
+            "name": "アイスランス",
+            "emoji": "❄️",
+            "type": "offensive",
+            "target": "single",
+            "element": "ice",
+            "basePower": 1,
+            "scalingStat": "magic",
+            "mpCost": 9,
+            "requiredLevel": 3,
+            "allowedRoles": [
+              "mage",
+              "all-rounder"
+            ],
+            "damageAt": "Lv10:氷弱点98/無64(md12)、Lv35:氷弱点292/無190(md45)、Lv50:氷弱点406/無262(md80)。旧power25→個別bp1.0で旧感維持。yamiはLv3でskillLearning習得。",
+            "description": "氷の槍で敵を貫く基本術。火属性の敵に刺さる氷の単体攻撃。"
+          },
+          {
+            "id": "thunder_strike",
+            "name": "サンダーストライク",
+            "emoji": "⚡",
+            "type": "offensive",
+            "target": "single",
+            "element": "thunder",
+            "basePower": 1,
+            "scalingStat": "magic",
+            "mpCost": 10,
+            "requiredLevel": 5,
+            "allowedRoles": [
+              "mage",
+              "all-rounder"
+            ],
+            "damageAt": "Lv10:雷弱点98/無64(md12)、Lv35:雷弱点292/無190(md45)、Lv50:雷弱点406/無262(md80)。旧power30→個別bp1.0で旧感維持。yamiはLv5でskillLearning習得。",
+            "description": "雷を落とす基本術。機械系・水濡れの敵に強い雷属性の単体攻撃。"
+          },
+          {
+            "id": "frost_pierce",
+            "name": "フロストピアス",
+            "emoji": "🧊",
+            "type": "offensive",
+            "target": "single",
+            "element": "ice",
+            "basePower": 1.2,
+            "scalingStat": "magic",
+            "mpCost": 13,
+            "requiredLevel": 18,
+            "allowedRoles": [
+              "mage",
+              "all-rounder"
+            ],
+            "damageAt": "Lv35:氷弱点354/無231(md45)、Lv50:氷弱点492/無319(md80)。中位の氷単体。ice_lance(bp1.0)の上位＝弱点なら大型雑魚を1〜2発圏に押し込む。",
+            "description": "氷塊を高速で貫通させる中位の氷単体術。氷弱点の重装を割る主力。"
+          },
+          {
+            "id": "voltspear",
+            "name": "ヴォルトスピア",
+            "emoji": "🌩️",
+            "type": "offensive",
+            "target": "single",
+            "element": "thunder",
+            "basePower": 1.2,
+            "scalingStat": "magic",
+            "mpCost": 13,
+            "requiredLevel": 20,
+            "allowedRoles": [
+              "mage",
+              "all-rounder"
+            ],
+            "damageAt": "Lv35:雷弱点354/無231(md45)、Lv50:雷弱点492/無319(md80)。中位の雷単体。thunder_strike(bp1.0)の上位で機械ボスに刺さる。",
+            "description": "雷光の槍を撃ち込む中位の雷単体術。雷弱点の機械系を一気に削る。"
+          },
+          {
+            "id": "thunderstorm",
+            "name": "サンダーストーム",
+            "emoji": "🌀",
+            "type": "offensive",
+            "target": "all",
+            "element": "thunder",
+            "basePower": 0.9,
+            "scalingStat": "magic",
+            "mpCost": 22,
+            "requiredLevel": 24,
+            "allowedRoles": [
+              "mage",
+              "all-rounder"
+            ],
+            "damageAt": "全体bp0.9=単体ピーク(bp1.7)の約0.53。Lv50:雷弱点1体375・3体総1125/無属性251(md40〜26)、Lv35:雷弱点263。3体総ダメが単体ピーク708を大きく超えない＝全体偏重を回避。",
+            "description": "雷の嵐で敵全体を打つ範囲術。雑魚の群れを一掃する燃費型AoE。"
+          },
+          {
+            "id": "explosion",
+            "name": "エクスプロージョン",
+            "emoji": "💥",
+            "type": "offensive",
+            "target": "all",
+            "element": "fire",
+            "basePower": 1,
+            "scalingStat": "magic",
+            "mpCost": 26,
+            "requiredLevel": 28,
+            "allowedRoles": [
+              "mage",
+              "all-rounder"
+            ],
+            "damageAt": "全体bp1.0=単体ピークの約0.59。Lv50:火弱点1体419・3体総1257/無280(md40〜26)、Lv35:火弱点294。旧power50の全体大爆発感を維持しつつ実magicスケール化。3体総1257は単体ピーク708超だが弱点限定＋高MP26で釣り合い。",
+            "description": "大爆発で全体を焼く高威力AoE。火弱点が混じる群れに最大効率。"
+          },
+          {
+            "id": "dark_nova",
+            "name": "ダークノヴァ",
+            "emoji": "🕳️",
+            "type": "offensive",
+            "target": "all",
+            "element": "dark",
+            "basePower": 1.05,
+            "scalingStat": "magic",
+            "mpCost": 30,
+            "requiredLevel": 34,
+            "allowedRoles": [
+              "mage"
+            ],
+            "damageAt": "全体bp1.05=単体ピークの約0.62(上限)。Lv50:闇弱点1体440・3体総1320/無294(md40〜26)、Lv35:闇弱点309。dark独占の終盤AoE。3体総1320は弱点限定でMP30と重く回復>被ダメ自動化を抑制。",
+            "description": "虚無の超新星で全体を飲み込む闇の最終AoE。dark弱点の集団を消し飛ばす。"
+          },
+          {
+            "id": "inferno_lance",
+            "name": "インフェルノランス",
+            "emoji": "☄️",
+            "type": "offensive",
+            "target": "single",
+            "element": "fire",
+            "basePower": 1.7,
+            "scalingStat": "magic",
+            "mpCost": 20,
+            "requiredLevel": 30,
+            "allowedRoles": [
+              "mage",
+              "all-rounder"
+            ],
+            "damageAt": "単体ピーク。Lv50:火弱点708/無463(magic288,md80)、Lv35:火弱点507/無333(magic205,md60)。spec例bp2.4はmagDef貫通を/3でなく大引きと誤想定したもの＝確殺の過大係数。実式(magDef/3)では弱点708・無463で『弱点でやっと1〜2発圏/無属性は2発』が成立しbp1.7が正。",
+            "description": "灼熱の槍を撃ち込む火属性の極大単体術。火弱点の重装ボスを2発圏に追い込む。"
+          },
+          {
+            "id": "abyssal_ruin",
+            "name": "アビサルルイン",
+            "emoji": "🌌",
+            "type": "offensive",
+            "target": "single",
+            "element": "dark",
+            "basePower": 1.7,
+            "scalingStat": "magic",
+            "mpCost": 21,
+            "requiredLevel": 35,
+            "allowedRoles": [
+              "mage"
+            ],
+            "damageAt": "dark独占の単体ピーク。Lv50:闇弱点708/無463(md80)、Lv35:闇弱点507/無333(md60)。inferno_lanceの闇版＝弱点を散らす設計上、火耐性ボスを闇で割る択を確保。無属性敵にも463通り単独全敵割りは不可。",
+            "description": "深淵の崩壊で標的を内側から砕く闇の極大単体術。ヤミだけが扱える最終奥義。"
+          }
+        ],
+        "skillLearning": "CHARACTER_GROWTH.yami.skillLearning を以下に更新（加入時skills=['dark_pulse','curse']は据え置き。下表は遡及習得される）: { 2:['fire_bolt'], 3:['ice_lance'], 5:['thunder_strike'], 18:['frost_pierce'], 20:['voltspear'], 24:['thunderstorm'], 28:['explosion'], 30:['inferno_lance'], 34:['dark_nova'], 35:['abyssal_ruin'] }。旧 {3:ice_lance,5:thunder_strike,8:explosion,10:haste} を置換。haste(support)はメイジのkit外へ＝攻撃特化に純化。Lv35クリア想定時点で abyssal_ruin まで揃い、火耐性ボスを闇で割る択が完成。",
+        "rationale": "【実成長で再算定したbp】魔法式 floor(magic*bp*elemMul)-floor(magDef/3) に yami実magic(Lv10=68/Lv35=205/Lv50=288)を代入して逆算した。★最重要の補正: spec例「bp≈2.4で対t5重装~700」は magDef を物理同様に大きく引く前提だったが、確定式は magDef/3 と貫通が強い。実際に検証すると bp2.4・Lv50・弱点は ~1000超で1発確殺の過大係数になる。目標『対t5重装(magDef≈80)・弱点で~700/無属性は~460(2発圏)』を満たす単体ピークは bp1.7(弱点708・無463)。よって inferno_lance / abyssal_ruin = bp1.7 を採用(bp2.4は不採用)。\n\n【11〜13個=12個構成】単体ボルト5(dark_pulse/curse/fire_bolt/ice_lance/thunder_strike) + 中位単体2(frost_pierce/voltspear) + 単体ピーク2(inferno_lance/abyssal_ruin) + 全体3(thunderstorm/explosion/dark_nova)。\n\n【属性差別化と弱点散らし(ユーザー決定1)】火=単体ピーク+全体大火力(inferno_lance/explosion/fire_bolt)、氷=貫通系の安定単体(ice_lance/frost_pierce)、雷=機械特効の単体+低燃費AoE(thunder_strike/voltspear/thunderstorm)、闇=mage独占の代名詞で全レンジ完備(dark_pulse/curse/abyssal_ruin/dark_nova)。yami単独で全敵を割れない設計のため『火ピーク＋闇ピーク』の2系統を持たせ、火耐性ボスは闇で・闇耐性ボスは火で割る択を保証。無属性(弱点なし)敵には全術が neutral 値(例ピーク463)で2発以上＝割れはするが過剰効率化しない。\n\n【全体bpの上限規律(必須修正)】全体=単体ピークbp1.7の0.5〜0.6倍に固定: thunderstorm0.9(0.53)/explosion1.0(0.59)/dark_nova1.05(0.62)。Lv50・弱点での3体総ダメ(1125/1257/1320)は単体ピーク708を超えるが、いずれも弱点一致限定＋MP22〜30と重く、無属性なら3体総でも単体ピーク同等以下。全体偏重で殴り続ける運用を抑制し、回復>総被ダメの自動化(ユーザー決定2)を成立させる。\n\n【旧スキルのレトロフィット】fire_bolt/ice_lance/thunder_strike/explosion/curse/dark_pulse は power/30 一律換算を廃し各々に個別bpを新規付与。旧power(20/25/30/50/30/22)に対し低〜中Lv帯で旧威力感±20%内(例 fire_bolt Lv10無属性64 vs 旧≈26+成長分・体感維持、explosion全体感維持)。curse/dark_pulseは『据え置き調整』として威力序列を保ったままelement=darkを付与しmage独占化。\n\n【役割住み分け(allowedRoles正本)】全12スキルが offensive×scalingStat=magic のため riku(tank)を機械的に全除外。dark系4種(dark_pulse/curse/abyssal_ruin/dark_nova)は ['mage'] 単独でmage独占。火/氷/雷の汎用ボルトのみ ['mage','all-rounder'] とし kaito(両刀)が基礎属性を触れる余地を残す(akari/rikuは攻撃術に不可)。supportのhasteはメイジkitから外し攻撃特化へ純化。\n\n【既存ID衝突回避】新規ID frost_pierce/voltspear/thunderstorm/dark_nova/inferno_lance/abyssal_ruin は既存装備25・敵15・スキル13いずれとも非衝突。既存ID(fire_bolt/ice_lance/thunder_strike/explosion/curse/dark_pulse)は同IDのまま属性・bp・mpCostを上書き調整。requiredLevelは習得段階に合わせ再設定し skillLearning と整合(Lv35クリア時点で全12種解放)。"
+      },
+      "physical": {
+        "role": "physical-skill-designer (kaito/all-rounder + riku/tank). 物理特技11個。formula: floor(attack*bp)-floor(physDef/2)。allowedRolesからyami(mage)を機械的に除外。shield_bash/taunt実装済で宙吊り解消。",
+        "skills": [
+          {
+            "id": "shield_bash",
+            "name": "シールドバッシュ",
+            "emoji": "🛡️",
+            "type": "offensive",
+            "target": "single",
+            "element": "none",
+            "basePower": 1.6,
+            "scalingStat": "attack",
+            "mpCost": 4,
+            "requiredLevel": 1,
+            "allowedRoles": [
+              "tank",
+              "all-rounder"
+            ],
+            "damageAt": "riku Lv10 atk56→floor(56*1.6)-pdef10/2=84 / Lv35 atk168→246 / Lv50 atk236→floor(377)-40=337（vs heavy）。リク加入時スキル（宙吊り解消）。盾で殴る軽量単体・序盤の主力。",
+            "description": "盾で敵を強打する。物理単体・低コストでターン頭から撃てるリクの基本技。物理防御の半分を貫通。"
+          },
+          {
+            "id": "taunt",
+            "name": "挑発",
+            "emoji": "😤",
+            "type": "support",
+            "target": "self",
+            "element": "none",
+            "basePower": 0,
+            "scalingStat": "attack",
+            "mpCost": 3,
+            "requiredLevel": 1,
+            "allowedRoles": [
+              "tank",
+              "all-rounder"
+            ],
+            "damageAt": "ダメージ0（挑発）。3ターン敵の攻撃をリクへ強制誘導＋自身の被物理を約15%軽減。リク加入時スキル（宙吊り解消）。タンク運用の核。",
+            "description": "敵の敵意を自分に集める。3ターンの間、敵の攻撃対象を自分へ引き付け、被ダメージをわずかに軽減する。後衛(アカリ/ヤミ)を守る盾役の生命線。"
+          },
+          {
+            "id": "heavy_smash",
+            "name": "ヘビースマッシュ",
+            "emoji": "🔨",
+            "type": "offensive",
+            "target": "single",
+            "element": "none",
+            "basePower": 3.2,
+            "scalingStat": "attack",
+            "mpCost": 14,
+            "requiredLevel": 12,
+            "allowedRoles": [
+              "tank",
+              "all-rounder"
+            ],
+            "damageAt": "riku Lv35 atk168→floor(537)-pdef45/2≈515 / Lv50 atk236→floor(755)-40=715（vs heavy pdef80）。タンク単体ピーク技。弱点に頼らず重装t5/ボスを1〜2発圏で削る無属性大打。kaito Lv50でも~496。",
+            "description": "全体重を乗せた渾身の一撃。物理単体最大火力。属性弱点に依存せず、耐性持ち・無属性の敵にも安定して大ダメージを通せる。"
+          },
+          {
+            "id": "whirl_strike",
+            "name": "ワールストライク",
+            "emoji": "🌀",
+            "type": "offensive",
+            "target": "all",
+            "element": "none",
+            "basePower": 1.9,
+            "scalingStat": "attack",
+            "mpCost": 16,
+            "requiredLevel": 18,
+            "allowedRoles": [
+              "tank",
+              "all-rounder"
+            ],
+            "damageAt": "riku Lv35→floor(319)-22≈297×敵 / Lv50→floor(448)-40=408×敵。2体目以降×0.7逓減で3体総計≈408+286+286=980<単体ピーク715の1.4倍内、bpは単体heavy_smash3.2の0.59倍。雑魚群掃討用。",
+            "description": "武器を旋回させ全方位を薙ぎ払う。全体物理。1発の威力は単体技より控えめで、2体目以降は威力が逓減するため、単体集中より総ダメージは伸びない雑魚処理向け。"
+          },
+          {
+            "id": "guard_break",
+            "name": "ガードブレイク",
+            "emoji": "💢",
+            "type": "offensive",
+            "target": "single",
+            "element": "none",
+            "basePower": 2.2,
+            "scalingStat": "attack",
+            "mpCost": 12,
+            "requiredLevel": 15,
+            "allowedRoles": [
+              "tank",
+              "all-rounder"
+            ],
+            "damageAt": "riku Lv35→floor(369)-22≈347 / Lv50→floor(519)-40=479（vs heavy）。命中時に対象のdefenseを3ターン約25%低下（後続の物理/味方火力を底上げ）。中威力単体＋防御デバフ運搬役。",
+            "description": "敵の防具を打ち砕く。中威力の物理単体に加え、対象の防御力を3ターン低下させる。重装ボスを味方全員で削る前の地ならしに最適。"
+          },
+          {
+            "id": "iron_wall",
+            "name": "アイアンウォール",
+            "emoji": "🧱",
+            "type": "support",
+            "target": "self",
+            "element": "none",
+            "basePower": 1.7,
+            "scalingStat": "attack",
+            "mpCost": 10,
+            "requiredLevel": 8,
+            "allowedRoles": [
+              "tank"
+            ],
+            "damageAt": "ダメージ0（自己防御バフ）。3ターン自身の物理/魔法防御を約1.7倍（×1.7）。tauntと併用で全体攻撃・多段持ちボスの被弾を受け切る。タンク専用。",
+            "description": "全身を鋼の構えで固める。3ターンの間、自身の防御を大幅に引き上げる。挑発と重ねれば敵の大技を受け止める鉄壁となる、リク専用の自己防御技。"
+          },
+          {
+            "id": "war_cry",
+            "name": "ウォークライ",
+            "emoji": "📣",
+            "type": "support",
+            "target": "allyAll",
+            "element": "none",
+            "basePower": 1.4,
+            "scalingStat": "attack",
+            "mpCost": 14,
+            "requiredLevel": 20,
+            "allowedRoles": [
+              "tank",
+              "all-rounder"
+            ],
+            "damageAt": "ダメージ0（味方全体攻撃バフ）。3ターン味方全員のattackを約1.4倍（×1.4）。物理パーティの瞬間火力を底上げしボス短期決戦を作る支援技。回復過多による自動化を崩す攻め手。",
+            "description": "鬨の声で味方を鼓舞する。3ターンの間、パーティ全員の攻撃力を引き上げる。物理アタッカーを並べた編成でボスを一気に押し切るための号令。"
+          },
+          {
+            "id": "blade_dance",
+            "name": "ブレイドダンス",
+            "emoji": "⚔️",
+            "type": "offensive",
+            "target": "single",
+            "element": "none",
+            "basePower": 2.8,
+            "scalingStat": "attack",
+            "mpCost": 13,
+            "requiredLevel": 14,
+            "allowedRoles": [
+              "all-rounder"
+            ],
+            "damageAt": "kaito Lv35 atk129→floor(361)-22≈339 / Lv50 atk182→floor(509)-40=469（vs heavy）。カイトの物理単体主力。両刀の片翼。riku heavy_smashよりbp控えめ＝役割差別化。",
+            "description": "連舞の斬撃を叩き込む。カイトの物理単体主力技。魔法も剣も扱う両刀ゆえ単発火力はタンク専用技に一歩譲るが、撃ち分けの自由度で勝る。"
+          },
+          {
+            "id": "cross_slash",
+            "name": "クロススラッシュ",
+            "emoji": "✖️",
+            "type": "offensive",
+            "target": "all",
+            "element": "none",
+            "basePower": 1.7,
+            "scalingStat": "attack",
+            "mpCost": 15,
+            "requiredLevel": 16,
+            "allowedRoles": [
+              "all-rounder"
+            ],
+            "damageAt": "kaito Lv35→floor(219)-22≈197×敵 / Lv50→floor(309)-40=269×敵。2体目以降×0.7で3体総計≈269+188+188=645<単体blade_dance469×1.4内、bpは単体2.8の0.61倍。カイトの全体物理。",
+            "description": "十字に斬り払う全体物理。1発の威力は単体技より低く逓減もあるため、雑魚集団の掃討用。単体は剣技に、複数はこれにと撃ち分けるのが両刀の旨味。"
+          },
+          {
+            "id": "rending_edge",
+            "name": "レンディングエッジ",
+            "emoji": "🌗",
+            "type": "offensive",
+            "target": "single",
+            "element": "none",
+            "basePower": 3.4,
+            "scalingStat": "attack",
+            "mpCost": 18,
+            "requiredLevel": 24,
+            "allowedRoles": [
+              "all-rounder"
+            ],
+            "damageAt": "kaito Lv35 atk129→floor(438)-22≈416 / Lv50 atk182→floor(618)-40=578（vs heavy）。直前ターンに魔法を撃っていれば威力×1.2（bp実効4.08→Lv50で~705）。系統スイッチ＝両刀のご褒美技。剣単発の最大火力。",
+            "description": "魔と剣を継いだ斬撃。カイト物理単体の最大火力で、直前に魔法を使ってから放つと威力が1.2倍に跳ね上がる。魔法→物理と系統を切り替える両刀ならではの撃ち分けボーナス技。"
+          },
+          {
+            "id": "piercing_arrow",
+            "name": "ピアスアロー",
+            "emoji": "🏹",
+            "type": "offensive",
+            "target": "single",
+            "element": "none",
+            "basePower": 1.6,
+            "scalingStat": "attack",
+            "mpCost": 6,
+            "requiredLevel": 6,
+            "allowedRoles": [
+              "all-rounder",
+              "healer"
+            ],
+            "damageAt": "akari Lv35 atk76→floor(121)-22≈99 / Lv50 atk106→floor(169)-22=147（vs mid pdef45）。kaito Lv50→floor(291)-40=251。アカリ(healer)が回復の合間に撃てる軽量物理。MP温存しつつ手数を作るユーティリティ。",
+            "description": "鋭い矢で急所を貫く軽量物理。低コストで、回復役のアカリでも回復の手が空いたターンに撃てる。物理防御の半分を貫通し、無属性なので耐性に左右されない。"
+          }
+        ],
+        "skillLearning": "物理職のskillLearning追記案（CHARACTER_GROWTH）。kaito(all-rounder): {6:['piercing_arrow'], 14:['blade_dance'], 16:['cross_slash'], 20:['war_cry'], 24:['rending_edge']}。riku(tank): 開始skills=['shield_bash','taunt'](Lv1既習), {8:['iron_wall'], 12:['heavy_smash'], 15:['guard_break'], 18:['whirl_strike'], 20:['war_cry']}。akari(healer): piercing_arrowはallowedRolesにhealerを含むため習得可だが既存skillLearning(4:mega_heal等)優先。任意で {10:['piercing_arrow']} を足して回復役に手数を持たせてよい。※shield_bash/taunt/heavy_smash等はmage非許可なのでyamiには絶対付与しない（魔法職から物理を機械除外）。",
+        "rationale": "【設計根拠】物理式 floor(attack*bp)-floor(physDef/2) に対し、basePowerは目標ダメージ÷実stat値で逆算。検証ツール tools/yami-skill-oracle.js 同様の実stat（riku atk Lv35=168/Lv50=236, kaito Lv50=182, akari Lv50=106）で全damageAtを実算出済み（python3で計算）。\\n\\n【単体ピークの釣り合い】タンク最大技 heavy_smash(bp3.2) は riku Lv50 atk236 で重装t5(physDef80)に対し715 ＝「弱点に頼らず1〜2発圏」。1発確殺(係数過大)を回避。カイト剣最大 rending_edge(bp3.4) は両刀差別化のため魔法→物理スイッチ時のみ×1.2(実効4.08→~705)とし、平常時(578)はタンクを超えない。\\n\\n【全体技の抑制】全体 whirl_strike(bp1.9)/cross_slash(bp1.7) は単体bp(3.2/2.8)の約0.59〜0.61倍＋2体目以降×0.7逓減。3体総計(riku 980/kaito 645)は各単体ピーク×1.4内に収まり、全体が単体集中を上回らない＝雑魚処理専用に役割固定。\\n\\n【宙吊り解消】開始参照の shield_bash・taunt を実装ID化（riku Lv1既習）。両者とも tank+all-rounder 許可で mage(yami)除外。taunt(被弾誘導)＋iron_wall(自己防御×1.7)＋guard_break(敵def-25%)＋war_cry(味方atk×1.4)でタンク/支援の縦深を確保し、ユーザー決定2の「回復>総被ダメで自動化しない」攻め手(war_cry短期決戦)も提供。\\n\\n【役割住み分け（allowedRoles正本）】全11技 scalingStat:attack。yami(mage)は全物理技の allowedRoles から機械除外。healer(akari)は軽量 piercing_arrow のみ許可し回復の合間の手数役に。element:none中心で耐性/無属性の敵にも通る安定枠を物理側に確保（弱点択ゲー回避をヤミ側の補完として機能）。\\n\\n【既存ID非衝突】新ID shield_bash/taunt/heavy_smash/whirl_strike/guard_break/iron_wall/war_cry/blade_dance/cross_slash/rending_edge/piercing_arrow は装備25・敵15・旧スキル13いずれとも衝突なし（shield_bash/taunt は参照のみ存在し実体未定義だった宙吊りを今回実体化）。"
+      }
+    },
+    "equipment": {
+      "physical": {
+        "items": [
+          {
+            "id": "steel_saber",
+            "name": "鋼のサーベル",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 13,
+            "defense": 0,
+            "magic": 0,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 0,
+            "speed": 2,
+            "tier": 2,
+            "price": 420
+          },
+          {
+            "id": "officer_blade",
+            "name": "オフィサーブレード",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 22,
+            "defense": 2,
+            "magic": 0,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 0,
+            "speed": 3,
+            "tier": 3,
+            "price": 900
+          },
+          {
+            "id": "riot_breaker",
+            "name": "ライオットブレイカー",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 34,
+            "defense": 3,
+            "magic": 0,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 0,
+            "speed": 3,
+            "tier": 4,
+            "price": 1700
+          },
+          {
+            "id": "pulse_greatsword",
+            "name": "パルス大剣",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 50,
+            "defense": 4,
+            "magic": 0,
+            "magicDefense": 0,
+            "hp": 10,
+            "mp": 0,
+            "speed": 2,
+            "tier": 5,
+            "price": 3000
+          },
+          {
+            "id": "railgun_lance",
+            "name": "レールガンランス",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 70,
+            "defense": 5,
+            "magic": 0,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 0,
+            "speed": 4,
+            "tier": 6,
+            "price": 5200
+          },
+          {
+            "id": "titan_cleaver",
+            "name": "タイタンクリーバー",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 95,
+            "defense": 8,
+            "magic": 0,
+            "magicDefense": 0,
+            "hp": 20,
+            "mp": 0,
+            "speed": 2,
+            "tier": 7,
+            "price": 8800
+          },
+          {
+            "id": "ragnarok_edge",
+            "name": "ラグナロクエッジ",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 125,
+            "defense": 10,
+            "magic": 0,
+            "magicDefense": 0,
+            "hp": 20,
+            "mp": 0,
+            "speed": 5,
+            "tier": 8,
+            "price": 15000
+          },
+          {
+            "id": "deus_executioner",
+            "name": "デウス・エクスキューショナー",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 165,
+            "defense": 12,
+            "magic": 0,
+            "magicDefense": 10,
+            "hp": 40,
+            "mp": 0,
+            "speed": 6,
+            "tier": 9,
+            "price": 26000
+          },
+          {
+            "id": "scale_vest",
+            "name": "スケイルベスト",
+            "slot": "body",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 0,
+            "defense": 11,
+            "magic": 0,
+            "magicDefense": 4,
+            "hp": 25,
+            "mp": 0,
+            "speed": 0,
+            "tier": 2,
+            "price": 450
+          },
+          {
+            "id": "riot_plate",
+            "name": "ライオットプレート",
+            "slot": "body",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 0,
+            "defense": 19,
+            "magic": 0,
+            "magicDefense": 6,
+            "hp": 45,
+            "mp": 0,
+            "speed": 0,
+            "tier": 3,
+            "price": 950
+          },
+          {
+            "id": "guardian_carapace",
+            "name": "ガーディアンカラペス",
+            "slot": "body",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 0,
+            "defense": 30,
+            "magic": 0,
+            "magicDefense": 9,
+            "hp": 70,
+            "mp": 0,
+            "speed": -1,
+            "tier": 4,
+            "price": 1800
+          },
+          {
+            "id": "titan_armor",
+            "name": "タイタンアーマー",
+            "slot": "body",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 0,
+            "defense": 44,
+            "magic": 0,
+            "magicDefense": 13,
+            "hp": 100,
+            "mp": 0,
+            "speed": -1,
+            "tier": 5,
+            "price": 3200
+          },
+          {
+            "id": "aegis_frame",
+            "name": "イージスフレーム",
+            "slot": "body",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 0,
+            "defense": 62,
+            "magic": 0,
+            "magicDefense": 18,
+            "hp": 140,
+            "mp": 0,
+            "speed": -1,
+            "tier": 6,
+            "price": 5600
+          },
+          {
+            "id": "fortress_mail",
+            "name": "フォートレスメイル",
+            "slot": "body",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 0,
+            "defense": 84,
+            "magic": 0,
+            "magicDefense": 24,
+            "hp": 190,
+            "mp": 0,
+            "speed": -2,
+            "tier": 7,
+            "price": 9500
+          },
+          {
+            "id": "colossus_plate",
+            "name": "コロッサスプレート",
+            "slot": "body",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 0,
+            "defense": 110,
+            "magic": 0,
+            "magicDefense": 30,
+            "hp": 250,
+            "mp": 0,
+            "speed": -2,
+            "tier": 8,
+            "price": 16000
+          },
+          {
+            "id": "deus_bulwark",
+            "name": "デウス・バルワーク",
+            "slot": "body",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 5,
+            "defense": 145,
+            "magic": 0,
+            "magicDefense": 40,
+            "hp": 320,
+            "mp": 0,
+            "speed": -1,
+            "tier": 9,
+            "price": 28000
+          },
+          {
+            "id": "scale_coif",
+            "name": "スケイルコイフ",
+            "slot": "head",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 0,
+            "defense": 8,
+            "magic": 0,
+            "magicDefense": 3,
+            "hp": 15,
+            "mp": 0,
+            "speed": 0,
+            "tier": 2,
+            "price": 300
+          },
+          {
+            "id": "riot_visor",
+            "name": "ライオットバイザー",
+            "slot": "head",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 0,
+            "defense": 14,
+            "magic": 0,
+            "magicDefense": 5,
+            "hp": 25,
+            "mp": 0,
+            "speed": 0,
+            "tier": 3,
+            "price": 650
+          },
+          {
+            "id": "guardian_helm",
+            "name": "ガーディアンヘルム",
+            "slot": "head",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 0,
+            "defense": 22,
+            "magic": 0,
+            "magicDefense": 7,
+            "hp": 40,
+            "mp": 0,
+            "speed": 0,
+            "tier": 4,
+            "price": 1250
+          },
+          {
+            "id": "titan_helm",
+            "name": "タイタンヘルム",
+            "slot": "head",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 0,
+            "defense": 32,
+            "magic": 0,
+            "magicDefense": 10,
+            "hp": 60,
+            "mp": 0,
+            "speed": 0,
+            "tier": 5,
+            "price": 2200
+          },
+          {
+            "id": "aegis_helm",
+            "name": "イージスヘルム",
+            "slot": "head",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 0,
+            "defense": 44,
+            "magic": 0,
+            "magicDefense": 14,
+            "hp": 85,
+            "mp": 0,
+            "speed": 0,
+            "tier": 6,
+            "price": 3900
+          },
+          {
+            "id": "fortress_helm",
+            "name": "フォートレスヘルム",
+            "slot": "head",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 0,
+            "defense": 58,
+            "magic": 0,
+            "magicDefense": 18,
+            "hp": 115,
+            "mp": 0,
+            "speed": 0,
+            "tier": 7,
+            "price": 6800
+          },
+          {
+            "id": "deus_crown",
+            "name": "デウス・クラウン",
+            "slot": "head",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 0,
+            "defense": 78,
+            "magic": 0,
+            "magicDefense": 24,
+            "hp": 160,
+            "mp": 0,
+            "speed": 1,
+            "tier": 8,
+            "price": 12500
+          },
+          {
+            "id": "scale_gauntlets",
+            "name": "スケイルガントレット",
+            "slot": "hands",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 4,
+            "defense": 6,
+            "magic": 0,
+            "magicDefense": 2,
+            "hp": 0,
+            "mp": 0,
+            "speed": 1,
+            "tier": 2,
+            "price": 280
+          },
+          {
+            "id": "riot_grips",
+            "name": "ライオットグリップ",
+            "slot": "hands",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 7,
+            "defense": 11,
+            "magic": 0,
+            "magicDefense": 3,
+            "hp": 0,
+            "mp": 0,
+            "speed": 1,
+            "tier": 3,
+            "price": 620
+          },
+          {
+            "id": "guardian_gauntlets",
+            "name": "ガーディアンガントレット",
+            "slot": "hands",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 11,
+            "defense": 18,
+            "magic": 0,
+            "magicDefense": 5,
+            "hp": 10,
+            "mp": 0,
+            "speed": 1,
+            "tier": 4,
+            "price": 1200
+          },
+          {
+            "id": "titan_fists",
+            "name": "タイタンフィスト",
+            "slot": "hands",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 17,
+            "defense": 27,
+            "magic": 0,
+            "magicDefense": 7,
+            "hp": 15,
+            "mp": 0,
+            "speed": 1,
+            "tier": 5,
+            "price": 2100
+          },
+          {
+            "id": "aegis_gauntlets",
+            "name": "イージスガントレット",
+            "slot": "hands",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 24,
+            "defense": 38,
+            "magic": 0,
+            "magicDefense": 10,
+            "hp": 25,
+            "mp": 0,
+            "speed": 2,
+            "tier": 6,
+            "price": 3700
+          },
+          {
+            "id": "fortress_gauntlets",
+            "name": "フォートレスガントレット",
+            "slot": "hands",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 33,
+            "defense": 52,
+            "magic": 0,
+            "magicDefense": 14,
+            "hp": 40,
+            "mp": 0,
+            "speed": 2,
+            "tier": 7,
+            "price": 6500
+          },
+          {
+            "id": "deus_gauntlets",
+            "name": "デウス・ガントレット",
+            "slot": "hands",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 45,
+            "defense": 70,
+            "magic": 0,
+            "magicDefense": 18,
+            "hp": 60,
+            "mp": 0,
+            "speed": 3,
+            "tier": 8,
+            "price": 11800
+          },
+          {
+            "id": "berserker_band",
+            "name": "バーサーカーバンド",
+            "slot": "accessory",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 14,
+            "defense": 2,
+            "magic": 0,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 0,
+            "speed": 3,
+            "tier": 4,
+            "price": 1600
+          },
+          {
+            "id": "iron_will_pendant",
+            "name": "アイアンウィルペンダント",
+            "slot": "accessory",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 2,
+            "defense": 14,
+            "magic": 0,
+            "magicDefense": 8,
+            "hp": 60,
+            "mp": 0,
+            "speed": 0,
+            "tier": 4,
+            "price": 1600
+          },
+          {
+            "id": "warlord_emblem",
+            "name": "ウォーロードエンブレム",
+            "slot": "accessory",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 28,
+            "defense": 6,
+            "magic": 0,
+            "magicDefense": 4,
+            "hp": 40,
+            "mp": 0,
+            "speed": 5,
+            "tier": 6,
+            "price": 4400
+          },
+          {
+            "id": "bastion_core",
+            "name": "バスティオンコア",
+            "slot": "accessory",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 6,
+            "defense": 30,
+            "magic": 0,
+            "magicDefense": 16,
+            "hp": 120,
+            "mp": 0,
+            "speed": 0,
+            "tier": 6,
+            "price": 4400
+          },
+          {
+            "id": "deus_sigil",
+            "name": "デウス・シジル",
+            "slot": "accessory",
+            "allowedRoles": [
+              "all-rounder",
+              "tank"
+            ],
+            "attack": 40,
+            "defense": 40,
+            "magic": 0,
+            "magicDefense": 22,
+            "hp": 150,
+            "mp": 0,
+            "speed": 6,
+            "tier": 9,
+            "price": 22000
+          }
+        ],
+        "line": "物理系（warrior/all-rounder/tank 向け）。武器=attack主軸、重装防具(体/頭/手)=defense主軸+hp、物理アクセ=attack/defense/hp。allowedRoles は全て ['all-rounder','tank'] で mage/healer を機械的に除外（berserker系・防御系アクセも tank/all-rounder のみ）。既存25id(wooden_sword..sage_circlet, mage_staff系)とは非衝突の新34id。tier1帯は既存(wooden_sword atk5 / cloth_armor def3 等)が担うため、新ラインは tier2 から開始し既存帯と連続させる。重装は speed にマイナス補正を持たせ「鈍重さ」で術士系軽装との質的差を出す（getTotalStats は speed も集計する前提）。magicDefense を全防具に持たせ、ユーザー決定の魔法ダメージ式(magDef/3貫通)に対し物理キャラの魔法被弾を緩和する。",
+        "shop": "エリア別の販売割当（武器店=リョウ shopType:weapons / 防具店=サクラ shopType:armor / 闇市=闇商人 shopType:black_market。enemy levelRange: city[1-3]/subway[3-5]/shrine[5-7]/garden[7-9]/market[8-10]/gov[10-13]/dungeon[13-17]、クリアLv35・上限Lv50）。\n\n【武器店リョウ(weapons)・序盤〜中盤】\n- steel_saber(t2, Lv3〜/subway帯), officer_blade(t3, Lv5〜/shrine帯), riot_breaker(t4, Lv8〜/garden〜market帯), pulse_greatsword(t5, Lv11〜/gov帯)\n【防具店サクラ(armor)・序盤〜中盤】体/頭/手 各tier2-5＋物理アクセ序盤\n- scale_vest/scale_coif/scale_gauntlets(t2), riot_plate/riot_visor/riot_grips(t3), guardian_carapace/guardian_helm/guardian_gauntlets(t4), titan_armor/titan_helm/titan_fists(t5), berserker_band/iron_will_pendant(t4物理アクセ)\n【闇市・闇商人(black_market)・後半〜エンドゲーム】高tierは渋谷商業街でなく闇市に限定し希少感を出す\n- 武器: railgun_lance(t6,Lv13〜/dungeon帯), titan_cleaver(t7,Lv20〜), ragnarok_edge(t8,Lv30〜/クリア前後), deus_executioner(t9,Lv40〜/エンドゲーム)\n- 防具: aegis_frame/aegis_helm/aegis_gauntlets(t6), fortress_mail/fortress_helm/fortress_gauntlets(t7), colossus_plate(t8), deus_crown(t8/頭最終), deus_bulwark(t9/体最終), deus_gauntlets(t8/手最終)\n- 物理アクセ: warlord_emblem/bastion_core(t6), deus_sigil(t9/最終)\n\n実装方法: map-system.js の this.shopData.weapons / .armor / .black_market 配列に { id, equipmentId } を追記。equipment-system.js の equipmentDatabase に34件追加し、_applyEquipmentRoles の table へ各idを WARRIOR=['all-rounder','tank'] で登録(magic=0なので既定でも WARRIOR に落ちるが明示推奨)。requiredLevel は上記 Lv目安を各装備に付与。",
+        "ladderCheck": "各スロットの主要stat伸び率(=新tier値/前tier値)が当該帯baseの≥30%(=ratio≥1.30)を満たすことを確認済み。\n\n■武器attack: 6(既存wooden_sword帯)→13→22→34→50→70→95→125→165\n 比 2.17/1.69/1.55/1.47/1.40/1.36/1.32/1.32 全て≥1.30。Lv50物理キャラ素atk(riku236/kaito182)に対し最終165は約70-90%上乗せで「装備で体感倍化」かつ過剰でない。\n\n■体防具defense: 3(既存cloth_armor)→11(scale)→19→30→44→62→84→110→145\n ※scale_vest(t2)は既存leather_armor(def8)/chain_mail(def15)と帯が重なるが、新ライン基準tierは t2=11 で leather(8)比1.38、以降11→19→30→44→62→84→110→145 の比は 1.73/1.58/1.47/1.41/1.35/1.31/1.32 全て≥1.30。Lv50 riku素def231＋body145+head78+hands70=293相当の追加で総def〜524、t5ボスの全体大ダメージ(物理通常= atk+var-floor(def/2))に対し floor(524/2)=262 軽減し「回復>総被ダメで自動化」しない範囲に収める設計。\n\n■頭防具defense: 2(既存cloth_hat)→8→14→22→32→44→58→78\n 比 4.0/1.75/1.57/1.45/1.38/1.32/1.34 全て≥1.30。\n\n■手防具defense: 1(既存cloth_gloves)→6→11→18→27→38→52→70\n 比 6.0/1.83/1.64/1.50/1.41/1.37/1.35 全て≥1.30。手のattackも 4→7→11→17→24→33→45 比1.75/1.57/1.55/1.41/1.38/1.36 で≥1.30。\n\n■物理アクセ: 攻撃系 berserker14(t4)→warlord28(t6)→deus_sigil40(t9) 比2.0/1.43、防御系 iron_will14(t4)→bastion30(t6)→deus_sigil40(t9)。tier飛ばし配置のため各段≥30%を維持。\n\n全スロットで magicDefense を段階的に付与(体4→40/頭3→24/手2→18)し、術防具の magicDefense と対称に getTotalStats で集計される前提。tier1帯は既存装備が担当するため新ラインは t2 開始とし、既存→新の接続点(leather/chain→scale/riot)も≥30%を満たす連続した8段(武器t2-9で実質8段、防具スロットも7-8段)の滑らかな階段を構成。"
+      },
+      "caster": {
+        "line": "術士系",
+        "shop": "武器(杖/ロッド)=各エリアの武器店&魔法商人ミコト/闇市。軽装ローブ&頭(circlet)=防具店サクラ。術士アクセ(チャーム/オーブ)=防具店&闇商人。エリア帯: T1-2=スタート街(weapons/armorショップ)、T2-3=駅subway商店、T3-4=シティ中央&闇市black_market、T4-5=研究施設 深層ショップ、T5(最終)=最終コア 隠し商店(black_market拡張)。既存5シード(mage_staff/healer_rod/arch_staff/mystic_robe/sage_circlet)は早期の別選択肢として温存し、本27点が正本ラダー。",
+        "ladderCheck": "全9ティア×全statライン(magic/magicDefense/mp/robe-def)でティア間成長率を検算済み(/tmp final3.py)。各ラインの最小成長率: weap-magic 36%, robe-magic 33%, acc-magic 33%, robe-magDef 35%, acc-magDef 36%, robe-def 30%, weap-mp 36%, robe-mp 33%, acc-mp 35% — 全て当該帯(直前ティア値=base)の≥30%伸びを満たす。3ピース合計magic供給は band base に対し +32〜61%(T1 79%→T9 61%)で、basePower較正(yami magic288/akari233前提)を壊さない範囲。magicDefense合計は T9で84(floor/3=28軽減)で innate magDef(yami26/akari51)と同オーダー、壁化しない。武器単体magicも全帯で band base の≥30%(T1 43%→T9 34%)。",
+        "items": [
+          {
+            "id": "apprentice_staff",
+            "name": "見習いの杖",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "mage"
+            ],
+            "attack": 3,
+            "defense": 0,
+            "magic": 6,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 6,
+            "speed": 0,
+            "tier": 1,
+            "price": 300
+          },
+          {
+            "id": "acolyte_rod",
+            "name": "信徒のロッド",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "healer"
+            ],
+            "attack": 2,
+            "defense": 0,
+            "magic": 6,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 8,
+            "speed": 0,
+            "tier": 1,
+            "price": 300
+          },
+          {
+            "id": "woven_robe",
+            "name": "織りのローブ",
+            "slot": "body",
+            "allowedRoles": [
+              "all-rounder",
+              "healer",
+              "mage"
+            ],
+            "attack": 0,
+            "defense": 3,
+            "magic": 3,
+            "magicDefense": 3,
+            "hp": 0,
+            "mp": 10,
+            "speed": 0,
+            "tier": 1,
+            "price": 260
+          },
+          {
+            "id": "glass_charm",
+            "name": "硝子のチャーム",
+            "slot": "accessory",
+            "allowedRoles": [
+              "all-rounder",
+              "healer",
+              "mage"
+            ],
+            "attack": 0,
+            "defense": 0,
+            "magic": 2,
+            "magicDefense": 2,
+            "hp": 0,
+            "mp": 8,
+            "speed": 1,
+            "tier": 1,
+            "price": 220
+          },
+          {
+            "id": "oak_staff",
+            "name": "樫の杖",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "mage"
+            ],
+            "attack": 4,
+            "defense": 0,
+            "magic": 9,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 10,
+            "speed": 0,
+            "tier": 2,
+            "price": 650
+          },
+          {
+            "id": "prayer_rod",
+            "name": "祈りのロッド",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "healer"
+            ],
+            "attack": 3,
+            "defense": 0,
+            "magic": 9,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 12,
+            "speed": 0,
+            "tier": 2,
+            "price": 650
+          },
+          {
+            "id": "silk_robe",
+            "name": "絹のローブ",
+            "slot": "body",
+            "allowedRoles": [
+              "all-rounder",
+              "healer",
+              "mage"
+            ],
+            "attack": 0,
+            "defense": 4,
+            "magic": 4,
+            "magicDefense": 5,
+            "hp": 0,
+            "mp": 16,
+            "speed": 0,
+            "tier": 2,
+            "price": 560
+          },
+          {
+            "id": "crystal_charm",
+            "name": "水晶のチャーム",
+            "slot": "accessory",
+            "allowedRoles": [
+              "all-rounder",
+              "healer",
+              "mage"
+            ],
+            "attack": 0,
+            "defense": 0,
+            "magic": 3,
+            "magicDefense": 3,
+            "hp": 0,
+            "mp": 12,
+            "speed": 1,
+            "tier": 2,
+            "price": 480
+          },
+          {
+            "id": "rune_staff",
+            "name": "ルーンの杖",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "mage"
+            ],
+            "attack": 6,
+            "defense": 0,
+            "magic": 13,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 15,
+            "speed": 0,
+            "tier": 3,
+            "price": 1300
+          },
+          {
+            "id": "saint_rod",
+            "name": "聖者のロッド",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "healer"
+            ],
+            "attack": 4,
+            "defense": 0,
+            "magic": 13,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 18,
+            "speed": 0,
+            "tier": 3,
+            "price": 1300
+          },
+          {
+            "id": "arcane_robe",
+            "name": "秘術のローブ",
+            "slot": "body",
+            "allowedRoles": [
+              "all-rounder",
+              "healer",
+              "mage"
+            ],
+            "attack": 0,
+            "defense": 6,
+            "magic": 6,
+            "magicDefense": 7,
+            "hp": 0,
+            "mp": 24,
+            "speed": 0,
+            "tier": 3,
+            "price": 1100
+          },
+          {
+            "id": "sage_charm",
+            "name": "賢者のチャーム",
+            "slot": "accessory",
+            "allowedRoles": [
+              "all-rounder",
+              "healer",
+              "mage"
+            ],
+            "attack": 0,
+            "defense": 0,
+            "magic": 4,
+            "magicDefense": 5,
+            "hp": 0,
+            "mp": 18,
+            "speed": 2,
+            "tier": 3,
+            "price": 950
+          },
+          {
+            "id": "sorcerer_staff",
+            "name": "魔術師の杖",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "mage"
+            ],
+            "attack": 8,
+            "defense": 0,
+            "magic": 19,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 22,
+            "speed": 0,
+            "tier": 4,
+            "price": 2400
+          },
+          {
+            "id": "cleric_rod",
+            "name": "司祭のロッド",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "healer"
+            ],
+            "attack": 5,
+            "defense": 0,
+            "magic": 19,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 26,
+            "speed": 0,
+            "tier": 4,
+            "price": 2400
+          },
+          {
+            "id": "mystic_veil_robe",
+            "name": "幻惑のローブ",
+            "slot": "body",
+            "allowedRoles": [
+              "all-rounder",
+              "healer",
+              "mage"
+            ],
+            "attack": 0,
+            "defense": 8,
+            "magic": 9,
+            "magicDefense": 10,
+            "hp": 0,
+            "mp": 34,
+            "speed": 0,
+            "tier": 4,
+            "price": 2000
+          },
+          {
+            "id": "astral_orb",
+            "name": "星辰のオーブ",
+            "slot": "accessory",
+            "allowedRoles": [
+              "all-rounder",
+              "healer",
+              "mage"
+            ],
+            "attack": 0,
+            "defense": 0,
+            "magic": 6,
+            "magicDefense": 7,
+            "hp": 0,
+            "mp": 26,
+            "speed": 2,
+            "tier": 4,
+            "price": 1700
+          },
+          {
+            "id": "archmage_staff",
+            "name": "大魔術師の杖",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "mage"
+            ],
+            "attack": 11,
+            "defense": 0,
+            "magic": 27,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 32,
+            "speed": 0,
+            "tier": 5,
+            "price": 4200
+          },
+          {
+            "id": "bishop_rod",
+            "name": "司教のロッド",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "healer"
+            ],
+            "attack": 7,
+            "defense": 0,
+            "magic": 27,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 36,
+            "speed": 0,
+            "tier": 5,
+            "price": 4200
+          },
+          {
+            "id": "phantom_robe",
+            "name": "幽幻のローブ",
+            "slot": "body",
+            "allowedRoles": [
+              "all-rounder",
+              "healer",
+              "mage"
+            ],
+            "attack": 0,
+            "defense": 11,
+            "magic": 13,
+            "magicDefense": 14,
+            "hp": 0,
+            "mp": 48,
+            "speed": 0,
+            "tier": 5,
+            "price": 3500
+          },
+          {
+            "id": "nebula_orb",
+            "name": "星雲のオーブ",
+            "slot": "accessory",
+            "allowedRoles": [
+              "all-rounder",
+              "healer",
+              "mage"
+            ],
+            "attack": 0,
+            "defense": 0,
+            "magic": 9,
+            "magicDefense": 10,
+            "hp": 0,
+            "mp": 36,
+            "speed": 3,
+            "tier": 5,
+            "price": 3000
+          },
+          {
+            "id": "warlock_staff",
+            "name": "破魔の杖",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "mage"
+            ],
+            "attack": 15,
+            "defense": 0,
+            "magic": 38,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 46,
+            "speed": 0,
+            "tier": 6,
+            "price": 7000
+          },
+          {
+            "id": "cardinal_rod",
+            "name": "枢機のロッド",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "healer"
+            ],
+            "attack": 10,
+            "defense": 0,
+            "magic": 38,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 50,
+            "speed": 0,
+            "tier": 6,
+            "price": 7000
+          },
+          {
+            "id": "void_robe",
+            "name": "虚空のローブ",
+            "slot": "body",
+            "allowedRoles": [
+              "all-rounder",
+              "healer",
+              "mage"
+            ],
+            "attack": 0,
+            "defense": 15,
+            "magic": 18,
+            "magicDefense": 19,
+            "hp": 0,
+            "mp": 66,
+            "speed": 0,
+            "tier": 6,
+            "price": 5800
+          },
+          {
+            "id": "eclipse_orb",
+            "name": "蝕のオーブ",
+            "slot": "accessory",
+            "allowedRoles": [
+              "all-rounder",
+              "healer",
+              "mage"
+            ],
+            "attack": 0,
+            "defense": 0,
+            "magic": 13,
+            "magicDefense": 14,
+            "hp": 0,
+            "mp": 50,
+            "speed": 3,
+            "tier": 6,
+            "price": 5000
+          },
+          {
+            "id": "sage_lord_staff",
+            "name": "賢王の杖",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "mage"
+            ],
+            "attack": 20,
+            "defense": 0,
+            "magic": 53,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 64,
+            "speed": 0,
+            "tier": 7,
+            "price": 11500
+          },
+          {
+            "id": "seraph_rod",
+            "name": "熾天使のロッド",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "healer"
+            ],
+            "attack": 13,
+            "defense": 0,
+            "magic": 53,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 68,
+            "speed": 0,
+            "tier": 7,
+            "price": 11500
+          },
+          {
+            "id": "celestial_robe",
+            "name": "天界のローブ",
+            "slot": "body",
+            "allowedRoles": [
+              "all-rounder",
+              "healer",
+              "mage"
+            ],
+            "attack": 0,
+            "defense": 20,
+            "magic": 25,
+            "magicDefense": 26,
+            "hp": 0,
+            "mp": 90,
+            "speed": 0,
+            "tier": 7,
+            "price": 9500
+          },
+          {
+            "id": "galaxy_orb",
+            "name": "銀河のオーブ",
+            "slot": "accessory",
+            "allowedRoles": [
+              "all-rounder",
+              "healer",
+              "mage"
+            ],
+            "attack": 0,
+            "defense": 0,
+            "magic": 18,
+            "magicDefense": 19,
+            "hp": 0,
+            "mp": 68,
+            "speed": 4,
+            "tier": 7,
+            "price": 8200
+          },
+          {
+            "id": "deus_staff",
+            "name": "神理の杖",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "mage"
+            ],
+            "attack": 26,
+            "defense": 0,
+            "magic": 72,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 88,
+            "speed": 0,
+            "tier": 8,
+            "price": 18000
+          },
+          {
+            "id": "divine_rod",
+            "name": "神癒のロッド",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "healer"
+            ],
+            "attack": 17,
+            "defense": 0,
+            "magic": 72,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 92,
+            "speed": 0,
+            "tier": 8,
+            "price": 18000
+          },
+          {
+            "id": "empyrean_robe",
+            "name": "天威のローブ",
+            "slot": "body",
+            "allowedRoles": [
+              "all-rounder",
+              "healer",
+              "mage"
+            ],
+            "attack": 0,
+            "defense": 26,
+            "magic": 34,
+            "magicDefense": 35,
+            "hp": 0,
+            "mp": 120,
+            "speed": 0,
+            "tier": 8,
+            "price": 15000
+          },
+          {
+            "id": "cosmos_orb",
+            "name": "宇宙のオーブ",
+            "slot": "accessory",
+            "allowedRoles": [
+              "all-rounder",
+              "healer",
+              "mage"
+            ],
+            "attack": 0,
+            "defense": 0,
+            "magic": 24,
+            "magicDefense": 26,
+            "hp": 0,
+            "mp": 92,
+            "speed": 4,
+            "tier": 8,
+            "price": 13000
+          },
+          {
+            "id": "kamui_staff",
+            "name": "神威の杖",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "mage"
+            ],
+            "attack": 35,
+            "defense": 0,
+            "magic": 98,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 120,
+            "speed": 0,
+            "tier": 9,
+            "price": 30000
+          },
+          {
+            "id": "kamui_rod",
+            "name": "神威のロッド",
+            "slot": "weapon",
+            "allowedRoles": [
+              "all-rounder",
+              "healer"
+            ],
+            "attack": 23,
+            "defense": 0,
+            "magic": 98,
+            "magicDefense": 0,
+            "hp": 0,
+            "mp": 124,
+            "speed": 0,
+            "tier": 9,
+            "price": 30000
+          },
+          {
+            "id": "kamui_robe",
+            "name": "神威のローブ",
+            "slot": "body",
+            "allowedRoles": [
+              "all-rounder",
+              "healer",
+              "mage"
+            ],
+            "attack": 0,
+            "defense": 34,
+            "magic": 46,
+            "magicDefense": 48,
+            "hp": 0,
+            "mp": 160,
+            "speed": 0,
+            "tier": 9,
+            "price": 25000
+          },
+          {
+            "id": "kamui_orb",
+            "name": "神威のオーブ",
+            "slot": "accessory",
+            "allowedRoles": [
+              "all-rounder",
+              "healer",
+              "mage"
+            ],
+            "attack": 0,
+            "defense": 0,
+            "magic": 33,
+            "magicDefense": 36,
+            "hp": 0,
+            "mp": 124,
+            "speed": 5,
+            "tier": 9,
+            "price": 21000
+          }
+        ]
+      }
+    },
+    "enemy": {
+      "newEnemies": [
+        {
+          "id": "rust_rat",
+          "name": "ラストラット",
+          "emoji": "🐀",
+          "tier": 1,
+          "hp": 22,
+          "attack": 7,
+          "defense": 4,
+          "magicDefense": 2,
+          "exp": 14,
+          "gold": 12,
+          "element": "none",
+          "weakness": "none",
+          "resist": "なし",
+          "role": "swarm",
+          "skills": [
+            "gnaw",
+            "scatter"
+          ]
+        },
+        {
+          "id": "spark_moth",
+          "name": "スパークモス",
+          "emoji": "🦋",
+          "tier": 1,
+          "hp": 18,
+          "attack": 6,
+          "defense": 3,
+          "magicDefense": 4,
+          "exp": 16,
+          "gold": 14,
+          "element": "thunder",
+          "weakness": "ice",
+          "resist": "thunder0.5",
+          "role": "caster_lite",
+          "skills": [
+            "spark",
+            "dazzle"
+          ]
+        },
+        {
+          "id": "cinder_hound",
+          "name": "シンダーハウンド",
+          "emoji": "🔥",
+          "tier": 2,
+          "hp": 48,
+          "attack": 16,
+          "defense": 11,
+          "magicDefense": 6,
+          "exp": 34,
+          "gold": 30,
+          "element": "fire",
+          "weakness": "ice",
+          "resist": "fire0.5",
+          "role": "striker",
+          "skills": [
+            "ember_fang",
+            "heat_howl"
+          ]
+        },
+        {
+          "id": "frost_widow",
+          "name": "フロストウィドウ",
+          "emoji": "🕷️",
+          "tier": 2,
+          "hp": 40,
+          "attack": 13,
+          "defense": 8,
+          "magicDefense": 10,
+          "exp": 46,
+          "gold": 34,
+          "element": "ice",
+          "weakness": "fire",
+          "resist": "ice0.6",
+          "role": "debuffer",
+          "skills": [
+            "ice_web",
+            "chill_bite",
+            "venom_fang"
+          ]
+        },
+        {
+          "id": "static_wisp",
+          "name": "スタティックウィスプ",
+          "emoji": "⚡",
+          "tier": 2,
+          "hp": 34,
+          "attack": 11,
+          "defense": 6,
+          "magicDefense": 14,
+          "exp": 50,
+          "gold": 32,
+          "element": "thunder",
+          "weakness": "none",
+          "resist": "thunder0.75",
+          "role": "caster",
+          "skills": [
+            "arc_bolt",
+            "overload"
+          ]
+        },
+        {
+          "id": "salt_pillar",
+          "name": "ソルトピラー",
+          "emoji": "🗿",
+          "tier": 3,
+          "hp": 132,
+          "attack": 20,
+          "defense": 40,
+          "magicDefense": 8,
+          "exp": 95,
+          "gold": 70,
+          "element": "none",
+          "weakness": "thunder,ice",
+          "resist": "なし",
+          "role": "wall",
+          "skills": [
+            "rock_throw",
+            "harden",
+            "quake_stomp"
+          ]
+        },
+        {
+          "id": "venom_bloom",
+          "name": "ヴェノムブルーム",
+          "emoji": "🌺",
+          "tier": 3,
+          "hp": 77,
+          "attack": 22,
+          "defense": 16,
+          "magicDefense": 20,
+          "exp": 100,
+          "gold": 66,
+          "element": "dark",
+          "weakness": "fire,light",
+          "resist": "dark0.5",
+          "role": "caster",
+          "skills": [
+            "toxic_spore",
+            "drain",
+            "entangle"
+          ]
+        },
+        {
+          "id": "mirror_sentinel",
+          "name": "ミラーセンチネル",
+          "emoji": "🪞",
+          "tier": 3,
+          "hp": 110,
+          "attack": 24,
+          "defense": 18,
+          "magicDefense": 30,
+          "exp": 120,
+          "gold": 80,
+          "element": "light",
+          "weakness": "dark",
+          "resist": "fire0.5,ice0.5,thunder0.5,light0.75",
+          "role": "reflector",
+          "skills": [
+            "prism_beam",
+            "mirror_guard",
+            "barrier"
+          ]
+        },
+        {
+          "id": "plasma_lancer",
+          "name": "プラズマランサー",
+          "emoji": "🔫",
+          "tier": 4,
+          "hp": 180,
+          "attack": 38,
+          "defense": 26,
+          "magicDefense": 22,
+          "exp": 175,
+          "gold": 120,
+          "element": "thunder",
+          "weakness": "dark",
+          "resist": "thunder0.5,fire0.25",
+          "role": "striker",
+          "skills": [
+            "plasma_thrust",
+            "charge_break",
+            "overload"
+          ]
+        },
+        {
+          "id": "cryo_warden",
+          "name": "クライオウォーデン",
+          "emoji": "❄️",
+          "tier": 4,
+          "hp": 260,
+          "attack": 34,
+          "defense": 44,
+          "magicDefense": 38,
+          "exp": 190,
+          "gold": 130,
+          "element": "ice",
+          "weakness": "fire",
+          "resist": "ice0.75,thunder0.5",
+          "role": "wall_caster",
+          "skills": [
+            "glacier_slam",
+            "frost_nova_aoe",
+            "barrier",
+            "guard"
+          ]
+        },
+        {
+          "id": "null_revenant",
+          "name": "ヌル・レヴナント",
+          "emoji": "🕳️",
+          "tier": 4,
+          "hp": 200,
+          "attack": 40,
+          "defense": 28,
+          "magicDefense": 30,
+          "exp": 210,
+          "gold": 140,
+          "element": "none",
+          "weakness": "none",
+          "resist": "fire0.3,ice0.3,thunder0.3,dark0.3,light0.3",
+          "role": "bruiser",
+          "skills": [
+            "void_grasp",
+            "null_pulse_aoe",
+            "curse"
+          ]
+        },
+        {
+          "id": "ember_seraph",
+          "name": "エンバーセラフ",
+          "emoji": "😇",
+          "tier": 5,
+          "hp": 235,
+          "attack": 52,
+          "defense": 40,
+          "magicDefense": 46,
+          "exp": 260,
+          "gold": 180,
+          "element": "fire",
+          "weakness": "ice,dark",
+          "resist": "fire0.6,light0.4",
+          "role": "caster_dps",
+          "skills": [
+            "flare_burst",
+            "meteor_aoe",
+            "heat_howl"
+          ]
+        },
+        {
+          "id": "glacier_titan",
+          "name": "グレイシアタイタン",
+          "emoji": "🧊",
+          "tier": 5,
+          "hp": 250,
+          "attack": 50,
+          "defense": 56,
+          "magicDefense": 30,
+          "exp": 270,
+          "gold": 190,
+          "element": "ice",
+          "weakness": "fire,thunder",
+          "resist": "ice0.75",
+          "role": "wall",
+          "skills": [
+            "avalanche_aoe",
+            "glacier_slam",
+            "harden"
+          ]
+        },
+        {
+          "id": "oblivion_shade",
+          "name": "オブリビオンシェイド",
+          "emoji": "🌒",
+          "tier": 5,
+          "hp": 230,
+          "attack": 48,
+          "defense": 38,
+          "magicDefense": 52,
+          "exp": 280,
+          "gold": 200,
+          "element": "dark",
+          "weakness": "light",
+          "resist": "dark0.75,ice0.4,fire0.4",
+          "role": "caster_dps",
+          "skills": [
+            "abyss_lance",
+            "dark_tide_aoe",
+            "drain",
+            "curse"
+          ]
+        },
+        {
+          "id": "aegis_colossus",
+          "name": "イージスコロッサス",
+          "emoji": "🛡️",
+          "tier": 5,
+          "hp": 250,
+          "attack": 54,
+          "defense": 60,
+          "magicDefense": 48,
+          "exp": 290,
+          "gold": 210,
+          "element": "none",
+          "weakness": "none",
+          "resist": "fire0.4,ice0.4,thunder0.4,dark0.5,light0.5",
+          "role": "fortress",
+          "skills": [
+            "siege_slam",
+            "crushing_aoe",
+            "barrier",
+            "guard"
+          ]
+        },
+        {
+          "id": "archon_deus",
+          "name": "アルコン・デウス",
+          "emoji": "👑",
+          "tier": 5,
+          "hp": 2800,
+          "attack": 88,
+          "defense": 72,
+          "magicDefense": 60,
+          "exp": 700,
+          "gold": 1200,
+          "element": "light",
+          "weakness": "dark,thunder",
+          "resist": "light0.6,fire0.4,ice0.4",
+          "role": "boss_caster",
+          "skills": [
+            "judgment_ray_aoe",
+            "triple_lance",
+            "aegis_protocol",
+            "radiant_nova_burst"
+          ]
+        },
+        {
+          "id": "leviathan_core",
+          "name": "リヴァイアサン・コア",
+          "emoji": "🐉",
+          "tier": 5,
+          "hp": 3200,
+          "attack": 95,
+          "defense": 90,
+          "magicDefense": 70,
+          "exp": 900,
+          "gold": 1500,
+          "element": "none",
+          "weakness": "none",
+          "resist": "fire0.5,ice0.5,thunder0.5,dark0.5,light0.5",
+          "role": "boss_fortress",
+          "skills": [
+            "data_storm_aoe",
+            "recursive_strike",
+            "firewall",
+            "core_overload_burst"
+          ]
+        }
+      ],
+      "retrofit": [
+        "watcher: weak=thunder resist=none element=none | magicDefense=2(既定floor(5*0.5)維持)。監視ボディは無属性、雷で麻痺=弱点thunder。耐性なし",
+        "patrol_drone: weak=thunder resist=none element=none | magicDefense=2。watcher同系の雷弱点",
+        "cerberus: weak=ice resist=fire0.3 element=fire | magicDefense=5。機械狼の駆動は発熱系→氷弱点・火やや耐性",
+        "dustGolem: weak=thunder,ice resist=none element=none | magicDefense=9(既定floor(18*0.5)維持)。★複数弱点(雷/氷)の重装。物理硬いが魔法で割れる入口",
+        "alraune: weak=fire,light resist=dark0.4 element=dark | magicDefense=14(既定4上書き・術寄り)。植物機械、火/光で複数弱点・闇耐性",
+        "deusMachina: weak=thunder resist=fire0.3,ice0.3 element=thunder | magicDefense=12(既定6上書き)。雷駆動アンドロイドだが「過負荷」設定で雷弱点維持",
+        "data_spider: weak=fire resist=thunder0.5 element=thunder | magicDefense=8(既定3上書き)。電子蜘蛛、雷半減・火弱点",
+        "phantom: weak=light resist=dark0.6,ice0.3 element=dark | magicDefense=20(既定3上書き・霊体は術耐性高)。光弱点・闇耐性=yamiでは割れない霊",
+        "security_drone: weak=thunder resist=fire0.4 element=none | magicDefense=12(既定7上書き)。重装警備、雷弱点",
+        "shadow_entity: weak=light resist=dark0.6,fire0.3 element=dark | magicDefense=24(既定4上書き)。弱点lightのみ=yami不得意",
+        "guard_robo: weak=thunder,ice resist=none element=none | magicDefense=11(既定floor(22*0.5)維持)。★無属性重装＋複数弱点(雷/氷)。物理超硬→魔法で崩す",
+        "glitch_spirit: weak=none resist=thunder0.5,dark0.5,fire0.5 element=none | magicDefense=22(既定5上書き)。★弱点なし(none)＋多属性半減=yami単独で割れない代表。light/iceで等倍が最大",
+        "queen_spider: weak=fire resist=ice0.4 element=ice | magicDefense=15(既定7上書き)。母蜘蛛、火弱点・氷耐性",
+        "corrupted_drone_boss: weak=thunder,ice resist=fire0.4,light0.3 element=none | magicDefense=20(既定7上書き)。無属性中ボス・複数弱点(雷/氷)",
+        "rogue_ai_core: weak=none resist=fire0.5,ice0.5,thunder0.5,dark0.5,light0.5 element=none | magicDefense=70(既定50上書き)。★最終AIコア。無属性・弱点なし・全属性半減=弱点ハメ完全不可の純粋ステータス戦"
+      ],
+      "encounter": [
+        "city: ['watcher','patrol_drone','rust_rat','spark_moth','watcher','cerberus'] — 序盤に無属性rust_rat＋雷spark_mothを混ぜ『弱点が効く/効かない』を最初に体験",
+        "subway: ['data_spider','frost_widow','dustGolem','static_wisp','cerberus'] — ★static_wisp(雷ほぼ無効・弱点なし)を地下鉄に投入しyami過信を崩す。frost_widowで氷耐性を学ぶ",
+        "shrine: ['phantom','venom_bloom','alraune','watcher'] — 霊phantom(光弱点・闇耐性)でyami不利、venom_bloom(複数弱点)で対比",
+        "garden: ['alraune','venom_bloom','cinder_hound','security_drone','data_spider'] — 火犬cinder_hound追加。氷で割る練習場",
+        "market: ['shadow_entity','oblivion_shade','deusMachina','mirror_sentinel','cerberus'] — ★闇市はyami泣かせ。shadow/oblivion(光弱点・闇耐性)＋mirror_sentinel(多耐性・dark弱点)でパーティ全属性運用を強制",
+        "gov: ['guard_robo','glitch_spirit','plasma_lancer','cryo_warden','deusMachina'] — 都庁にt4 plasma_lancer/cryo_warden(全体氷frost_nova_aoe)を配備。Lv35帯の全体攻撃の壁",
+        "dungeon: ['queen_spider','null_revenant','salt_pillar','glitch_spirit','aegis_colossus','oblivion_shade','dustGolem'] — ★深層はnull_revenant/aegis_colossus(無属性・弱点なし・多耐性)を主軸に。弱点ハメ封じの最終総合試験",
+        "boss_archon: ['archon_deus'] — 章ボス枠(Lv35クリア想定)。光ボス・dark/thunder弱点・全体judgment_ray_aoe",
+        "boss_leviathan: ['leviathan_core'] — 真ボス枠。無属性弱点なし・全体data_storm_aoe＋多段。rogue_ai_coreと並ぶ最終戦"
+      ],
+      "bossBurst": [
+        "【設計原則】ボス全体攻撃は必ず『魔法ベース』にする。物理式 max(1,atk - floor(physDef/2)) はriku(def231)に対し~1まで潰れ自動化を許す。魔法式 floor(magic*bp*elem*(1-resist)) - floor(magDef/3) は貫通が良くパーティ全体に有効ダメが通る。検証: boss magic200 bp1.0 → yami(magDef26)~192/akari(51)~183/riku(115)~162。全員に約25%maxHP級が入る",
+        "judgment_ray_aoe (archon_deus): 全体光魔法。magic185×bp0.95×elemMul×(1-resist) − floor(magDef/3)。対パーティ全体~155-175(maxHPの15-25%)。light耐性編成だと軽減=属性で受けを変える駆け引き。omega_heal(~629回復)と釣り合い『全体被弾~480 < 全快回復』だが3連併用で削り勝つ設計",
+        "triple_lance (archon_deus): 単体3連物理ヒット。1ヒット floor(atk88*0.6) − floor(physDef/2)。集中対象を1ターンで瀕死に。タンク以外を狙うと致命=riku tauntで誘導する駆け引きを誘発。多段=回復追いつかせない",
+        "radiant_nova_burst (archon_deus): HP40%以下で発動の大バースト。全体光魔法 magic185×bp1.4。~230-260/体(maxHPの30-40%)。omega_heal半分〜全快に対する『一撃でのリセット』。ターン回復1回では純被ダメが上回るよう調整(全体被ダメ~720 > heal~629)",
+        "data_storm_aoe (leviathan_core): 全体無属性魔法。magic210×bp1.0、弱点・耐性無効(無属性)で軽減不可。~195/体均一。属性受けでの軽減が効かない=純HP/純回復勝負を強制",
+        "recursive_strike (leviathan_core): 単体4連多段。floor(atk95*0.5)×4hit。タンク(riku)以外には合計~300-520。taunt前提のヘイト管理を要求。物理だがランダムターゲットだと事故るので集中させる設計",
+        "core_overload_burst (leviathan_core): HP25%以下トリガー。全体無属性魔法 magic210×bp1.6＝~320/体(均一・軽減不可)。最終局面で『大回復一回では足りない』圧。omega_heal(~629)では1人分しか戻せない計算→蘇生・複数回復・防御選択を迫る。これが大回復と火力の釣り合いの要",
+        "frost_nova_aoe / meteor_aoe / avalanche_aoe / dark_tide_aoe / crushing_aoe / null_pulse_aoe (t4-t5雑魚): 全体攻撃の標準装備。雑魚は magic(なければatk流用)×bp0.7前後、全体~60-110/体。Lv35+で『雑魚でも全体が削れる』ことで回復>総被ダメの自動化を防ぐ。単体ピークより明確に弱い全体bp(0.6-0.7)で総量管理"
+      ],
+      "sprites": [
+        "共通方針: 既存assets/enemies/*.png(例 enemy_corrupted_drone.png)と同解像度・正面/やや斜めの単体立ち絵・背景透過PNG・サイバーパンク×和(デウス・コード世界観=東京の崩壊した未来)。属性を色で即読みさせる(fire=橙赤/ice=シアン白/thunder=黄紫/dark=紫黒/light=金白/none=無彩鋼色)。emojiと色相を一致させyami割れ可否を視覚で示唆",
+        "rust_rat(無属性): 錆びた金属外装の機械ネズミ。鋼グレー無彩・赤目LED1点。プロンプト方針『rusty scrap-metal cyber rat, monochrome steel gray, glowing red single eye, transparent background, game enemy sprite, cyberpunk Tokyo ruins』",
+        "spark_moth/static_wisp(thunder): 電光の蛾／浮遊する雷の鬼火。黄×紫アーク放電。『electric moth made of crackling yellow-violet lightning, arc discharge wings』『floating thunder wisp, purple-yellow plasma orb, no fixed form』。static_wispは弱点なしを示すため『中心が虚無の黒コア＋雷殻』で『割れない感』を出す",
+        "cinder_hound/ember_seraph(fire): 火犬は溶岩亀裂の入った三足機械犬・橙発光。『mechanical hound with glowing orange lava cracks, ember breath』。ember_seraphは堕天使型・燃える片翼『fallen angel automaton with one burning wing, ash-orange halo, dark-vulnerable shadow accents(氷/闇弱点を翼の青寒色で示唆)』",
+        "frost_widow/cryo_warden/glacier_titan(ice): 氷蜘蛛=結晶脚のシアン蜘蛛。cryo_warden=氷の重装兵『heavy frost-armored warden, glacier shield, cyan mist』。glacier_titan=巨大氷塊ゴーレム『towering glacier golem, translucent ice body with fire-red weak-point veins(火弱点を内部の赤脈で可視化)』",
+        "venom_bloom(dark): 毒花機械『biomechanical poison flower, dark-purple petals, fire/light-sensitive glowing pistil(火光弱点を中心の金光で示唆), toxic spores』",
+        "mirror_sentinel(light/多耐性): 鏡面装甲の番兵『prismatic mirror-armored sentinel, reflective chrome surface scattering rainbow light, single dark crack at the core(唯一の弱点darkを黒い亀裂で表現)』。多耐性=全身が反射面という一目で分かる意匠",
+        "null_revenant/aegis_colossus/leviathan_core(無属性・弱点なし): 『弱点なし』を共通言語化=無彩色＋属性カラーを一切持たない設計。null_revenant『hollow void wraith, pure black silhouette swallowing all color, no elemental glow』。aegis_colossus『fortress colossus, seamless gunmetal plating, no glowing weak points, oppressive bulk』。leviathan_core『colossal serpentine AI core, obsidian-black coils with cold white data-lines, radiates no element, final-boss scale』",
+        "archon_deus(light boss): 章ボスの神格化『crowned archon machine-god, radiant gold-white aura, six judgment lances floating, but two dark/thunder fracture lines on the chest(dark/thunder弱点を胸の亀裂で示す), divine-corrupt Tokyo throne backdrop』。ボスは背景込み大判で他と差別化",
+        "oblivion_shade(dark t5雑魚): shadow_entity上位『greater shadow entity, deep violet-black robe, single golden light-weak rune(光弱点を金ルーンで), abyssal tendrils』。yamiで割れない=darkカラーを濃く纏わせ『同属性で効かない』を視覚的に納得させる"
+      ]
+    },
+    "verify": {
+      "verdict": "flawed",
+      "checks": [
+        "CHECK 1 (mage single peak vs t5 zako, FAIL): Requirement says the mage single-target peak must NOT one-shot a t5 zako (HP cap 250) when there is no weakness, and should take 1-2 hits only on a weakness match. Reality: inferno_lance Lv50 (bp1.7, magic288) deals floor(288*1.7) - floor(magDef/3) = 489 - 5..8 = ~481-486 against realistic enemy magDef (2-24), and ~726-733 on weakness. Both ONE-SHOT a 250 HP zako. The spec's own 'no-weak 463 / weak 708' figures subtract floor(80/3)=26, i.e. they were computed against magDef=80, which is YAMI's PLAYER magDef, not the enemy's. Even 463 >= 250 one-shots. The magic*bp term (489) alone already exceeds 250; the /3 magDef divisor cannot close the gap for any sane enemy magDef.",
+        "ROOT-CAUSE / wrong-magDef: The spec repeatedly validates mage/healer damage 'vs md80' and 'vs md60' (e.g. 'inferno弱点708・無463(md80)', 'holy_lance Lv50 神=419(md80)'). magDef 80/60 are the Lv50/Lv35 PLAYER stats of yami, not enemy magDefs. Documented enemy magDefs (retrofit list) are 2-24 for all non-final-boss enemies (watcher2, phantom20, shadow_entity24, glitch_spirit22) and 70 only for rogue_ai_core. Recomputing every mage/healer number against md2-24 yields ~20 more damage than the spec's md80 figures, worsening the overkill. The entire single/AoE balance table is anchored to the wrong defense value.",
+        "CHECK 2 (AoE total <= single peak, FAIL under strict reading / moot in practice): thunderstorm bp0.9 -> 3x ~254 = 762; explosion bp1.0 -> 3x ~283 = 849; dark_nova bp1.05 -> 3x ~297 = 891 (no-weak, md15), all EXCEEDING the no-weak single peak (~484). With weakness, totals reach 1149-1344. The spec acknowledges its AoE totals (1257-1320) exceed single peak and rationalizes it as 'weakness-limited + high MP'. Worse: because the single peak (~484) is itself ~2x a zako's 250 HP, the 'AoE total <= single peak' constraint is moot — both single and AoE overkill t5 trash.",
+        "CHECK 3 (physical persistent vs magic burst, PASS): riku heavy_smash Lv50 ~715 (vs pdef80), kaito blade_dance ~469 are element-agnostic and stable; yami inferno swings 484 (no-weak) -> 729 (weak). Physical is consistent/persistent, magic is weakness-gated burst. Roles are differentiated as intended. (Caveat: physical peaks also overkill the 250 HP zako — see CHECK 5/HP-cap finding — but the role contrast itself holds.)",
+        "CHECK 4 (big-heal allowed but boss burst prevents auto-attrition, PASS): omega_heal Lv50 = floor(233*3.4)=792 (~97% of akari's 815 HP). leviathan core_overload_burst (magic210 bp1.6) deals ~298-328 per member, party total ~1260 > 792, so one big heal covers only one member. radiant_nova/core_overload exceed a single heal's throughput. Boss bursts are correctly MAGIC-based (judgment_ray magic185 bp0.95 -> ~137-167/member, 10-24% maxHP, penetrating tank riku). Anti-automation design is sound.",
+        "CHECK 5 (equipment >=30%/tier growth, INCONCLUSIVE): The spec states '装備物理35種 / 術36種' and asserts 'each tier >=30% growth, smooth to Lv50' but provides NO equipment stat tables, tier breakpoints, or per-tier percentages. Cannot be verified from the given data.",
+        "CHECK 6 (15-enemy retrofit elements fire, PASS structurally): All 15 retrofits have defined weak/resist/element. Weakness elements present across retrofit-15: fire/ice/thunder/light (dark absent from the 15). dark weakness IS supplied by the NEW enemy set (mirror_sentinel, plasma_lancer, ember_seraph, archon_deus), so yami's dark monopoly (curse/abyssal_ruin) has valid targets overall. Element assignments are internally consistent.",
+        "CHECK 7 (yami cannot solo-break all enemies, PASS): yami covers fire/ice/thunder/dark but NOT light. phantom (weak=light, dark resist0.6), shadow_entity (weak=light), oblivion_shade (weak=light), glitch_spirit (weak=none, fire/thunder/dark 0.5 resist), rogue_ai_core (weak=none, all 0.5 resist) cannot be exploited by yami — best she gets is equal-multiplier (~482) or resisted (~189-237). akari's holy_lance (light bp1.8) covers the light-weak enemies, giving real party complementarity and resist depth.",
+        "SYSTEMIC HP-CAP finding: The t5 zako HP cap of 250 is below EVERY Lv50 single-target peak — physical riku heavy_smash ~715, kaito blade_dance ~469, magic yami inferno ~484 (no-weak) / ~729 (weak). Even at Lv35, yami inferno no-weak = 343 > 250. So all single-target hero peaks overkill t5 trash regardless of element. Requirement (1) and the 'AoE <= single-peak' logic of (2) are mathematically unsatisfiable at HP 250 — this is the central flaw, not a mage-only issue."
+      ],
+      "fixes": [
+        "FIX (primary, resolves CHECK 1 & makes CHECK 2 meaningful): Raise the t5 zako HP cap from 250 to ~500-560. Verified: at HP550, inferno no-weak (484) takes 2 hits, weak (729) takes 1, exactly matching the spec's own narrative 'やっと1-2発'. This is the least-disruptive fix and aligns single AND physical peaks (heavy_smash 715 = 2 hits, blade_dance 469 = 2 hits) with the intended 'no-weak ~2 hits / weak ~1' pacing. Also re-scale tierMul so t5 zako base HP lands near 520-560 (current t5 base ~60 * mul ~4.2 = 250; bump base or mul).",
+        "FIX (alternative to the above, do NOT combine): If HP250 must stay, halve mage single-peak basePower from 1.7 to ~0.85 AND halve physical single peaks proportionally (heavy_smash 3.2->1.6, blade_dance 2.8->1.4). Verified at HP250: inferno bp0.85 -> no-weak 239 (2 hits), weak 362 (1 hit). But this rescales the entire skill table and contradicts the spec's stated 'inferno bp1.7 is correct' reasoning, so FIX-primary (raise HP) is preferred.",
+        "FIX (correct the balance anchor — mandatory regardless of HP fix): Re-derive ALL mage/healer 'no-weakness' reference numbers against realistic ENEMY magDef (2-24), NOT magDef=80. The spec's md80/md60 figures are yami's own player magDef and understate true damage by ~20 per hit. Recompute the single-vs-AoE comparison tables (e.g. holy_lance, dark_nova, sanderstorm) with per-target enemy magDef so the documented damage matches in-game reality.",
+        "FIX (CHECK 2 AoE constraint): With the corrected single peak (~484 no-weak vs realistic md), cap AoE 3-body NO-WEAKNESS total at <= single peak by lowering AoE bp: thunderstorm 0.9->~0.55, explosion 1.0->~0.6, dark_nova 1.05->~0.63 would put 3-body no-weak totals (~480) at/under single peak. Keep weakness AoE above peak intentionally but gate it behind high MP (already done) — and document that weak-AoE > single-peak is an accepted exception so the requirement (2) is stated as 'no-weakness totals only'.",
+        "FIX (CHECK 5 — supply missing data): Provide the actual equipment stat tables (per-tier ATK/MAGIC/DEF values for all 35 physical + 36 spell items) with per-tier % deltas so the '>=30% growth per tier, smooth to Lv50' claim can be verified. As written it is an unbacked assertion.",
+        "FIX (CHECK 6 minor — dark coverage in early/mid game): The retrofit-15 set has no dark-weak enemy, so yami's dark line (curse/abyssal_ruin/dark_pulse) has no weakness target until the new-enemy tiers appear. Add a dark weakness to one mid-tier retrofit enemy (e.g. give phantom or shadow_entity a secondary dark weakness, or add a dark-weak t2-t3 zako) so dark is exploitable before the late-game new enemies, keeping yami's dark monopoly relevant throughout progression."
+      ]
+    },
+    "counts": {
+      "healer": 16,
+      "mage": 12,
+      "physical": 11,
+      "equipPhys": 35,
+      "equipCaster": 36,
+      "newEnemies": 17
+    }
+  }
+}
