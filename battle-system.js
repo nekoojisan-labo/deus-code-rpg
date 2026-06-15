@@ -1288,9 +1288,10 @@ class BattleSystem {
         BattlePanel.renderCommands(items, {
             headerLabel: `${memberName} のスキル`,
             title: '⚡ スキル',
-            selectedIndex: this.selectedCommand,
-            grid: true,    // ★2列グリッド（縦一列→2列で一覧性UP・行数半減でスクロールも減る）
-            listMode: true // ★枠を外して平文行に＝narrowセルでも名前が潰れず読める
+            selectedIndex: this.selectedCommand
+            // ★1列・枠付きに戻す。2列はこのパネル幅だと日本語スキル名が潰れ、左右列の文字が
+            //   重なる/枠からはみ出す（動画報告）。対象選択リストと同じ1列なら確実に読める。
+            //   消費MP/全タグは各行(mpHtml/allTag)に明示済み。多い時は選択追従でスクロール(バー無し)。
         });
     }
 
