@@ -97,5 +97,27 @@ const deepEq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
     chk('anyOccupied=true（占有あり）', SaveSystem.anyOccupied(st) === true);
 }
 
-console.log(`\n${pass ? '✅ 全PASS: 往復整合/スロット隔離/空ガード/破損・版違い/旧セーブ移行(冪等・非破壊)/最新スロット を実コードで確認' : '❌ 不合格あり'}`);
+// ---------- (6) EXPORT / IMPORT（書き出し→ファイル相当→検証→別スロットへ書込） ----------
+{
+    const st = makeStorage();
+    const s = mkState(2);
+    SaveSystem.writeSlot(st, 2, s);
+    // 書き出し相当: スロットの封筒をJSON文字列化（ファイルDLの中身）
+    const exported = JSON.stringify(SaveSystem.readSlot(st, 2).envelope);
+    // 読み込み相当: 文字列をparse→検証→別ストレージのスロット1へ writeEnvelope
+    const env = JSON.parse(exported);
+    chk('validateEnvelope: 正しい封筒は true', SaveSystem.validateEnvelope(env) === true);
+    chk('validateEnvelope: version違い/state欠落は false',
+        SaveSystem.validateEnvelope({ version: 1, state: {} }) === false &&
+        SaveSystem.validateEnvelope({ version: 2 }) === false &&
+        SaveSystem.validateEnvelope(null) === false);
+    const st2 = makeStorage();
+    const ok = SaveSystem.writeEnvelope(st2, 1, env);
+    chk('writeEnvelope: 検証通過で別スロットへ書込成功', ok === true);
+    chk('import往復: 書込先 readSlot.state が元stateと完全一致', deepEq(SaveSystem.readSlot(st2, 1).state, s));
+    chk('import往復: 原本のmeta/timestampを保持', SaveSystem.readSlot(st2, 1).meta.timestamp === s.timestamp);
+    chk('writeEnvelope: 不正な封筒は書込拒否(false)', SaveSystem.writeEnvelope(st2, 3, { version: 1 }) === false && SaveSystem.readSlot(st2, 3) === null);
+}
+
+console.log(`\n${pass ? '✅ 全PASS: 往復整合/スロット隔離/空ガード/破損・版違い/旧セーブ移行(冪等・非破壊)/最新スロット/書き出し・読み込み検証 を実コードで確認' : '❌ 不合格あり'}`);
 process.exit(pass ? 0 : 1);

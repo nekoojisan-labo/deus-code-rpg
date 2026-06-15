@@ -3246,8 +3246,8 @@
             <h1>デウス・コード</h1>
             <h2>八百万の神託</h2>
             <p style="margin-bottom: 20px; color: #aaa;">神々の力をその身に降ろし、AIが支配する無機質な世界に、人の心を取り戻せ</p>
-            <button class="start-button" onclick="startOpening()">ゲーム開始</button>
-            <button class="start-button" id="continueButton" style="display:none; margin-top:10px;" onclick="continueGame()">つづきから</button>
+            <button class="start-button" onclick="startOpening()">▶ はじめから（New Game）</button>
+            <button class="start-button" id="continueButton" style="margin-top:10px;" onclick="openTitleLoadScreen()">💾 つづきから / ロード</button>
         </div>
 
         <!-- Opening Story Screen (背景画像のみ。本文は #gameMessagePanel に表示) -->
@@ -3646,7 +3646,7 @@
     <script src="magic-system.js?v=47"></script>
     <script src="se-system.js?v=1"></script>
     <script src="ui-panel.js?v=2"></script>
-    <script src="save-system.js?v=1"></script>
+    <script src="save-system.js?v=2"></script>
     <script src="battle-system.js?v=65"></script>
     <script src="map-walkability-data.js?v=12"></script>
     <script src="object-catalog.js?v=2"></script>
@@ -4443,19 +4443,17 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             return pages.length > 0 ? pages : [trimmed];
         }
 
-        // タイトルでセーブの有無を判定し「つづきから」を出す
+        // タイトルの「つづきから/ロード」は常時表示（新端末でもファイル読み込みから再開できるため）。
+        // 旧単一セーブはここで一度だけスロット1へ移行（冪等）。
         function refreshContinueButton() {
-            if (typeof migrateLegacySaveOnce === 'function') migrateLegacySaveOnce(); // 旧単一セーブ→スロット1（冪等）
+            if (typeof migrateLegacySaveOnce === 'function') migrateLegacySaveOnce();
             const btn = document.getElementById('continueButton');
-            if (btn) btn.style.display = (typeof hasSaveData === 'function' && hasSaveData()) ? 'inline-block' : 'none';
+            if (btn) btn.style.display = 'inline-block';
         }
-        // 「つづきから」: オープニングを飛ばして直接 startGame(true)
+        // 「つづきから」: スロット選択ロード画面へ（後方互換のため関数は残す）
         function continueGame() {
             if (openingStarted || gameStarted) return;
-            document.getElementById('titleScreen').style.display = 'none';
-            const gc = document.querySelector('.game-container');
-            if (gc) gc.classList.remove('title-mode');
-            startGame(true);
+            openTitleLoadScreen();
         }
         window.continueGame = continueGame;
 
@@ -5891,16 +5889,30 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         function openSaveScreen(fromMenu) {
             const host = document.getElementById('savePanelHost');
             if (!host || !window.UIPanel) { saveGame(); return; } // フォールバック: 既定スロット
+            const items = buildSlotRows({ forLoad: false });
+            items.push({ icon: '📤', label: '書き出し（バックアップ）', sub: 'スロットを.jsonでダウンロード', value: { export: true } });
             UIPanel.open({
                 host, overlay: 'saveMenuOverlay', selectable: true,
                 title: 'セーブ — スロットを選択',
-                items: buildSlotRows({ forLoad: false }),
+                items,
                 hint: '↑↓ 選択 / Z 決定 / X 閉じる',
                 onSelect: (v) => {
+                    if (v.export) { openExportPicker(fromMenu); return; }
                     if (v.occupied) openOverwriteConfirm(v.slot, fromMenu);
                     else doSaveToSlot(v.slot, fromMenu);
                 },
                 onCancel: () => closeSaveScreen(fromMenu)
+            });
+        }
+        // 書き出すスロットを選んで .json をダウンロード（占有スロットのみ選択可）
+        function openExportPicker(fromMenu) {
+            UIPanel.open({
+                host: 'savePanelHost', overlay: 'saveMenuOverlay', selectable: true,
+                title: '書き出すスロットを選択',
+                items: buildSlotRows({ forLoad: true }), // forLoad=空スロットはdisabled
+                hint: '↑↓ 選択 / Z 決定 / X 戻る',
+                onSelect: (v) => { if (v.occupied) { exportSlotToFile(v.slot); closeSaveScreen(fromMenu); } },
+                onCancel: () => openSaveScreen(fromMenu)
             });
         }
         function openOverwriteConfirm(slot, fromMenu) {
@@ -5932,6 +5944,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 return;
             }
             const rows = buildSlotRows({ forLoad: true });
+            rows.push({ icon: '📥', label: 'ファイルから読み込み', sub: 'セーブファイル(.json)を取り込む', value: { import: true } });
             rows.push({ icon: '✨', label: 'New Game（はじめから）', sub: 'タイトルから やりなおす', value: { newGame: true } });
             UIPanel.open({
                 host, overlay: 'loadMenuOverlay', selectable: true,
@@ -5941,6 +5954,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 hint: '↑↓ 選択 / Z 決定',
                 onSelect: (v) => {
                     if (v.newGame) { window.isGameOver = false; if (window.UIPanel) UIPanel.close(); location.reload(); return; }
+                    if (v.import) { importSaveFromFile(() => openGameOverScreen()); return; }
                     if (v.occupied) {
                         const ok = loadSaveSlot(v.slot);
                         if (ok) {
@@ -5956,6 +5970,100 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             });
         }
         window.openGameOverScreen = openGameOverScreen;
+
+        // --- タイトル「つづきから/ロード」: スロット一覧＋ファイル読み込み（新端末でも自分のファイルで再開） ---
+        function openTitleLoadScreen() {
+            const host = document.getElementById('loadPanelHost');
+            const title = document.getElementById('titleScreen');
+            if (!host || !window.UIPanel) {
+                // フォールバック: 最新スロット自動ロード（従来のつづき挙動）
+                if (hasSaveData()) {
+                    window.pendingLoadSlot = SaveSystem.latestSlot(window.localStorage);
+                    if (title) title.style.display = 'none';
+                    const gc = document.querySelector('.game-container'); if (gc) gc.classList.remove('title-mode');
+                    startGame(true);
+                }
+                return;
+            }
+            if (title) title.style.display = 'none'; // タイトルを隠してピッカーを前面に
+            const rows = buildSlotRows({ forLoad: true });
+            rows.push({ icon: '📥', label: 'ファイルから読み込み', sub: 'セーブファイル(.json)を取り込む', value: { import: true } });
+            UIPanel.open({
+                host, overlay: 'loadMenuOverlay', selectable: true,
+                title: 'ロード — スロットを選択',
+                items: rows,
+                hint: '↑↓ 選択 / Z 決定 / X 戻る',
+                onSelect: (v) => {
+                    if (v.import) { importSaveFromFile(() => openTitleLoadScreen()); return; }
+                    if (v.occupied) {
+                        if (window.UIPanel) UIPanel.close();
+                        window.pendingLoadSlot = v.slot;
+                        const gc = document.querySelector('.game-container'); if (gc) gc.classList.remove('title-mode');
+                        startGame(true);
+                    }
+                },
+                onCancel: () => { if (window.UIPanel) UIPanel.close(); if (title) title.style.display = ''; }
+            });
+        }
+        window.openTitleLoadScreen = openTitleLoadScreen;
+
+        // ===== セーブデータの書き出し / 読み込み（各自が .json で自己管理＝案A） =====
+        function exportSlotToFile(i) {
+            const s = SaveSystem.readSlot(window.localStorage, i);
+            if (!s) { showMessage('そのスロットは 空です'); return; }
+            try {
+                const json = JSON.stringify(s.envelope, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const ts = (s.meta.timestamp || '').replace(/[:.]/g, '-').slice(0, 16) || 'save';
+                a.href = url; a.download = `deus-save-slot${i}-${ts}.json`;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                showMessage(`スロット${i} を 書き出しました`);
+            } catch (e) {
+                console.error('[Export] failed:', e);
+                showMessage('書き出しに失敗しました');
+            }
+        }
+        // ファイル選択→検証→読み込み先スロットを選ばせて書込。onDone はUI再表示用。
+        function importSaveFromFile(onDone) {
+            const input = document.createElement('input');
+            input.type = 'file'; input.accept = 'application/json,.json';
+            input.onchange = (e) => {
+                const file = e.target.files && e.target.files[0];
+                if (!file) { if (onDone) onDone(); return; }
+                const reader = new FileReader();
+                reader.onload = () => {
+                    let env = null;
+                    try { env = JSON.parse(reader.result); } catch (err) { env = null; }
+                    if (!env || !SaveSystem.validateEnvelope(env)) {
+                        showMessage('読み込み失敗: 正しいセーブファイルではありません');
+                        if (onDone) onDone();
+                        return;
+                    }
+                    promptImportSlot(env, onDone);
+                };
+                reader.onerror = () => { showMessage('読み込みに失敗しました'); if (onDone) onDone(); };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+        // 読み込み先スロットを選ばせて封筒を書込（既存スロットは上書き）
+        function promptImportSlot(env, onDone) {
+            UIPanel.open({
+                host: 'loadPanelHost', overlay: 'loadMenuOverlay', selectable: true,
+                title: '読み込み先スロットを選択（上書き）',
+                items: buildSlotRows({ forLoad: false }), // 3スロットとも選択可
+                hint: '↑↓ 選択 / Z 決定 / X やめる',
+                onSelect: (v) => {
+                    const ok = SaveSystem.writeEnvelope(window.localStorage, v.slot, env);
+                    showMessage(ok ? `スロット${v.slot} に 読み込みました` : '読み込みに失敗しました');
+                    if (onDone) onDone();
+                },
+                onCancel: () => { if (onDone) onDone(); }
+            });
+        }
 
         // ===== クエストログ（メニュー内） =====
         function openQuestLog() {

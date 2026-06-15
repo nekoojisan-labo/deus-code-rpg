@@ -32,6 +32,19 @@ const SaveSystem = (() => {
         return { version: VERSION, timestamp: (state && state.timestamp) || '', state, meta: buildSlotMeta(state) };
     }
 
+    // ファイルから読んだ生オブジェクトが正しいセーブ封筒か（import検証用）
+    function validateEnvelope(env) {
+        return !!(env && env.version === VERSION && env.state && typeof env.state === 'object');
+    }
+
+    // 検証済み封筒をそのままスロットへ書く（import: 原本のmeta/timestampを保持。欠落時のみ補完）
+    function writeEnvelope(storage, i, env) {
+        if (!validateEnvelope(env)) return false;
+        const e = env.meta ? env : Object.assign({}, env, { meta: buildSlotMeta(env.state) });
+        storage.setItem(slotKey(i), JSON.stringify(e));
+        return true;
+    }
+
     // スロット読込: 空/JSON不正/版違い/state欠落 は null（=空スロット扱い・ロード不可）
     function readSlot(storage, i) {
         try {
@@ -77,7 +90,7 @@ const SaveSystem = (() => {
 
     return {
         VERSION, LEGACY_KEY, SLOTS, slotKey,
-        buildSlotMeta, buildEnvelope,
+        buildSlotMeta, buildEnvelope, validateEnvelope, writeEnvelope,
         readSlot, hasSlot, writeSlot, listSlots, anyOccupied, latestSlot, migrateLegacySave
     };
 })();
