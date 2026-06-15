@@ -764,7 +764,7 @@ class MapSystem {
                 { x: 350, y: 410, width: 100, height: 20, to: 'tokyo_gov_floor2', direction: 'south' }
             ],
             npcs: [
-                { x: 400, y: 180, emoji: '🦾', name: 'アーク・プライム', dialogue: '人間よ...お前たちの時代は終わりだ。', hostile: true, level: 10, boss: true }
+                { x: 400, y: 180, emoji: '🦾', name: 'アーク・プライム', dialogue: '人間よ...お前たちの時代は終わりだ。', hostile: true, level: 35, boss: true }
             ],
             savePoint: { x: 100, y: 350, emoji: '💠', name: '緊急セーブポイント' }
         };
@@ -4169,12 +4169,12 @@ class MapSystem {
     getEncounterZone() {
         const id = this.normalizeMapId(this.currentMap) || '';
         // 順序重要: 長い接頭辞から判定
-        if (id.startsWith('tokyo_gov')) return { table: 'gov', tier: 4, levelRange: [10, 13] };
-        if (id.startsWith('deep_tunnel')) return { table: 'dungeon', tier: 5, levelRange: [13, 17] };
-        if (id.startsWith('subway')) return { table: 'subway', tier: 2, levelRange: [3, 5] };
-        if (id.startsWith('shrine')) return { table: 'shrine', tier: 2, levelRange: [5, 7] };
-        if (id.startsWith('biodome')) return { table: 'garden', tier: 3, levelRange: [7, 9] };
-        if (id.startsWith('black_market')) return { table: 'market', tier: 3, levelRange: [8, 10] };
+        if (id.startsWith('tokyo_gov')) return { table: 'gov', tier: 4, levelRange: [16, 19] };
+        if (id.startsWith('deep_tunnel')) return { table: 'dungeon', tier: 5, levelRange: [20, 28] };
+        if (id.startsWith('subway')) return { table: 'subway', tier: 2, levelRange: [4, 6] };
+        if (id.startsWith('shrine')) return { table: 'shrine', tier: 2, levelRange: [7, 9] };
+        if (id.startsWith('biodome')) return { table: 'garden', tier: 3, levelRange: [10, 12] };
+        if (id.startsWith('black_market')) return { table: 'market', tier: 3, levelRange: [13, 15] };
         // 広場・駅・商店街・住宅街など序盤の街
         return { table: 'city', tier: 1, levelRange: [1, 3] };
     }

@@ -17,9 +17,9 @@ W.updateUI = noop;
 
 // ---- index.html と同一の loadout ロジック ----
 const MEMBER_LOADOUT = {
-  akari: { level: 1, equip: ['wooden_sword', 'cloth_armor'] },
-  riku:  { level: 4, equip: ['iron_sword', 'leather_armor', 'iron_helmet'] },
-  yami:  { level: 4, equip: ['wooden_sword', 'cloth_armor', 'mana_amulet'] }
+  akari: { level: 4, equip: ['healer_rod', 'cloth_armor'] },
+  riku:  { level: 8, equip: ['iron_sword', 'leather_armor', 'iron_helmet'] },
+  yami:  { level: 13, equip: ['mage_staff', 'cloth_armor', 'mana_amulet'] }
 };
 function applyMemberLoadout(memberId, member) {
   const lo = MEMBER_LOADOUT[memberId];
@@ -51,7 +51,9 @@ for (const id of ['akari', 'riku', 'yami']) {
   applyMemberLoadout(id, m);
   const eq = W.equipmentSystem.getEquipped(m);
   const lo = MEMBER_LOADOUT[id];
-  const weaponOk = eq.weapon === lo.equip.find(e => e.includes('sword'));
+  // 武器は slot==='weapon' の装備で判定（剣/杖/銃いずれも対応。"sword"決め打ちは術士装備に非対応）
+  const weaponItem = lo.equip.find(e => { const d = W.equipmentSystem.equipmentDatabase[e]; return d && d.slot === 'weapon'; });
+  const weaponOk = eq.weapon === weaponItem;
   const bodyOk = !!eq.body;
   const lvOk = m.level === lo.level;
   const armed = m.attack > baseAttack;       // 丸腰でない（武器で攻撃増）

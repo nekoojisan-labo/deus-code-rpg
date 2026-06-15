@@ -213,10 +213,12 @@ const CHARACTER_GROWTH = {
 
 // 経験値テーブル計算関数
 function calculateExpNeeded(level, expCurve = 'normal') {
+    // 単段コスト（L→L+1）。線形で「次のレベルまで」が常に手の届く距離に保つ。
+    // 旧二次式(lvl²×50)はLv50到達に累計約205万EXPを要し終盤が壁→線形化で累計5.2万へ圧縮。
     const curves = {
-        fast: (lvl) => Math.floor(lvl * lvl * 35 + lvl * 20),
-        normal: (lvl) => Math.floor(lvl * lvl * 50 + lvl * 25),
-        slow: (lvl) => Math.floor(lvl * lvl * 70 + lvl * 30)
+        fast: (lvl) => Math.floor(28 * lvl + 42),
+        normal: (lvl) => Math.floor(40 * lvl + 60),
+        slow: (lvl) => Math.floor(52 * lvl + 78)
     };
 
     return curves[expCurve](level);

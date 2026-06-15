@@ -199,7 +199,7 @@ class BattleSystem {
                 mp: 10,
                 attack: 8,
                 defense: 5,
-                exp: 15,
+                exp: 18,
                 gold: 20,
                 type: 'drone',
                 skills: ['scan', 'alert'],
@@ -223,7 +223,7 @@ class BattleSystem {
                 mp: 15,
                 attack: 15,
                 defense: 10,
-                exp: 35,
+                exp: 30,
                 gold: 50,
                 type: 'mecha',
                 skills: ['bite', 'howl', 'rush'],
@@ -248,7 +248,7 @@ class BattleSystem {
                 mp: 5,
                 attack: 12,
                 defense: 18,
-                exp: 40,
+                exp: 55,
                 gold: 45,
                 type: 'construct',
                 skills: ['slam', 'guard'],
@@ -273,7 +273,7 @@ class BattleSystem {
                 mp: 25,
                 attack: 10,
                 defense: 8,
-                exp: 30,
+                exp: 52,
                 gold: 40,
                 type: 'hybrid',
                 skills: ['drain', 'entangle', 'spore'],
@@ -298,7 +298,7 @@ class BattleSystem {
                 mp: 20,
                 attack: 14,
                 defense: 12,
-                exp: 50,
+                exp: 92,
                 gold: 60,
                 type: 'android',
                 skills: ['laserBeam', 'barrier', 'analyze'],
@@ -318,7 +318,7 @@ class BattleSystem {
             // --- フィールド別 追加敵（基礎は tier1 ベースライン。エリアの tier 倍率で自動スケール）---
             patrol_drone: {
                 name: 'パトロールドローン', emoji: '🛰️',
-                hp: 20, maxHp: 20, mp: 8, attack: 7, defense: 4, exp: 12, gold: 15,
+                hp: 20, maxHp: 20, mp: 8, attack: 7, defense: 4, exp: 15, gold: 15,
                 type: 'drone', skills: ['scan', 'tackle'],
                 description: '街路を巡回する小型監視機。弱いが素早い。',
                 dropTable: [ { id: 'heal_potion', rate: 0.3 }, { id: 'energy_core', rate: 0.12 } ],
@@ -326,7 +326,7 @@ class BattleSystem {
             },
             data_spider: {
                 name: 'データスパイダー', emoji: '🕷️',
-                hp: 30, maxHp: 30, mp: 12, attack: 10, defense: 6, exp: 20, gold: 24,
+                hp: 30, maxHp: 30, mp: 12, attack: 10, defense: 6, exp: 42, gold: 24,
                 type: 'construct', skills: ['web_shot', 'bite'],
                 description: '地下網に巣食う電子の蜘蛛。手数で攻める。',
                 dropTable: [ { id: 'heal_potion', rate: 0.28 }, { id: 'energy_core', rate: 0.18 } ],
@@ -334,7 +334,7 @@ class BattleSystem {
             },
             phantom: {
                 name: 'ファントム', emoji: '👻',
-                hp: 32, maxHp: 32, mp: 30, attack: 9, defense: 6, exp: 30, gold: 38,
+                hp: 32, maxHp: 32, mp: 30, attack: 9, defense: 6, exp: 60, gold: 38,
                 type: 'spirit', skills: ['drain', 'curse_touch'],
                 description: '社に漂う残留思念。捉えどころがなく魔を操る。',
                 dropTable: [ { id: 'mega_heal_potion', rate: 0.2 }, { id: 'mana_amulet', rate: 0.05 } ],
@@ -342,7 +342,7 @@ class BattleSystem {
             },
             security_drone: {
                 name: 'セキュリティドローン', emoji: '🚨',
-                hp: 52, maxHp: 52, mp: 14, attack: 13, defense: 15, exp: 42, gold: 48,
+                hp: 52, maxHp: 52, mp: 14, attack: 13, defense: 15, exp: 78, gold: 48,
                 type: 'drone', skills: ['barrier', 'laser_scan', 'guard'],
                 description: '園内警備の重装機。装甲が厚い。',
                 dropTable: [ { id: 'iron_helmet', rate: 0.1 }, { id: 'leather_armor', rate: 0.08 } ],
@@ -350,7 +350,7 @@ class BattleSystem {
             },
             shadow_entity: {
                 name: 'シャドウエンティティ', emoji: '🌑',
-                hp: 44, maxHp: 44, mp: 38, attack: 12, defense: 9, exp: 50, gold: 60,
+                hp: 44, maxHp: 44, mp: 38, attack: 12, defense: 9, exp: 100, gold: 60,
                 type: 'spirit', skills: ['shadow_bind', 'drain', 'curse'],
                 description: '闇市の影に巣食う存在。呪詛と魔法を操る。',
                 dropTable: [ { id: 'mega_heal_potion', rate: 0.22 }, { id: 'mana_amulet', rate: 0.08 }, { id: 'revival_stone', rate: 0.04 } ],
@@ -358,7 +358,7 @@ class BattleSystem {
             },
             guard_robo: {
                 name: 'ガードロボ', emoji: '🤖',
-                hp: 75, maxHp: 75, mp: 12, attack: 17, defense: 22, exp: 65, gold: 75,
+                hp: 75, maxHp: 75, mp: 12, attack: 17, defense: 22, exp: 135, gold: 75,
                 type: 'construct', skills: ['heavy_slam', 'guard', 'barrier'],
                 description: 'アーク中枢を守る重装甲兵。極めて硬い。',
                 dropTable: [ { id: 'iron_gauntlets', rate: 0.1 }, { id: 'chain_mail', rate: 0.06 } ],
@@ -366,7 +366,7 @@ class BattleSystem {
             },
             glitch_spirit: {
                 name: 'グリッチスピリット', emoji: '👾',
-                hp: 48, maxHp: 48, mp: 42, attack: 14, defense: 10, exp: 70, gold: 65,
+                hp: 48, maxHp: 48, mp: 42, attack: 14, defense: 10, exp: 150, gold: 65,
                 type: 'spirit', skills: ['system_hack', 'glitch_pulse', 'analyze'],
                 description: '崩れたデータから生じた変則体。状態異常を撒く。',
                 dropTable: [ { id: 'mega_energy_core', rate: 0.2 }, { id: 'mana_amulet', rate: 0.08 } ],
@@ -374,7 +374,7 @@ class BattleSystem {
             },
             queen_spider: {
                 name: 'クイーンスパイダー', emoji: '🕸️',
-                hp: 85, maxHp: 85, mp: 22, attack: 19, defense: 15, exp: 95, gold: 110,
+                hp: 85, maxHp: 85, mp: 22, attack: 19, defense: 15, exp: 220, gold: 110,
                 type: 'construct', skills: ['summon_brood', 'venom_fang', 'rush'],
                 description: '深層に君臨する母蜘蛛。深層トンネルの精鋭。',
                 dropTable: [ { id: 'full_heal_potion', rate: 0.15 }, { id: 'power_gloves', rate: 0.05 }, { id: 'revival_stone', rate: 0.05 } ],
@@ -411,11 +411,11 @@ class BattleSystem {
             rogue_ai_core: {
                 name: '暴走AIコア',
                 emoji: '⚡',
-                hp: 250,
-                maxHp: 250,
+                hp: 3500,
+                maxHp: 3500,
                 mp: 100,
-                attack: 25,
-                defense: 20,
+                attack: 105,
+                defense: 100,
                 exp: 500,
                 gold: 800,
                 type: 'boss',
@@ -523,53 +523,109 @@ class BattleSystem {
             ? window.mapSystem.getEncounterZone()
             : null;
         const tableKey = (zone && zone.table) || area;
-        const encounterTable = this.encounterTables[tableKey] || this.encounterTables.city;
-        const enemyId = encounterTable[Math.floor(Math.random() * encounterTable.length)];
-        const base = this.enemyDatabase[enemyId];
-        if (!base) return;
+        // ★マルチ敵: 1-3体の群れを生成（同種複数/混成/前衛重の3パターン・分布はtableで維持）。
+        const group = this.buildEncounterGroup(zone, tableKey);
+        if (!group.length) return;
+        console.log('エンカウント:', group.map(e => `${e.name}Lv${e.level}`).join(' / '), `(${group.length}体)`);
+        this.startBattle(group);
+    }
 
+    // 単体の敵を tier倍率＋帯内レベルでスケールして生成（triggerから抽出・マルチ敵で再利用）
+    makeScaledEnemy(enemyId, zone) {
+        const base = this.enemyDatabase[enemyId];
+        if (!base) return null;
         const tier = (zone && zone.tier) || 1;
         const mult = this.tierMultiplier[tier] || 1.0;
         const range = (zone && zone.levelRange) || [1, 1];
         const level = range[0] + Math.floor(Math.random() * (range[1] - range[0] + 1));
         const sc = (v) => Math.max(1, Math.round((v || 0) * mult));
-
         const hp = sc(base.hp);
-        const enemy = {
-            ...base,
-            hp,
-            maxHp: hp,
-            currentHp: hp,
-            currentMp: base.mp || 0,
-            attack: sc(base.attack),
-            defense: sc(base.defense),
-            exp: sc(base.exp),
-            gold: sc(base.gold),
-            level,
-            id: enemyId
+        return {
+            ...base, hp, maxHp: hp, currentHp: hp, currentMp: base.mp || 0,
+            attack: sc(base.attack), defense: sc(base.defense), exp: sc(base.exp), gold: sc(base.gold),
+            level, id: enemyId, statusAilments: {}
         };
+    }
 
-        console.log('エンカウント:', enemy.name, `Lv${level}(tier${tier}x${mult})`, 'HP:', enemy.currentHp, 'ATK:', enemy.attack, 'EXP:', enemy.exp);
-        this.startBattle(enemy);
+    // エンカウント群を生成: 1-3体・分布は area の encounterTable で維持・組み合わせ3パターン。
+    //   均一(同種をcount体) / 混成(table内の異種優先) / 前衛重(強敵1+雑魚で固める)。
+    //   1体も残す＝序盤の単体戦の体感を維持しつつ、複数戦でレベリングを楽にする。
+    buildEncounterGroup(zone, tableKey) {
+        const key = tableKey || (zone && zone.table) || 'city';
+        const table = this.encounterTables[key] || this.encounterTables.city;
+        const roll = Math.random();
+        const count = roll < 0.34 ? 1 : (roll < 0.74 ? 2 : 3); // 1体34% / 2体40% / 3体26%
+        const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+        let ids = [];
+        if (count === 1) {
+            ids = [pick(table)];
+        } else {
+            const pat = Math.floor(Math.random() * 3);
+            if (pat === 0) {
+                // 均一: 同種を count 体（「同じキャラを3体」）
+                const id = pick(table);
+                ids = Array.from({ length: count }, () => id);
+            } else if (pat === 1) {
+                // 混成: table内の異種を優先（「AとBが並ぶ」）
+                const pool = [...new Set(table)];
+                for (let i = 0; i < count; i++) ids.push(pool.length ? pool.splice(Math.floor(Math.random() * pool.length), 1)[0] : pick(table));
+            } else {
+                // 前衛重: 強敵(table末尾寄り)1体＋雑魚(table先頭)で固める
+                ids = [table[table.length - 1], ...Array.from({ length: count - 1 }, () => table[0])];
+            }
+        }
+        return ids.map(id => this.makeScaledEnemy(id, zone)).filter(Boolean);
+    }
+
+    // 生存している敵の配列
+    livingEnemies() {
+        return (this.enemies || []).filter(e => e && e.currentHp > 0);
+    }
+
+    // ターゲット解決: 指定indexが生存ならそれ、死んでいれば先頭の生存敵、全滅でもnullを返さない。
+    resolveEnemyTarget(idx) {
+        const list = this.enemies || [];
+        if (typeof idx === 'number' && list[idx] && list[idx].currentHp > 0) return list[idx];
+        const living = this.livingEnemies();
+        return living[0] || list[idx] || list[0] || this.currentEnemy || null;
+    }
+
+    // 報酬の全敵合算（EXP/Gold）。「3体分のポイントが入る」=レベリング緩和の核。
+    computeBattleRewards() {
+        const list = (this.enemies && this.enemies.length) ? this.enemies : (this.currentEnemy ? [this.currentEnemy] : []);
+        let exp = 0, gold = 0;
+        list.forEach(e => { if (e) { exp += (e.exp || 0); gold += (e.gold || 0); } });
+        return { exp, gold };
+    }
+
+    // 群れの表示名（"スパイダー×3" / "ドローン と ゴーレム" / 単体名）
+    enemyGroupName() {
+        const list = (this.enemies && this.enemies.length) ? this.enemies : (this.currentEnemy ? [this.currentEnemy] : []);
+        if (list.length <= 1) return (list[0] || {}).name || 'てき';
+        const counts = {};
+        list.forEach(e => { counts[e.name] = (counts[e.name] || 0) + 1; });
+        return Object.entries(counts).map(([n, c]) => (c > 1 ? `${n}×${c}` : n)).join(' と ');
     }
     
     // 戦闘開始
-    startBattle(enemy, isBossBattle = false, onBossDefeat = null) {
+    startBattle(enemyOrGroup, isBossBattle = false, onBossDefeat = null) {
         if (window.playSE) window.playSE('encounter');
         this.inBattle = true;
-        this.isBossBattle = isBossBattle || enemy.boss || false;
+        // ★単体(ボス/旧API)も配列(マルチ敵)も受ける。内部は常に this.enemies 配列で扱う。
+        const group = Array.isArray(enemyOrGroup) ? enemyOrGroup : [enemyOrGroup];
+        this.enemies = group.filter(Boolean).map(e => {
+            const copy = { ...e };
+            if (!copy.currentHp) copy.currentHp = copy.hp;
+            if (!copy.maxHp) copy.maxHp = copy.hp;
+            if (!copy.currentMp) copy.currentMp = copy.mp || 0;
+            copy.statusAilments = {};
+            return copy;
+        });
+        if (!this.enemies.length) this.enemies = [{ ...group[0] }];
+        this.currentEnemy = this.enemies[0];     // 表示/行動の「現在の敵」ポインタ
+        this.targetEnemyIndex = 0;
+        this.isBossBattle = isBossBattle || this.currentEnemy.boss || false;
         this.onBossDefeat = onBossDefeat;
-        this.currentEnemy = { ...enemy }; // 敵データをコピー
-        // currentHpを確実に初期化
-        if (!this.currentEnemy.currentHp) {
-            this.currentEnemy.currentHp = this.currentEnemy.hp;
-        }
-        if (!this.currentEnemy.currentMp) {
-            this.currentEnemy.currentMp = this.currentEnemy.mp;
-        }
-
-        // ステータス異常を初期化
-        this.currentEnemy.statusAilments = {};
 
         this.selectedCommand = 0;
         this.battleLog = [];
@@ -601,7 +657,7 @@ class BattleSystem {
 
         // 戦闘画面表示
         this.showBattleScreen();
-        this.addBattleLog(`${enemy.name}が あらわれた！`);
+        this.addBattleLog(`${this.enemyGroupName()}が あらわれた！`);
 
         // パーティメンバーのステータス異常をクリア
         const allMembers = this.getPartyMembers();
@@ -796,7 +852,7 @@ class BattleSystem {
             case 'attack':
                 this.memberAttack(member, () => {
                     this.executeActionsSequentially(actions, actionIndex + 1);
-                });
+                }, action.enemyTarget);
                 break;
             case 'kamui':
                 // magicId / targetIndex は計画フェーズで確定済み
@@ -828,7 +884,10 @@ class BattleSystem {
     }
 
     // メンバーの攻撃
-    memberAttack(member, callback) {
+    memberAttack(member, callback, enemyTarget) {
+        // ★対象を解決（選択敵が既に死んでいれば生存敵へ振替）。this.currentEnemy をその敵に向ける。
+        this.currentEnemy = this.resolveEnemyTarget(enemyTarget);
+        const enemyIdx = (this.enemies || []).indexOf(this.currentEnemy);
         const baseDamage = member.attack || 10;
         const variance = Math.floor(Math.random() * 5) - 2;
         let damage = Math.max(1, baseDamage + variance - Math.floor(this.currentEnemy.defense / 2));
@@ -849,11 +908,11 @@ class BattleSystem {
         if (killed) atkMsgs.push(`${this.currentEnemy.name}を たおした！`); // 結果行はビートの最後
         const dmgIdx = isCritical ? 2 : 1;
         const fx = [];
-        fx[dmgIdx] = () => { this.showDamageEffect(damage, true, isCritical); this.updateBattleUI(); };
+        fx[dmgIdx] = () => { this.showDamageEffect(damage, true, isCritical, enemyIdx); this.updateBattleUI(); };
         this.presentBeat(atkMsgs, { fx });
         this.afterBattleMessages(() => {
-            if (killed) {
-                this.currentEnemy.currentHp = 0;
+            // ★全敵を倒したときだけ勝利。1体撃破でも他が生存していれば次の行動へ継続。
+            if (this.livingEnemies().length === 0) {
                 this.updateBattleUI();
                 this.battleVictory(window.player);
             } else if (callback) {
@@ -971,17 +1030,20 @@ class BattleSystem {
             return;
         }
 
-        // 対象を解決
+        // 対象を解決。攻撃系は 'enemy'(=生存敵へ自動) または 'enemy:N'(=N番目の敵を指定)。
         let target = null;
-        if (targetIndex === 'enemy') {
-            target = this.currentEnemy;
-        } else if (targetIndex === 'self') {
+        if (targetIndex === 'self') {
             target = member;
+        } else if (typeof targetIndex === 'string' && targetIndex.indexOf('enemy') === 0) {
+            const m = targetIndex.match(/enemy:(\d+)/);
+            target = this.resolveEnemyTarget(m ? parseInt(m[1], 10) : undefined);
+            this.currentEnemy = target;   // ★FX/撃破判定がこの敵を指すよう再ポイント
         } else if (typeof targetIndex === 'number') {
             const partyMembers = this.getPartyMembers();
             target = partyMembers[targetIndex] || member;
         } else {
-            target = this.currentEnemy;
+            target = this.resolveEnemyTarget();
+            this.currentEnemy = target;
         }
 
         console.log('[DEBUG] memberKamui called with:', {
@@ -1005,17 +1067,18 @@ class BattleSystem {
         }
 
         // 召喚→効果→(結果) を1ビートで。ダメージ系は効果行(result.message)と同時にエフェクト発火
+        const enemyIdx = (this.enemies || []).indexOf(this.currentEnemy);
         const kamuiKilled = this.currentEnemy && this.currentEnemy.currentHp <= 0 && result.damage > 0;
         const kMsgs = [`${member.name}は ${result.magic.name}を よびだした！`, result.message];
         if (kamuiKilled) kMsgs.push(`${this.currentEnemy.name}を たおした！`);
         const fx = []; fx[1] = () => {
-            if (result.damage && result.damage > 0) this.showDamageEffect(result.damage, true, true);
+            if (result.damage && result.damage > 0) this.showDamageEffect(result.damage, true, true, enemyIdx);
             this.updateBattleUI();
         };
         this.presentBeat(kMsgs, { fx });
         this.afterBattleMessages(() => {
-            if (kamuiKilled) {
-                this.currentEnemy.currentHp = 0;
+            // ★全敵撃破でのみ勝利。1体撃破でも生存敵がいれば次の行動へ。
+            if (this.livingEnemies().length === 0) {
                 this.updateBattleUI();
                 this.battleVictory(window.player);
             } else if (callback) {
@@ -1101,6 +1164,7 @@ class BattleSystem {
         // 対象選択が必要な種別か判定
         if (skill.type === 'healing' || skill.type === 'revive') {
             // 味方を選ぶ（蘇生は戦闘不能の味方が対象）
+            this.targetMode = 'skill';   // キャンセル時はスキル選択へ戻す
             this.availableTargets = this.getPartyMembers().map((m, i) => ({ member: m, index: i, scope: 'ally' }));
             this.commandPhase = 'target';
             this.selectedCommand = 0;
@@ -1109,8 +1173,90 @@ class BattleSystem {
             // 自分のみ（自動確定）
             this.commitKamuiCommand(skill.id, 'self');
         } else {
-            // offensive / kamui: 敵が単体のみなので自動的に enemy
-            this.commitKamuiCommand(skill.id, 'enemy');
+            // offensive / kamui: ★敵が複数なら対象を選ぶ、単体なら自動。
+            const living = this.livingEnemies();
+            if (living.length > 1) {
+                this.beginEnemyTargeting('skill', (enemyIdx) => this.commitKamuiCommand(skill.id, 'enemy:' + enemyIdx));
+            } else {
+                const idx = (this.enemies || []).indexOf(living[0]);
+                this.commitKamuiCommand(skill.id, 'enemy:' + (idx >= 0 ? idx : 0));
+            }
+        }
+    }
+
+    // ★敵ターゲット選択フェーズを開始（攻撃/攻撃スキル共通）。onPick(enemyIndex) で確定。
+    beginEnemyTargeting(mode, onPick) {
+        this.targetMode = mode;                 // 'attack' | 'skill'（キャンセル時の戻り先判定）
+        this._onEnemyTargetPick = onPick;
+        this.availableTargets = (this.enemies || [])
+            .map((e, i) => ({ enemy: e, index: i }))
+            .filter(x => x.enemy && x.enemy.currentHp > 0);
+        this.commandPhase = 'target';
+        this.selectedCommand = 0;
+        this.waitingForCommand = true;
+        this.renderEnemyTargetPhase();
+    }
+
+    renderEnemyTargetPhase() {
+        const items = this.availableTargets.map((entry, i) => {
+            const e = entry.enemy;
+            const hp = `<span style="color:#ff9a9a; font-size:11px;">HP:${Math.max(0, e.currentHp)}/${e.maxHp}</span>`;
+            return {
+                html: `${e.name} ${hp}`,
+                onClick: () => {
+                    this.selectedCommand = i;
+                    this.refreshCurrentPhaseSelection();
+                    const cb = this._onEnemyTargetPick;
+                    this._onEnemyTargetPick = null;
+                    if (cb) cb(entry.index);
+                }
+            };
+        });
+        items.push({ html: '↩ もどる', color: '#ff8888', onClick: () => this.cancelTargetPhase() });
+        BattlePanel.renderCommands(items, { headerLabel: 'たいしょう', title: '🎯 てきを えらぶ', selectedIndex: this.selectedCommand });
+    }
+
+    // 対象選択フェーズのキャンセル。攻撃ならコマンド選択へ、スキルならスキル選択へ戻る。
+    cancelTargetPhase() {
+        this._onEnemyTargetPick = null;
+        if (this.targetMode === 'attack') {
+            this.targetMode = null;
+            this.commandPhase = 'command';
+            this.selectedCommand = 0;
+            this.waitingForCommand = true;
+            this.showCommands();
+            this.updateCurrentMemberDisplay();
+        } else {
+            this.targetMode = null;
+            this.commandPhase = 'skill';
+            this.selectedCommand = 0;
+            this.renderSkillPhase();
+        }
+    }
+
+    // 攻撃コマンドを対象付きで積む（道具/カムイと同じ＝即時実行せず次メンバーへ）。
+    commitAttackCommand(enemyTarget) {
+        this.targetMode = null;
+        const member = this.getPartyMembers()[this.currentMemberIndex];
+        this.partyCommands[this.currentMemberIndex] = { member, command: 'attack', enemyTarget };
+        this.commandPhase = 'command';
+        this.waitingForCommand = false;
+        const commands = document.getElementById('battleCommands');
+        if (commands) commands.style.display = 'none';
+        const body = document.getElementById('gameMessageBody');
+        if (body) body.classList.remove('battle-cmd-mode', 'battle-cmd-grid');
+        this.currentMemberIndex++;
+        setTimeout(() => this.showNextMemberCommand(), 200);
+    }
+
+    // 攻撃コマンド選択時の入口（複数敵なら対象選択、単体なら自動確定）。
+    beginAttackTargeting() {
+        const living = this.livingEnemies();
+        if (living.length > 1) {
+            this.beginEnemyTargeting('attack', (idx) => this.commitAttackCommand(idx));
+        } else {
+            const idx = (this.enemies || []).indexOf(living[0]);
+            this.commitAttackCommand(idx >= 0 ? idx : 0);
         }
     }
 
@@ -1398,10 +1544,11 @@ class BattleSystem {
             battleScreen.classList.remove('is-shaking');
 
             this.setBattleBackground();
-            this.renderEnemySprite(this.currentEnemy);
+            this.renderEnemyGroup();
 
-            // 敵情報更新
-            document.getElementById('enemyName').textContent = this.currentEnemy.name;
+            // 敵情報更新（群れ名 or 単体名）
+            const nameEl = document.getElementById('enemyName');
+            if (nameEl) nameEl.textContent = this.enemyGroupName();
 
             // 旧コマンド領域は使わないが互換のため非表示維持
             const commands = document.getElementById('battleCommands');
@@ -1417,7 +1564,7 @@ class BattleSystem {
 
             // メッセージパネルをバトルモードで起動（最初はログモード）
             BattlePanel.activate('戦闘');
-            BattlePanel.renderLog([`${this.currentEnemy.name} が あらわれた！`]);
+            BattlePanel.renderLog([`${this.enemyGroupName()} が あらわれた！`]);
 
             this.updateBattleUI();
         }
@@ -1469,6 +1616,73 @@ class BattleSystem {
             this.style.display = 'none';
         };
         bgImage.src = this.getBattleBackground(area, mapId);
+    }
+
+    // ★マルチ敵: enemy-stage に 1-3体のスロット（影＋スプライト＋複数時はミニ名/HP）を描画。
+    //   スロット0のスプライトは id="enemySprite" を維持（旧FX/参照との互換）。
+    renderEnemyGroup() {
+        const stage = document.querySelector('.enemy-stage');
+        if (!stage) { this.renderEnemySprite(this.currentEnemy); return; }
+        const list = (this.enemies && this.enemies.length) ? this.enemies : (this.currentEnemy ? [this.currentEnemy] : []);
+        stage.innerHTML = '';
+        stage.style.display = 'flex';
+        stage.style.justifyContent = 'center';
+        stage.style.alignItems = 'stretch';   // 各スロットがstageの高さを継承（spriteのheight:100%崩壊を防ぐ）
+        stage.style.gap = list.length > 1 ? '3%' : '0';
+        const multi = list.length > 1;
+        const scale = list.length === 3 ? 0.66 : (list.length === 2 ? 0.82 : 1);
+        list.forEach((enemy, idx) => {
+            const slot = document.createElement('div');
+            slot.className = 'enemy-slot';
+            slot.dataset.enemyIndex = String(idx);
+            // ★高さはstageを継承(height:100%)。名前/HPはabsoluteでspriteの高さを食わない。
+            slot.style.cssText = `position:relative;height:100%;flex:0 1 ${Math.floor(96 / list.length)}%;min-width:0;`;
+
+            const shadow = document.createElement('div');
+            shadow.className = 'enemy-shadow';
+            shadow.setAttribute('aria-hidden', 'true');
+            slot.appendChild(shadow);
+
+            const sprite = document.createElement('div');
+            sprite.className = 'enemy-sprite';
+            if (idx === 0) sprite.id = 'enemySprite';     // 互換: 旧参照/FXの主スプライト
+            sprite.dataset.enemyIndex = String(idx);
+            if (scale !== 1) sprite.style.transform = `scale(${scale})`;
+            const imagePath = this.getEnemyImagePath(enemy);
+            if (imagePath) {
+                const img = document.createElement('img');
+                img.src = imagePath; img.alt = enemy?.name || ''; img.decoding = 'async';
+                img.onerror = function () {
+                    if (!this.dataset.fallbackTried && this.src.includes('.webp')) { this.dataset.fallbackTried = '1'; this.src = this.src.replace('.webp', '.png'); return; }
+                    this.style.display = 'none';
+                };
+                sprite.appendChild(img);
+            } else {
+                sprite.textContent = enemy?.emoji || '??';
+            }
+            if ((enemy.currentHp || 0) <= 0) { sprite.style.opacity = '0.3'; sprite.style.filter = 'grayscale(100%)'; }
+            slot.appendChild(sprite);
+
+            // 複数体時のみ各敵のミニ名＋HPバー（absolute配置でspriteの高さに影響しない）
+            if (multi) {
+                const plate = document.createElement('div');
+                plate.style.cssText = 'position:absolute;left:50%;bottom:0;transform:translateX(-50%);z-index:3;display:flex;flex-direction:column;align-items:center;pointer-events:none;';
+                const label = document.createElement('div');
+                label.style.cssText = 'font-size:10px;color:#d8f4ff;max-width:78px;text-align:center;line-height:1.1;text-shadow:0 1px 2px #000;';
+                label.textContent = enemy.name;
+                const bar = document.createElement('div');
+                bar.style.cssText = 'width:54px;height:5px;background:rgba(0,0,0,.55);border-radius:3px;margin-top:2px;overflow:hidden;';
+                const fill = document.createElement('div');
+                fill.className = 'enemy-slot-hp-fill';
+                const ratio = Math.max(0, (enemy.currentHp || 0) / (enemy.maxHp || 1));
+                fill.style.cssText = `width:${ratio * 100}%;height:100%;background:${ratio > 0.5 ? '#43e97b' : ratio > 0.25 ? '#f5a623' : '#ef4444'};transition:width .2s;`;
+                bar.appendChild(fill);
+                plate.appendChild(label);
+                plate.appendChild(bar);
+                slot.appendChild(plate);
+            }
+            stage.appendChild(slot);
+        });
     }
 
     renderEnemySprite(enemy) {
@@ -1525,22 +1739,23 @@ class BattleSystem {
     // プレイヤーの攻撃
     playerAttack(player) {
         console.log('playerAttack called, waiting:', this.waitingForCommand);
-        
+        // 先頭の生存敵を対象に（旧ソロ経路）
+        this.currentEnemy = this.resolveEnemyTarget();
+        const enemyIdx = (this.enemies || []).indexOf(this.currentEnemy);
         const baseDamage = player.attack || 15;
         const variance = Math.floor(Math.random() * 5) - 2; // -2 to +2
         const damage = Math.max(1, baseDamage + variance - Math.floor(this.currentEnemy.defense / 2));
-        
+
         this.currentEnemy.currentHp = Math.max(0, this.currentEnemy.currentHp - damage);
 
         // 攻撃→ダメージ→(結果) を1ビートで表示。エフェクトはダメージ行と同時に発火
         const killed = this.currentEnemy.currentHp <= 0;
         const msgs = [`カイトの こうげき！`, `${this.currentEnemy.name}に ${Math.floor(damage)}の ダメージ！`];
         if (killed) msgs.push(`${this.currentEnemy.name}を たおした！`);
-        const fx = []; fx[1] = () => { this.showDamageEffect(damage, true); this.updateBattleUI(); };
+        const fx = []; fx[1] = () => { this.showDamageEffect(damage, true, false, enemyIdx); this.updateBattleUI(); };
         this.presentBeat(msgs, { fx });
         this.afterBattleMessages(() => {
-            if (killed) {
-                this.currentEnemy.currentHp = 0;
+            if (this.livingEnemies().length === 0) {
                 this.updateBattleUI();
                 this.battleVictory(player);
             } else {
@@ -1564,6 +1779,8 @@ class BattleSystem {
         }
 
         player.mp -= 10;
+        this.currentEnemy = this.resolveEnemyTarget();
+        const enemyIdx = (this.enemies || []).indexOf(this.currentEnemy);
         const baseDamage = 25;
         const variance = Math.floor(Math.random() * 10);
         const damage = baseDamage + variance;
@@ -1574,11 +1791,10 @@ class BattleSystem {
         const killed = this.currentEnemy.currentHp <= 0;
         const msgs = [`カイトは スサノオの力を よびだした！`, `${this.currentEnemy.name}に ${damage}の ダメージ！`];
         if (killed) msgs.push(`${this.currentEnemy.name}を たおした！`);
-        const fx = []; fx[1] = () => { this.showDamageEffect(damage, true, true); this.updateBattleUI(); };
+        const fx = []; fx[1] = () => { this.showDamageEffect(damage, true, true, enemyIdx); this.updateBattleUI(); };
         this.presentBeat(msgs, { fx });
         this.afterBattleMessages(() => {
-            if (killed) {
-                this.currentEnemy.currentHp = 0;
+            if (this.livingEnemies().length === 0) {
                 this.updateBattleUI();
                 this.battleVictory(player);
             } else {
@@ -1587,26 +1803,31 @@ class BattleSystem {
         });
     }
     
-    // 敵のターン
+    // 敵のターン（★マルチ敵: 生存敵が1体ずつ順に行動 → 全員行動後に次ラウンドへ）
     enemyTurn(player) {
-        console.log('enemyTurn called');
-
-        // 敵のAI行動決定
-        const action = this.determineEnemyAction();
-
-        switch (action) {
-            case 'attack':
-                this.enemyAttack(player);
-                break;
-            case 'defend':
-                this.enemyDefend(player);
-                break;
-            case 'skill':
-                this.enemySkillAttack(player);
-                break;
-            default:
-                this.enemyAttack(player);
-        }
+        const acting = this.livingEnemies();           // このフェーズ開始時点の生存敵
+        let i = 0;
+        const finishPhase = () => {
+            if (this.checkPartyWipeout()) { this.gameOver(); return; }
+            // 状態異常処理・ターン加算・次プレイヤーターンはフェーズ末で1回だけ
+            this.processAllMembersStatusAilments(() => {
+                this.turnCount++;
+                this.startPlayerTurn();
+            });
+        };
+        const step = () => {
+            if (this.checkPartyWipeout()) { this.gameOver(); return; }  // 途中で全滅したら即終了
+            if (i >= acting.length) { finishPhase(); return; }
+            const e = acting[i]; i++;
+            if (!e || e.currentHp <= 0) { step(); return; }             // フェーズ中に倒された敵は飛ばす
+            this.currentEnemy = e;                                       // 行動主体をこの敵へ
+            const action = this.determineEnemyAction();
+            const done = () => step();                                  // この敵の行動完了 → 次の敵へ
+            if (action === 'defend') this.enemyDefend(player, done);
+            else if (action === 'skill') this.enemySkillAttack(player, done);
+            else this.enemyAttack(player, done);
+        };
+        step();
     }
 
     // 敵の行動を決定
@@ -1631,15 +1852,17 @@ class BattleSystem {
         return aiPattern.normalAction || 'attack';
     }
 
-    // 敵の通常攻撃
-    enemyAttack(player) {
+    // 敵の通常攻撃（done: この敵の行動完了後に敵フェーズを進めるコールバック）
+    enemyAttack(player, done) {
         const baseDamage = this.currentEnemy.attack;
         const variance = Math.floor(Math.random() * 3);
         let damage = Math.max(1, baseDamage + variance - Math.floor((player.defense || 5) / 2));
 
-        // パーティメンバーからランダムにターゲットを選択
+        // ★生存メンバーからランダムにターゲット（戦闘不能の味方は狙わない）
         const allMembers = this.getPartyMembers();
-        const target = allMembers[Math.floor(Math.random() * allMembers.length)];
+        const aliveMembers = allMembers.filter(m => (m.hp || 0) > 0);
+        if (!aliveMembers.length) { this.gameOver(); return; }
+        const target = aliveMembers[Math.floor(Math.random() * aliveMembers.length)];
 
         const msgs = [`${this.currentEnemy.name}の こうげき！`];
         if (target.defending) {
@@ -1656,38 +1879,27 @@ class BattleSystem {
         // ★攻撃→(防御)→ダメージ→(結果) を1ビートで表示。被弾エフェクト/HPバーはダメージ行と同時発火
         const fx = []; fx[dmgIdx] = () => { this.showDamageEffect(damage, false, false, targetIdx); this.updateBattleUI(); };
         this.presentBeat(msgs, { fx });
-        this.afterBattleMessages(() => {
-            if (this.checkPartyWipeout()) {
-                this.gameOver();
-            } else {
-                this.processAllMembersStatusAilments(() => {
-                    this.turnCount++;
-                    this.startPlayerTurn();
-                });
-            }
-        });
+        this.afterBattleMessages(() => { if (done) done(); });
     }
 
     // 敵の防御
-    enemyDefend(player) {
+    enemyDefend(player, done) {
         this.currentEnemy.defending = true;
         this.presentBeat([`${this.currentEnemy.name}は みをまもっている！`]);
-        // 次のターンへ（ビート表示完了後）
-        this.afterBattleMessages(() => {
-            this.turnCount++;
-            this.startPlayerTurn();
-        });
+        this.afterBattleMessages(() => { if (done) done(); });
     }
 
-    // 敵のスキル攻撃
-    enemySkillAttack(player) {
+    // 敵のスキル攻撃（done: 敵フェーズ継続コールバック）
+    enemySkillAttack(player, done) {
         const skillDamage = Math.floor(this.currentEnemy.attack * 1.5);
         const variance = Math.floor(Math.random() * 5);
         let damage = Math.max(1, skillDamage + variance - Math.floor((player.defense || 5) / 3));
 
-        // パーティメンバーからランダムにターゲットを選択
+        // ★生存メンバーからランダムにターゲット
         const allMembers = this.getPartyMembers();
-        const target = allMembers[Math.floor(Math.random() * allMembers.length)];
+        const aliveMembers = allMembers.filter(m => (m.hp || 0) > 0);
+        if (!aliveMembers.length) { this.gameOver(); return; }
+        const target = aliveMembers[Math.floor(Math.random() * aliveMembers.length)];
 
         // 特殊攻撃→(防御)→ダメージ→(状態異常)→(結果) を1ビートに畳み込む
         const msgs = [`${this.currentEnemy.name}の とくしゅこうげき！`];
@@ -1714,16 +1926,7 @@ class BattleSystem {
         // 被弾エフェクト/HPバーはダメージ行と同時発火
         const fx = []; fx[dmgIdx] = () => { this.showDamageEffect(damage, false, true, targetIdx); this.updateBattleUI(); };
         this.presentBeat(msgs, { fx });
-        this.afterBattleMessages(() => {
-            if (this.checkPartyWipeout()) {
-                this.gameOver();
-            } else {
-                this.processAllMembersStatusAilments(() => {
-                    this.turnCount++;
-                    this.startPlayerTurn();
-                });
-            }
-        });
+        this.afterBattleMessages(() => { if (done) done(); });
     }
 
     // 全メンバーのステータス異常処理（1メンバー=1ビート。固定タイマー廃止・ビート完了で次へ）
@@ -1772,8 +1975,10 @@ class BattleSystem {
         if (body) body.classList.remove('battle-cmd-mode', 'battle-cmd-grid');
 
         // 経験値・ゴールド・ドロップを先に適用（データ確定）。表示は1つずつ順次に。
-        const expGained = this.currentEnemy.exp || 10;
-        const goldGained = this.currentEnemy.gold || 5;
+        // ★全敵の報酬を合算（マルチ敵=「3体分のポイント」）。単体時は従来通り単体分。
+        const rewards = this.computeBattleRewards();
+        const expGained = rewards.exp || 10;
+        const goldGained = rewards.gold || 5;
         player.gold = (player.gold || 0) + goldGained;
         const allMembers = [player];
         if (window.partySystem) allMembers.push(...window.partySystem.getMembers());
@@ -1793,40 +1998,35 @@ class BattleSystem {
         this.afterBattleMessages(() => this.processLevelUps(allMembers, 0));
     }
 
-    // ドロップアイテム処理
+    // ドロップアイテム処理（★全敵のdropTableを走査＝マルチ敵では各敵が個別に抽選）
     processItemDrops() {
         const droppedItems = [];
+        const enemies = (this.enemies && this.enemies.length) ? this.enemies : (this.currentEnemy ? [this.currentEnemy] : []);
 
-        if (!this.currentEnemy || !this.currentEnemy.dropTable) {
-            return droppedItems;
-        }
-
-        this.currentEnemy.dropTable.forEach(dropEntry => {
-            const roll = Math.random();
-            if (roll < dropEntry.rate) {
-                // アイテムかチェック
-                if (window.itemSystem && window.itemSystem.itemDatabase[dropEntry.id]) {
-                    const success = window.itemSystem.addItem(dropEntry.id, 1);
-                    if (success) {
-                        const itemData = window.itemSystem.itemDatabase[dropEntry.id];
-                        droppedItems.push(itemData);
+        enemies.forEach(enemy => {
+            if (!enemy || !enemy.dropTable) return;
+            enemy.dropTable.forEach(dropEntry => {
+                const roll = Math.random();
+                if (roll < dropEntry.rate) {
+                    // アイテムかチェック
+                    if (window.itemSystem && window.itemSystem.itemDatabase[dropEntry.id]) {
+                        const success = window.itemSystem.addItem(dropEntry.id, 1);
+                        if (success) {
+                            const itemData = window.itemSystem.itemDatabase[dropEntry.id];
+                            droppedItems.push(itemData);
+                        }
+                    }
+                    // 装備品かチェック
+                    else if (window.equipmentSystem && window.equipmentSystem.equipmentDatabase[dropEntry.id]) {
+                        // 装備品は equipmentSystem.inventory へ入れる（装備メニューはこちらを読む。
+                        // 旧 player.equipmentInventory 配列はメニュー未参照で永久に使えなかったバグを修正）
+                        const equipData = window.equipmentSystem.equipmentDatabase[dropEntry.id];
+                        window.equipmentSystem.addEquipment(dropEntry.id, 1);
+                        droppedItems.push({ name: equipData.name, emoji: equipData.emoji });
+                        console.log(`装備品ドロップ: ${equipData.name}`);
                     }
                 }
-                // 装備品かチェック
-                else if (window.equipmentSystem && window.equipmentSystem.equipmentDatabase[dropEntry.id]) {
-                    // 装備品は equipmentSystem.inventory へ入れる（装備メニューはこちらを読む。
-                    // 旧 player.equipmentInventory 配列はメニュー未参照で永久に使えなかったバグを修正）
-                    const equipData = window.equipmentSystem.equipmentDatabase[dropEntry.id];
-                    window.equipmentSystem.addEquipment(dropEntry.id, 1);
-
-                    droppedItems.push({
-                        name: equipData.name,
-                        emoji: equipData.emoji
-                    });
-
-                    console.log(`装備品ドロップ: ${equipData.name}`);
-                }
-            }
+            });
         });
 
         return droppedItems;
@@ -1861,6 +2061,12 @@ class BattleSystem {
         if (window.playSE) window.playSE('level_up');
         const characterId = character.characterId || 'kaito';
         const oldLevel = character.level;
+        // Lv50 ハードキャップ: 上限到達後は余剰expを切り捨て、それ以上 level++ しない。
+        if (character.level >= 50) {
+            character.exp = 0;
+            if (window.updateUI) window.updateUI();
+            return [`${character.name}は さいだいレベルに たっした！`];
+        }
         // このレベルに必要だったexpを消費（消費しないとprocessLevelUpsが同レベルで無限/多段暴発する）
         const expCurve = window.CHARACTER_GROWTH?.[characterId]?.expCurve || 'normal';
         const needed = window.calculateExpNeeded ? window.calculateExpNeeded(character.level, expCurve) : character.level * 100;
@@ -2284,24 +2490,29 @@ class BattleSystem {
 
         if (isEnemy) {
             const enemyArea = document.getElementById('enemyArea');
-            const enemySprite = document.getElementById('enemySprite');
-            if (enemyArea) {
-                const enemyRect = enemyArea.getBoundingClientRect();
+            // ★被弾した敵スロット（targetIndex=敵index）を特定。未指定/不在なら主スプライト。
+            const stage = document.querySelector('.enemy-stage');
+            let hitSprite = document.getElementById('enemySprite');
+            let anchor = enemyArea;
+            if (stage && typeof targetIndex === 'number' && targetIndex >= 0) {
+                const slot = stage.querySelector(`.enemy-slot[data-enemy-index="${targetIndex}"]`);
+                if (slot) { anchor = slot; const sp = slot.querySelector('.enemy-sprite'); if (sp) hitSprite = sp; }
+            }
+            if (anchor) {
+                const enemyRect = anchor.getBoundingClientRect();
                 damageEl.style.left = `${enemyRect.left + enemyRect.width / 2 - screenRect.left}px`;
                 damageEl.style.top = `${enemyRect.top + enemyRect.height * 0.34 - screenRect.top}px`;
-                enemyArea.classList.remove('is-hit');
-                void enemyArea.offsetWidth;
-                enemyArea.classList.add('is-hit');
-                setTimeout(() => enemyArea.classList.remove('is-hit'), 320);
+                enemyArea && enemyArea.classList.remove('is-hit');
+                if (enemyArea) { void enemyArea.offsetWidth; enemyArea.classList.add('is-hit'); setTimeout(() => enemyArea.classList.remove('is-hit'), 320); }
             } else {
                 damageEl.style.left = '50%';
                 damageEl.style.top = '30%';
             }
-            if (enemySprite) {
-                enemySprite.classList.remove('is-hit');
-                void enemySprite.offsetWidth;
-                enemySprite.classList.add('is-hit');
-                setTimeout(() => enemySprite.classList.remove('is-hit'), 320);
+            if (hitSprite) {
+                hitSprite.classList.remove('is-hit');
+                void hitSprite.offsetWidth;
+                hitSprite.classList.add('is-hit');
+                setTimeout(() => hitSprite.classList.remove('is-hit'), 320);
             }
         } else {
             const partyContainer = document.getElementById('battlePartyStatus');
@@ -2338,22 +2549,33 @@ class BattleSystem {
     
     // UI更新
     updateBattleUI() {
-        // 敵HP更新
+        // 上部HUDのHPバーは「現在の対象(currentEnemy)」を表示
         if (this.currentEnemy) {
             const enemyHpRatio = Math.max(0, this.currentEnemy.currentHp / this.currentEnemy.maxHp);
             const enemyHpFill = document.getElementById('enemyHpFill');
-            if (enemyHpFill) {
-                enemyHpFill.style.width = (enemyHpRatio * 100) + '%';
-            }
+            if (enemyHpFill) enemyHpFill.style.width = (enemyHpRatio * 100) + '%';
+        }
 
-            // 敵が倒れたら表示を更新
-            if (this.currentEnemy.currentHp <= 0) {
-                const enemySprite = document.getElementById('enemySprite');
-                if (enemySprite) {
-                    enemySprite.style.opacity = '0.3';
-                    enemySprite.style.filter = 'grayscale(100%)';
+        // ★各敵スロットのミニHP・撃破グレーアウトを個別更新
+        const stage = document.querySelector('.enemy-stage');
+        const list = (this.enemies && this.enemies.length) ? this.enemies : (this.currentEnemy ? [this.currentEnemy] : []);
+        if (stage) {
+            list.forEach((enemy, idx) => {
+                const slot = stage.querySelector(`.enemy-slot[data-enemy-index="${idx}"]`);
+                if (!slot) return;
+                const sprite = slot.querySelector('.enemy-sprite');
+                const dead = (enemy.currentHp || 0) <= 0;
+                if (sprite) {
+                    sprite.style.opacity = dead ? '0.3' : '1';
+                    sprite.style.filter = dead ? 'grayscale(100%)' : 'none';
                 }
-            }
+                const fill = slot.querySelector('.enemy-slot-hp-fill');
+                if (fill) {
+                    const ratio = Math.max(0, (enemy.currentHp || 0) / (enemy.maxHp || 1));
+                    fill.style.width = (ratio * 100) + '%';
+                    fill.style.background = ratio > 0.5 ? '#43e97b' : ratio > 0.25 ? '#f5a623' : '#ef4444';
+                }
+            });
         }
 
         // パーティメンバー全員のステータス更新

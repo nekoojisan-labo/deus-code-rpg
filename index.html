@@ -3649,15 +3649,15 @@
     <script src="se-system.js?v=1"></script>
     <script src="ui-panel.js?v=3"></script>
     <script src="save-system.js?v=2"></script>
-    <script src="battle-system.js?v=70"></script>
+    <script src="battle-system.js?v=72"></script>
     <script src="map-walkability-data.js?v=12"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=27"></script>
-    <script src="map-system.js?v=82"></script>
+    <script src="map-system.js?v=83"></script>
     <script src="map-system-grid.js"></script>
     <script src="player-grid-movement.js"></script>
     <script src="bgm-system.js?v=36"></script>
-    <script src="party-system.js?v=47"></script>
+    <script src="party-system.js?v=48"></script>
     <script src="quest-system.js?v=7"></script>
     <script src="story-events.js?v=58"></script>
 
@@ -5188,9 +5188,9 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
 
         // 仲間ごとの加入レベル（物語段階で固定）＋初期装備キット
         const MEMBER_LOADOUT = {
-            akari: { level: 3, equip: ['wooden_sword', 'cloth_armor'] },  // 駅(subway t2/Lv3-5帯)で加入＝Lv3へ底上げ
-            riku:  { level: 4, equip: ['iron_sword', 'leather_armor', 'iron_helmet'] },
-            yami:  { level: 6, equip: ['wooden_sword', 'cloth_armor', 'mana_amulet'] }  // 都庁手前(t3-t4帯)で本加入＝Lv6へ
+            akari: { level: 4, equip: ['healer_rod', 'cloth_armor'] },  // 駅(subway t2/Lv4-6帯)で加入＝Lv4へ。ヒーラー=回復杖(物理武器は装備不可)
+            riku:  { level: 8, equip: ['iron_sword', 'leather_armor', 'iron_helmet'] },  // 神社(shrine Lv7-9帯)で加入＝Lv8へ。戦士=物理武器＋重装
+            yami:  { level: 13, equip: ['mage_staff', 'cloth_armor', 'mana_amulet'] }  // 闇市(market Lv13-15帯)で本加入＝Lv13へ。メイジ=魔法杖(物理武器は装備不可)・即死回避
         };
         // 加入時に固定レベルへ底上げ＋初期装備を自動装備（共有インベントリに浮かせない＝丸腰防止）
         function applyMemberLoadout(memberId, member) {
@@ -6586,10 +6586,8 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                     battleSystem.showCommands();
                     setupBattleCommands();
                 } else if (phase === 'target') {
-                    // 対象選択 → スキル選択へ戻る
-                    battleSystem.commandPhase = 'skill';
-                    battleSystem.selectedCommand = 0;
-                    battleSystem.renderSkillPhase();
+                    // 対象選択キャンセル → 攻撃ならコマンド選択へ・スキルならスキル選択へ（battle-system が判定）
+                    battleSystem.cancelTargetPhase();
                 } else if (phase === 'skill') {
                     // スキル選択 → コマンド選択へ戻る
                     battleSystem.cancelKamuiPlanning();
@@ -6669,7 +6667,13 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 return;
             }
 
-            // attack / defend：通常通り保存して次のメンバーへ
+            // ★攻撃: 敵が複数なら対象選択フェーズへ、単体なら自動確定（どちらも commitAttackCommand で積む）
+            if (command === 'attack') {
+                battleSystem.beginAttackTargeting();
+                return;
+            }
+
+            // defend：通常通り保存して次のメンバーへ
             const partyMembers = battleSystem.getPartyMembers();
             const currentMember = partyMembers[battleSystem.currentMemberIndex];
 
