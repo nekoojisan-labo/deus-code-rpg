@@ -104,11 +104,12 @@ if (story) {
 sb.window.addEventListener = noop; // inline末尾の DOMContentLoaded 登録用
 sb.HTMLElement = function () {}; sb.Node = function () {};
 const html = read('game-inspector.html');
-const mInline = html.match(/<script>(?![^]*?\bsrc=)([\s\S]*?)<\/script>/); // src無しの<script>本体
+const mInline = html.match(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/); // タグにsrc無しの<script>本体
 let renderOk = false, renderedTabs = [];
+let assetsOk = false, changeOk = false;
 if (mInline) {
   try {
-    vm.runInContext(mInline[1] + '\n;globalThis.__buildModel=buildModel;globalThis.__VIEWS=VIEWS;', sb, { filename: 'game-inspector.inline.js' });
+    vm.runInContext(mInline[1] + '\n;globalThis.__buildModel=buildModel;globalThis.__VIEWS=VIEWS;globalThis.__setChange=setChange;globalThis.__changeText=changeText;', sb, { filename: 'game-inspector.inline.js' });
     const model = sb.__buildModel();
     let allNonEmpty = true;
     Object.keys(sb.__VIEWS).forEach(name => {
@@ -118,9 +119,20 @@ if (mInline) {
       if (!out || out.length < 30) allNonEmpty = false;
     });
     renderOk = allNonEmpty;
-  } catch (e) { console.log('inline実行エラー: ' + e.message); }
+    // 素材抽出
+    const A = model.assets;
+    assetsOk = A && A.sprites.length > 0 && A.enemies.length > 0 && A.maps.length > 0 && A.portraits.length > 0 && A.battle.length > 0 && A.ui.length > 0;
+    console.log(`   素材: スプライト${A.sprites.length}/敵${A.enemies.length}/マップ${A.maps.length}/立ち絵${A.portraits.length}/戦闘${A.battle.length}/UI${A.ui.length}`);
+    // 変更リクエスト round-trip
+    sb.__setChange('enemy.watcher.hp', { label: 'watcher.hp', orig: 25, val: 30, file: 'battle-system.js' });
+    sb.__setChange('char.akari.attack', { label: 'akari.attack', orig: 8, val: 10, file: 'party-system.js' });
+    const txt = sb.__changeText();
+    changeOk = /watcher\.hp: 25 → 30/.test(txt) && /akari\.attack: 8 → 10/.test(txt) && /battle-system\.js/.test(txt) && /party-system\.js/.test(txt);
+  } catch (e) { console.log('inline実行エラー: ' + e.message + '\n' + (e.stack || '').split('\n').slice(0, 3).join('\n')); }
 }
-chk('ダッシュボード全タブが実データで描画される（エラー無し・非空）', renderOk, renderedTabs.join(' '));
+chk('全タブが実データで描画される（エラー無し・非空）', renderOk, renderedTabs.join(' '));
+chk('素材パスが全カテゴリ抽出される（スプライト/敵/マップ/立ち絵/戦闘/UI）', assetsOk);
+chk('編集→変更リクエスト生成: 値の差分がファイル別に正しく書き出される', changeOk);
 
 console.log(`\n${pass ? '✅ 全PASS: 全DB抽出＋クロス参照＋マップ/ストーリー解析＋ダッシュボード全タブ描画 が実コードで成立' : '❌ 不合格あり'}`);
 process.exit(pass ? 0 : 1);

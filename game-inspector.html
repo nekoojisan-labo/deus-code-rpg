@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>デウス・コード 設定ビューア</title>
+<title>デウス・コード 設定ビューア / エディタ</title>
 <style>
   :root{
     --bg:#0a0e16; --panel:#101725; --panel2:#0c1220; --line:rgba(0,229,255,.22);
@@ -19,7 +19,7 @@
   .tab{background:#0c1626;border:1px solid var(--line);color:var(--sub);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px}
   .tab:hover{color:var(--text);border-color:var(--accent)}
   .tab.active{background:rgba(0,229,255,.14);color:#fff;border-color:var(--accent2)}
-  main{padding:18px 20px 60px;max-width:1280px;margin:0 auto}
+  main{padding:18px 20px 90px;max-width:1320px;margin:0 auto}
   .view{display:none}.view.active{display:block}
   .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:20px}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
@@ -27,37 +27,60 @@
   .card .l{color:var(--sub);font-size:12px;margin-top:2px}
   h2{font-size:15px;border-left:3px solid var(--accent2);padding-left:8px;margin:22px 0 10px}
   table{width:100%;border-collapse:collapse;background:var(--panel2);border:1px solid var(--line);border-radius:10px;overflow:hidden}
-  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:top}
+  th,td{text-align:left;padding:6px 9px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:middle}
   th{background:#0e1828;color:var(--accent);font-size:11px;letter-spacing:.04em;position:sticky;top:0}
-  tr:hover td{background:rgba(0,229,255,.05)}
   td.num{text-align:right;font-variant-numeric:tabular-nums}
+  tr:hover td{background:rgba(0,229,255,.05)}
   .pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;background:rgba(0,229,255,.12);color:var(--accent);margin:1px}
-  .pill.warn{background:rgba(255,184,77,.15);color:var(--warn)}
-  .pill.err{background:rgba(255,107,107,.15);color:var(--err)}
-  .pill.ok{background:rgba(111,227,154,.15);color:var(--ok)}
-  .pill.boss{background:rgba(250,204,21,.15);color:var(--accent2)}
-  .muted{color:var(--sub)}
-  .health{display:grid;gap:10px}
-  .h-item{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:8px;padding:10px 12px}
+  .pill.warn{background:rgba(255,184,77,.15);color:var(--warn)} .pill.err{background:rgba(255,107,107,.15);color:var(--err)}
+  .pill.ok{background:rgba(111,227,154,.15);color:var(--ok)} .pill.boss{background:rgba(250,204,21,.15);color:var(--accent2)}
+  .muted{color:var(--sub)} .sub2{color:var(--sub);font-size:11px}
+  input.edit{width:62px;background:#0a1626;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:3px 6px;font-family:var(--font);font-size:12px;text-align:right}
+  input.edit:focus{outline:none;border-color:var(--accent2);box-shadow:0 0 0 2px rgba(250,204,21,.15)}
+  input.edit.dirty{border-color:var(--accent2);background:rgba(250,204,21,.10);color:#fff}
+  input.edit.txt{width:160px;text-align:left}
+  /* 素材ギャラリー */
+  .gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+  .asset{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center}
+  .asset .imgwrap{height:96px;display:flex;align-items:center;justify-content:center;background:repeating-conic-gradient(#0d1422 0% 25%,#0a0f18 0% 50%) 50%/16px 16px;border-radius:6px;overflow:hidden}
+  .asset img{max-width:100%;max-height:96px;image-rendering:pixelated}
+  .asset .nm{font-size:10px;color:var(--sub);margin-top:5px;word-break:break-all}
+  .asset.missing .imgwrap{color:var(--err);font-size:11px}
+  /* マッププレビュー */
+  .map-wrap{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start}
+  .map-stage{position:relative;background:#05080e;border:1px solid var(--line);border-radius:10px;overflow:auto;max-height:70vh}
+  .map-stage img.bg{display:block}
+  .ov{position:absolute;box-sizing:border-box;pointer-events:none}
+  .ov.walk{border:1px solid rgba(111,227,154,.5);background:rgba(111,227,154,.10)}
+  .ov.build{border:1px solid rgba(255,107,107,.5);background:rgba(255,107,107,.12)}
+  .ov.exit{border:1px dashed var(--accent2);background:rgba(250,204,21,.12)}
+  .marker{position:absolute;transform:translate(-50%,-50%);font-size:18px;text-shadow:0 1px 2px #000;pointer-events:none}
+  .marker .tag{display:block;font-size:9px;color:#fff;background:rgba(0,0,0,.6);border-radius:4px;padding:0 3px;transform:translateX(-50%);margin-left:50%;white-space:nowrap}
+  .map-side{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;max-height:70vh;overflow:auto}
+  .map-side h3{margin:8px 0 4px;font-size:12px;color:var(--accent)}
+  .npc-row{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px}
+  .npc-row .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* 変更リクエスト フローティング */
+  #fab{position:fixed;right:20px;bottom:20px;z-index:50;background:var(--accent2);color:#1a1400;font-weight:700;border:none;border-radius:999px;padding:12px 18px;cursor:pointer;box-shadow:0 6px 20px rgba(250,204,21,.35);font-family:var(--font)}
+  #fab[disabled]{background:#22303f;color:var(--sub);box-shadow:none;cursor:default}
+  textarea.req{width:100%;min-height:340px;background:#070b12;border:1px solid var(--line);border-radius:8px;color:#cfe;font-family:ui-monospace,monospace;font-size:12px;padding:12px}
+  .btn{background:rgba(0,229,255,.14);border:1px solid var(--accent);color:#fff;border-radius:8px;padding:8px 14px;cursor:pointer;font-family:var(--font);font-size:12px}
+  .btn:hover{background:rgba(0,229,255,.24)}
+  .h-item{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:8px;padding:10px 12px;margin-bottom:8px}
   .h-item.ok{border-left-color:var(--ok)}.h-item.err{border-left-color:var(--err)}
-  .h-item h3{margin:0 0 4px;font-size:13px}
-  .h-item .d{color:var(--sub);font-size:12px}
-  details{margin-top:4px}summary{cursor:pointer;color:var(--sub);font-size:11px}
-  pre{background:#070b12;border:1px solid var(--line);border-radius:6px;padding:8px;overflow:auto;font-size:11px;color:#bcd}
-  .sub2{color:var(--sub);font-size:11px}
-  .bar{height:6px;background:#0c1626;border-radius:4px;overflow:hidden;margin-top:6px}
-  .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .h-item h3{margin:0 0 4px;font-size:13px}.h-item .d{color:var(--sub);font-size:12px}
   .err-box{background:rgba(255,107,107,.08);border:1px solid var(--err);color:#ffd;padding:10px;border-radius:8px;margin-bottom:14px;font-size:12px}
+  select{background:#0a1626;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 10px;font-family:var(--font);font-size:13px}
 </style>
 </head>
 <body>
 <header>
-  <h1>デウス・コード 設定ビューア <small>RPGツクール風・実データから生成 / 読み取り専用</small></h1>
+  <h1>デウス・コード 設定ビューア / エディタ <small>実データから生成・編集は「変更リクエスト」を書き出してClaudeへ</small></h1>
   <div class="tabs" id="tabs"></div>
 </header>
 <main id="main"></main>
+<button id="fab" disabled onclick="window._openChanges()">📝 変更 0件</button>
 
-<!-- ゲーム実データ（index.html と同じ外部JSを読む。各システムをインスタンス化してDBを読む） -->
 <script src="item-system.js?v=47"></script>
 <script src="equipment-system.js?v=50"></script>
 <script src="magic-system.js?v=47"></script>
@@ -77,270 +100,287 @@
 const G = window;
 const esc = (s) => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const safeNew = (C) => { try { return C ? new C() : null; } catch (e) { console.warn('init fail', C && C.name, e); return null; } };
-const num = (v) => (v == null || v === '' ? '' : v);
-const compact = (v) => {
-  if (v == null) return '';
-  if (Array.isArray(v)) return v.map(x => typeof x === 'object' ? (x.id || x.name || JSON.stringify(x)) : x).join(', ');
-  if (typeof v === 'object') return Object.entries(v).map(([k,val]) => `${k}:${val}`).join(' ');
-  return String(v);
-};
+const compact = (v) => { if (v == null) return ''; if (Array.isArray(v)) return v.map(x => typeof x === 'object' ? (x.id || x.name || JSON.stringify(x)) : x).join(', '); if (typeof v === 'object') return Object.entries(v).map(([k,val]) => `${k}:${val}`).join(' '); return String(v); };
+const entries = (obj) => Object.keys(obj).map(k => Object.assign({ _id: k }, obj[k]));
 
+// ===== 変更リクエスト（編集→Claudeへ渡すブリッジ） =====
+const CHANGES = {}; // path -> {label, orig, val, file, group}
+function setChange(path, info) {
+  if (String(info.val) === String(info.orig)) delete CHANGES[path];
+  else CHANGES[path] = info;
+  refreshFab();
+}
+function refreshFab() {
+  const fab = document.getElementById('fab'); if (!fab) return;
+  const n = Object.keys(CHANGES).length;
+  fab.textContent = `📝 変更 ${n}件` + (n ? ' → 書き出し' : '');
+  fab.disabled = n === 0;
+}
+function changeText() {
+  const keys = Object.keys(CHANGES);
+  if (!keys.length) return '（変更はありません）';
+  const byFile = {};
+  keys.forEach(k => { const c = CHANGES[k]; (byFile[c.file] = byFile[c.file] || []).push(c); });
+  let out = '# デウス・コード 設定変更リクエスト\n';
+  out += '# このブロックをそのまま Claude に渡すと、対応するソース(.js)へ反映します。\n';
+  out += '# 形式: <対象>.<項目>: <現在値> → <新しい値>\n';
+  Object.keys(byFile).sort().forEach(file => {
+    out += `\n## ${file}\n`;
+    byFile[file].forEach(c => { out += `- ${c.label}: ${c.orig} → ${c.val}\n`; });
+  });
+  out += '\n# 注: キャラ/敵のステータスは base*（baseAttack等・成長の土台）も同期して反映してください。\n';
+  return out;
+}
+// 数値編集セル
+function editCell(file, group, path, label, value, isText) {
+  if (value == null) return '<span class="muted">—</span>';
+  const t = isText ? 'text' : 'number';
+  return `<input class="edit${isText ? ' txt' : ''}" type="${t}" value="${esc(value)}" data-file="${esc(file)}" data-path="${esc(path)}" data-label="${esc(label)}" data-orig="${esc(value)}">`;
+}
+
+// ===== モデル構築 =====
 function buildModel() {
   const item = safeNew(G.ItemSystem), equip = safeNew(G.EquipmentSystem), magic = safeNew(G.MagicSystem);
   const battle = safeNew(G.BattleSystem), map = safeNew(G.MapSystem), story = safeNew(G.StoryEventSystem);
   const m = {
     errors: [],
-    items: (item && item.itemDatabase) || {},
-    equipment: (equip && equip.equipmentDatabase) || {},
-    magic: (magic && magic.magicDatabase) || {},
-    enemies: (battle && battle.enemyDatabase) || {},
-    encounterTables: (battle && battle.encounterTables) || {},
-    maps: (map && map.maps) || {},
-    mapSys: map,
-    events: story && story.events ? [...story.events.entries()] : [],
-    quests: G.QUEST_STEPS || [],
-    questEnding: G.QUEST_ENDING || null,
-    characters: G.CHARACTER_DATA || {},
-    growth: G.CHARACTER_GROWTH || {},
-    save: G.SaveSystem || null
+    items: (item && item.itemDatabase) || {}, equipment: (equip && equip.equipmentDatabase) || {},
+    magic: (magic && magic.magicDatabase) || {}, enemies: (battle && battle.enemyDatabase) || {},
+    encounterTables: (battle && battle.encounterTables) || {}, maps: (map && map.maps) || {}, mapSys: map,
+    spriteMap: (map && map.npcSpriteMap) || {},
+    events: story && story.events ? [...story.events.entries()] : [], quests: G.QUEST_STEPS || [],
+    characters: G.CHARACTER_DATA || {}, growth: G.CHARACTER_GROWTH || {}, save: G.SaveSystem || null
   };
-  if (!item) m.errors.push('ItemSystem');
-  if (!battle) m.errors.push('BattleSystem'); if (!map) m.errors.push('MapSystem'); if (!story) m.errors.push('StoryEventSystem');
+  ['ItemSystem','BattleSystem','MapSystem','StoryEventSystem'].forEach((n, i) => { if ([item,battle,map,story][i] == null) m.errors.push(n); });
   m.analysis = analyze(m);
+  m.assets = collectAssets(m);
   return m;
 }
-
-// マップ毎の難易度帯（mapSys.getEncounterZone は currentMap を見るので切り替えて呼ぶ）
-function zoneOf(m, id) {
-  try { m.mapSys.currentMap = id; return m.mapSys.getEncounterZone(); } catch (e) { return null; }
-}
+function zoneOf(m, id) { try { m.mapSys.currentMap = id; return m.mapSys.getEncounterZone(); } catch (e) { return null; } }
 
 function analyze(m) {
-  // 敵↔エンカウントテーブル
-  const enemyIds = new Set(Object.keys(m.enemies));
-  const tableToEnemies = {}, enemyToTables = {};
-  const broken = [];
-  Object.keys(m.encounterTables).forEach(tk => {
-    tableToEnemies[tk] = [];
-    (m.encounterTables[tk] || []).forEach(e => {
-      const id = (typeof e === 'string') ? e : (e.id || e.enemyId || e.enemy);
-      if (!id) return;
-      tableToEnemies[tk].push(id);
-      (enemyToTables[id] = enemyToTables[id] || []).push(tk);
-      if (!enemyIds.has(id)) broken.push(tk + ' → ' + id);
-    });
-  });
+  const enemyIds = new Set(Object.keys(m.enemies)); const enemyToTables = {}; const broken = [];
+  Object.keys(m.encounterTables).forEach(tk => (m.encounterTables[tk] || []).forEach(e => {
+    const id = (typeof e === 'string') ? e : (e.id || e.enemyId || e.enemy); if (!id) return;
+    (enemyToTables[id] = enemyToTables[id] || []).push(tk); if (!enemyIds.has(id)) broken.push(tk + ' → ' + id);
+  }));
   const orphanEnemies = [...enemyIds].filter(id => !enemyToTables[id]);
-  // テーブル → そのテーブルを使うマップ
-  const tableToMaps = {};
-  Object.keys(m.maps).forEach(id => {
-    const z = zoneOf(m, id);
-    if (z && z.table) (tableToMaps[z.table] = tableToMaps[z.table] || []).push(id);
-  });
-  // マップ内容
   const mapsNoNpc = [], mapsNoExit = [], exitsNoDir = [];
-  Object.keys(m.maps).forEach(id => {
-    const map = m.maps[id];
+  Object.keys(m.maps).forEach(id => { const map = m.maps[id];
     if (!map.npcs || !map.npcs.length) mapsNoNpc.push(id);
     if (!map.exits || !map.exits.length) mapsNoExit.push(id);
     (map.exits || []).forEach(ex => { if (!ex.direction) exitsNoDir.push(id + (ex.to ? '→' + ex.to : '')); });
   });
-  // ストーリー
   const eventsNoOneTime = m.events.filter(([, e]) => !e.oneTime).map(([id]) => id);
   const eventsShort = m.events.filter(([, e]) => (e.scenes || []).length <= 1).map(([id]) => id);
-  return { enemyToTables, tableToEnemies, tableToMaps, orphanEnemies, broken, mapsNoNpc, mapsNoExit, exitsNoDir, eventsNoOneTime, eventsShort };
+  return { enemyToTables, orphanEnemies, broken, mapsNoNpc, mapsNoExit, exitsNoDir, eventsNoOneTime, eventsShort };
 }
 
-// ---- 汎用テーブル ----
+// 素材パスを実データから収集
+function collectAssets(m) {
+  const seen = new Set(); const add = (arr, path, label) => { if (path && !seen.has(path)) { seen.add(path); arr.push({ path, label: label || path.split('/').pop() }); } };
+  const sprites = [], enemies = [], maps = [], portraits = [], battle = [], ui = [];
+  Object.entries(m.spriteMap).forEach(([name, path]) => {
+    if (/\/enemies\//.test(path)) add(enemies, path, name);
+    else add(sprites, path, name);
+  });
+  Object.keys(m.maps).forEach(id => { const im = m.maps[id].image; if (im) add(maps, im, m.maps[id].name || id); });
+  Object.keys(m.characters).concat(['kaito']).forEach(id => { add(portraits, `assets/characters/${id}_portrait.png`, id); });
+  ['city','subway','shrine','gov','biodome','abyss'].forEach(b => add(battle, `assets/battle/bg_${b}.png`, b));
+  ['panel_frame','cmd_normal','cmd_selected','menu_bg'].forEach(u => add(ui, `assets/ui/${u}.png`, u));
+  return { sprites, enemies, maps, portraits, battle, ui };
+}
+
+// ===== 汎用テーブル =====
 function tbl(rows, cols) {
   let h = '<table><thead><tr>' + cols.map(c => `<th>${esc(c.label)}</th>`).join('') + '</tr></thead><tbody>';
-  rows.forEach(r => {
-    h += '<tr>' + cols.map(c => {
-      let v = c.get ? c.get(r) : r[c.key];
-      const cls = c.num ? ' class="num"' : '';
-      return `<td${cls}>${c.raw ? (v == null ? '' : v) : esc(v == null ? '' : v)}</td>`;
-    }).join('') + '</tr>';
-  });
+  rows.forEach(r => { h += '<tr>' + cols.map(c => { let v = c.get ? c.get(r) : r[c.key]; const cls = c.num ? ' class="num"' : ''; return `<td${cls}>${c.raw ? (v == null ? '' : v) : esc(v == null ? '' : v)}</td>`; }).join('') + '</tr>'; });
   return h + '</tbody></table>';
 }
-const entries = (obj) => Object.keys(obj).map(k => Object.assign({ _id: k }, obj[k]));
 
-// ---- 各タブのレンダラ ----
 const VIEWS = {};
 
 VIEWS['概要'] = (m) => {
   const c = (n, l) => `<div class="card"><div class="n">${n}</div><div class="l">${l}</div></div>`;
-  const a = m.analysis;
-  const warns = a.broken.length + a.mapsNoNpc.length + a.mapsNoExit.length + a.exitsNoDir.length;
-  let h = '<div class="cards">' +
-    c(Object.keys(m.maps).length, 'マップ') + c(Object.keys(m.enemies).length, '敵') +
-    c(Object.keys(m.items).length, 'アイテム') + c(Object.keys(m.equipment).length, '装備') +
-    c(Object.keys(m.magic).length, '神威スキル') + c(m.events.length, 'ストーリーイベント') +
-    c(m.quests.length, 'クエストステップ') + c(Object.keys(m.characters).length, 'キャラクター') +
-    '</div>';
-  h += `<h2>ひとめで状態</h2>`;
-  h += `<div class="health"><div class="h-item ${a.broken.length ? 'err' : 'ok'}"><h3>${a.broken.length ? '⚠️' : '✅'} データ整合性</h3><div class="d">壊れた敵参照 ${a.broken.length}件 / 構造警告 合計 ${warns}件（詳細は「健全性チェック」タブ）</div></div>`;
-  // 章カバレッジ（クエスト章ごとの完了フラグの有無＝物語の骨格がどこまで通っているか）
-  const chapters = {};
-  m.quests.forEach(q => { const ch = q.chapterTitle || ('第' + q.chapter + '章'); chapters[ch] = (chapters[ch] || 0) + 1; });
-  h += `<div class="h-item ok"><h3>📖 章 / クエスト構成</h3><div class="d">` +
-    Object.entries(chapters).map(([ch, n]) => `<span class="pill">${esc(ch)}：${n}ステップ</span>`).join(' ') +
-    `</div></div></div>`;
-  h += `<p class="sub2" style="margin-top:14px">※このビューアは <b>${['item-system','battle-system','map-system','party-system','quest-system','story-events'].join(' / ')}.js</b> ほかゲーム本体の実データを読み込んで表示しています（読み取り専用）。値を変えるには各データファイルを編集してください。</p>`;
+  let h = '<div class="cards">' + c(Object.keys(m.maps).length,'マップ') + c(Object.keys(m.enemies).length,'敵') + c(Object.keys(m.items).length,'アイテム') + c(Object.keys(m.equipment).length,'装備') + c(Object.keys(m.magic).length,'神威') + c(m.events.length,'イベント') + c(m.quests.length,'クエスト') + c(Object.keys(m.characters).length,'キャラ') + '</div>';
+  const total = m.assets.sprites.length + m.assets.enemies.length + m.assets.maps.length + m.assets.portraits.length + m.assets.battle.length + m.assets.ui.length;
+  h += `<div class="h-item ok"><h3>🎨 素材</h3><div class="d">スプライト${m.assets.sprites.length}・敵${m.assets.enemies.length}・マップ${m.assets.maps.length}・立ち絵${m.assets.portraits.length}・戦闘背景${m.assets.battle.length}・UI${m.assets.ui.length}（計${total}）→「素材」タブ</div></div>`;
+  h += `<div class="h-item"><h3>✏️ 編集 → Claude反映</h3><div class="d">キャラ/敵/アイテム/装備/神威/マップの数値を編集すると、右下の「変更」ボタンに件数が溜まります。書き出したテキストをClaudeに渡すとソース(.js)へ反映されます（ブラウザはソースを直接書けないため）。</div></div>`;
   return h;
 };
 
-VIEWS['マップ'] = (m) => {
-  const rows = Object.keys(m.maps).map(id => {
-    const map = m.maps[id]; const z = zoneOf(m, id);
-    return {
-      id, name: map.name || '', area: map.area || '',
-      zone: z ? `T${z.tier} Lv${(z.levelRange || []).join('-')} <span class="sub2">(${z.table})</span>` : '',
-      npcs: (map.npcs || []).length, npcNames: (map.npcs || []).map(n => n.name + (n.move ? `<span class="pill">${n.move.type}</span>` : (n.static ? '' : ''))).join('、'),
-      exits: (map.exits || []).map(e => `${e.to || '?'}<span class="sub2">${e.direction ? '/' + e.direction : '/<span class="pill warn">無方向</span>'}</span>`).join('　'),
-      save: map.savePoint ? '💤' : '', layer: map.objectLayer ? 'object' : 'rect'
-    };
-  });
-  return tbl(rows, [
-    { label: 'ID', key: 'id' }, { label: '名前', key: 'name' }, { label: 'エリア', key: 'area' },
-    { label: '難易度帯', key: 'zone', raw: true }, { label: 'NPC数', key: 'npcs', num: true },
-    { label: 'NPC', key: 'npcNames', raw: true }, { label: '出口', key: 'exits', raw: true },
-    { label: 'セーブ', key: 'save' }, { label: '層', key: 'layer' }
-  ]);
+VIEWS['素材'] = (m) => {
+  const gallery = (title, list) => {
+    if (!list.length) return '';
+    let h = `<h2>${esc(title)}（${list.length}）</h2><div class="gal">`;
+    list.forEach(a => {
+      h += `<div class="asset"><div class="imgwrap"><img loading="lazy" src="${esc(a.path)}" alt="" onerror="this.parentNode.parentNode.classList.add('missing');this.parentNode.textContent='欠落';"></div><div class="nm">${esc(a.label)}</div></div>`;
+    });
+    return h + '</div>';
+  };
+  return gallery('キャラ・NPCスプライト', m.assets.sprites) + gallery('敵', m.assets.enemies) +
+    gallery('立ち絵', m.assets.portraits) + gallery('マップ背景', m.assets.maps) +
+    gallery('戦闘背景', m.assets.battle) + gallery('UI', m.assets.ui) +
+    `<p class="sub2" style="margin-top:14px">※「欠落」は data が参照しているが画像ファイルが見つからないもの（webp版のみ存在 等）。差し替え/追加は assets/ 配下にファイルを置いてください。</p>`;
 };
 
-VIEWS['敵'] = (m) => {
-  const a = m.analysis;
-  const rows = entries(m.enemies).map(e => {
-    const tables = a.enemyToTables[e._id];
-    const isBoss = !tables;
-    return {
-      e, isBoss,
-      tag: isBoss ? '<span class="pill boss">ボス/召喚</span>' : (tables || []).map(t => `<span class="pill">${t}</span>`).join(''),
-      drops: (e.dropTable || []).map(d => `${d.id}<span class="sub2">(${Math.round(d.rate*100)}%)</span>`).join('、')
-    };
-  });
-  return tbl(rows, [
-    { label: '', get: r => r.e.emoji }, { label: 'ID', get: r => r.e._id }, { label: '名前', get: r => r.e.name },
-    { label: 'HP', num: true, get: r => r.e.hp }, { label: '攻', num: true, get: r => r.e.attack },
-    { label: '防', num: true, get: r => r.e.defense }, { label: 'EXP', num: true, get: r => r.e.exp },
-    { label: 'G', num: true, get: r => r.e.gold }, { label: '種別', get: r => r.e.type },
-    { label: 'スキル', get: r => compact(r.e.skills) }, { label: 'ドロップ', key: 'drops', raw: true },
-    { label: '出現', key: 'tag', raw: true }
-  ]);
+VIEWS['マップ'] = (m) => {
+  const ids = Object.keys(m.maps);
+  let h = `<div style="margin-bottom:12px">マップ: <select id="mapSel" onchange="window._selectMap(this.value)">` +
+    ids.map(id => `<option value="${esc(id)}">${esc(m.maps[id].name || id)}（${id}）</option>`).join('') + `</select>
+    <span class="sub2">　緑=可動域 赤=建物/障害 黄破線=出口 🚶=NPC（base座標を編集→変更リクエストへ）</span></div>
+    <div id="mapHost"></div>`;
+  return h;
 };
+
+VIEWS['敵'] = (m) => tbl(entries(m.enemies).map(e => ({ e, isBoss: !m.analysis.enemyToTables[e._id] })), [
+  { label:'', get:r=>m.spriteMap[r.e.name] ? `<img src="${esc(m.spriteMap[r.e.name])}" style="height:34px;image-rendering:pixelated" onerror="this.style.display='none'">` : r.e.emoji, raw:true },
+  { label:'ID', get:r=>r.e._id }, { label:'名前', get:r=>r.e.name },
+  { label:'HP', raw:true, get:r=>editCell('battle-system.js','敵',`enemy.${r.e._id}.hp`,`${r.e._id}.hp`,r.e.hp) },
+  { label:'攻', raw:true, get:r=>editCell('battle-system.js','敵',`enemy.${r.e._id}.attack`,`${r.e._id}.attack`,r.e.attack) },
+  { label:'防', raw:true, get:r=>editCell('battle-system.js','敵',`enemy.${r.e._id}.defense`,`${r.e._id}.defense`,r.e.defense) },
+  { label:'EXP', raw:true, get:r=>editCell('battle-system.js','敵',`enemy.${r.e._id}.exp`,`${r.e._id}.exp`,r.e.exp) },
+  { label:'G', raw:true, get:r=>editCell('battle-system.js','敵',`enemy.${r.e._id}.gold`,`${r.e._id}.gold`,r.e.gold) },
+  { label:'種別', get:r=>r.e.type }, { label:'ドロップ', get:r=>(r.e.dropTable||[]).map(d=>`${d.id}(${Math.round(d.rate*100)}%)`).join('、') },
+  { label:'出現', raw:true, get:r=>r.isBoss?'<span class="pill boss">ボス/召喚</span>':(m.analysis.enemyToTables[r.e._id]||[]).map(t=>`<span class="pill">${t}</span>`).join('') }
+]);
 
 VIEWS['アイテム'] = (m) => tbl(entries(m.items), [
-  { label: '', key: 'emoji' }, { label: 'ID', key: '_id' }, { label: '名前', key: 'name' },
-  { label: '種別', key: 'type' }, { label: '分類', key: 'category' },
-  { label: '効果', get: r => compact(r.effect) }, { label: '説明', key: 'description' },
-  { label: '価格', key: 'price', num: true }, { label: '売値', key: 'sellPrice', num: true }
+  { label:'', get:r=>r.emoji }, { label:'ID', get:r=>r._id }, { label:'名前', get:r=>r.name },
+  { label:'種別', get:r=>r.type }, { label:'分類', get:r=>r.category },
+  { label:'HP回復', raw:true, get:r=>r.effect&&r.effect.hp!=null?editCell('item-system.js','アイテム',`item.${r._id}.effect.hp`,`${r._id}.effect.hp`,r.effect.hp):'' },
+  { label:'MP回復', raw:true, get:r=>r.effect&&r.effect.mp!=null?editCell('item-system.js','アイテム',`item.${r._id}.effect.mp`,`${r._id}.effect.mp`,r.effect.mp):'' },
+  { label:'説明', get:r=>r.description },
+  { label:'価格', raw:true, get:r=>editCell('item-system.js','アイテム',`item.${r._id}.price`,`${r._id}.price`,r.price) },
+  { label:'売値', raw:true, get:r=>editCell('item-system.js','アイテム',`item.${r._id}.sellPrice`,`${r._id}.sellPrice`,r.sellPrice) }
 ]);
 
 VIEWS['装備'] = (m) => tbl(entries(m.equipment), [
-  { label: '', key: 'emoji' }, { label: 'ID', key: '_id' }, { label: '名前', key: 'name' },
-  { label: 'スロット', get: r => r.slot || r.type }, { label: '攻', key: 'attack', num: true },
-  { label: '防', key: 'defense', num: true }, { label: '魔', key: 'magic', num: true },
-  { label: '速', key: 'speed', num: true }, { label: '説明', key: 'description' }, { label: '価格', key: 'price', num: true }
+  { label:'', get:r=>r.emoji }, { label:'ID', get:r=>r._id }, { label:'名前', get:r=>r.name }, { label:'スロット', get:r=>r.slot||r.type },
+  { label:'攻', raw:true, get:r=>editCell('equipment-system.js','装備',`equip.${r._id}.attack`,`${r._id}.attack`,r.attack) },
+  { label:'防', raw:true, get:r=>editCell('equipment-system.js','装備',`equip.${r._id}.defense`,`${r._id}.defense`,r.defense) },
+  { label:'魔', raw:true, get:r=>editCell('equipment-system.js','装備',`equip.${r._id}.magic`,`${r._id}.magic`,r.magic) },
+  { label:'速', raw:true, get:r=>editCell('equipment-system.js','装備',`equip.${r._id}.speed`,`${r._id}.speed`,r.speed) },
+  { label:'説明', get:r=>r.description },
+  { label:'価格', raw:true, get:r=>editCell('equipment-system.js','装備',`equip.${r._id}.price`,`${r._id}.price`,r.price) }
 ]);
 
 VIEWS['神威'] = (m) => tbl(entries(m.magic), [
-  { label: '', key: 'emoji' }, { label: 'ID', key: '_id' }, { label: '名前', key: 'name' },
-  { label: '種別', key: 'type' }, { label: 'MP', key: 'mpCost', num: true }, { label: '威力', key: 'power', num: true },
-  { label: '効果', get: r => compact(r.effect) }, { label: '説明', key: 'description' }, { label: '価格', key: 'price', num: true }
+  { label:'', get:r=>r.emoji }, { label:'ID', get:r=>r._id }, { label:'名前', get:r=>r.name }, { label:'種別', get:r=>r.type },
+  { label:'MP', raw:true, get:r=>editCell('magic-system.js','神威',`magic.${r._id}.mpCost`,`${r._id}.mpCost`,r.mpCost) },
+  { label:'威力', raw:true, get:r=>editCell('magic-system.js','神威',`magic.${r._id}.power`,`${r._id}.power`,r.power) },
+  { label:'説明', get:r=>r.description },
+  { label:'価格', raw:true, get:r=>editCell('magic-system.js','神威',`magic.${r._id}.price`,`${r._id}.price`,r.price) }
 ]);
 
-VIEWS['キャラ'] = (m) => {
-  const rows = entries(m.characters).map(c => {
-    const g = m.growth[c._id] || {};
-    const learn = g.skillLearning ? Object.entries(g.skillLearning).map(([lv, sk]) => `Lv${lv}:${[].concat(sk).join(',')}`).join(' ') : '';
-    return { c, g, learn };
-  });
-  return tbl(rows, [
-    { label: '', get: r => r.c.sprite || '' }, { label: 'ID', get: r => r.c._id }, { label: '名前', get: r => r.c.name },
-    { label: 'Lv', num: true, get: r => r.c.level }, { label: 'HP', num: true, get: r => r.c.maxHp },
-    { label: 'MP', num: true, get: r => r.c.maxMp }, { label: '攻', num: true, get: r => r.c.attack },
-    { label: '防', num: true, get: r => r.c.defense }, { label: '魔', num: true, get: r => r.c.magic },
-    { label: '速', num: true, get: r => r.c.speed }, { label: '初期スキル', get: r => compact(r.c.skills) },
-    { label: '成長', get: r => r.g.expCurve || '' }, { label: '習得(Lv)', get: r => r.learn }
-  ]);
-};
+VIEWS['キャラ'] = (m) => tbl(entries(m.characters), [
+  { label:'', get:r=>r.sprite||'' }, { label:'ID', get:r=>r._id }, { label:'名前', get:r=>r.name },
+  { label:'Lv', raw:true, get:r=>editCell('party-system.js','キャラ',`char.${r._id}.level`,`${r._id}.level`,r.level) },
+  { label:'HP', raw:true, get:r=>editCell('party-system.js','キャラ',`char.${r._id}.maxHp`,`${r._id}.maxHp`,r.maxHp) },
+  { label:'MP', raw:true, get:r=>editCell('party-system.js','キャラ',`char.${r._id}.maxMp`,`${r._id}.maxMp`,r.maxMp) },
+  { label:'攻', raw:true, get:r=>editCell('party-system.js','キャラ',`char.${r._id}.attack`,`${r._id}.attack`,r.attack) },
+  { label:'防', raw:true, get:r=>editCell('party-system.js','キャラ',`char.${r._id}.defense`,`${r._id}.defense`,r.defense) },
+  { label:'魔', raw:true, get:r=>editCell('party-system.js','キャラ',`char.${r._id}.magic`,`${r._id}.magic`,r.magic) },
+  { label:'速', raw:true, get:r=>editCell('party-system.js','キャラ',`char.${r._id}.speed`,`${r._id}.speed`,r.speed) },
+  { label:'初期スキル', get:r=>compact(r.skills) }, { label:'成長', get:r=>(m.growth[r._id]||{}).expCurve||'' }
+]);
 
 VIEWS['ストーリー'] = (m) => {
-  let h = '<h2>クエスト（章の骨格・物語の進行）</h2>';
-  h += tbl(m.quests, [
-    { label: '章', get: r => r.chapterTitle || ('第' + r.chapter + '章') }, { label: 'ID', key: 'id' },
-    { label: 'タイトル', key: 'title' }, { label: '場所', key: 'where' }, { label: '対象マップ', key: 'target' },
-    { label: '完了フラグ', get: r => (r.done ? '関数で判定' : '') }
+  let h = '<h2>クエスト（章の骨格）</h2>' + tbl(m.quests, [
+    { label:'章', get:r=>r.chapterTitle||('第'+r.chapter+'章') }, { label:'ID', key:'id' }, { label:'タイトル', key:'title' }, { label:'場所', key:'where' }, { label:'対象マップ', key:'target' }
   ]);
-  h += '<h2>ストーリーイベント（会話・加入・分岐）</h2>';
-  const rows = m.events.map(([id, e]) => ({
-    id, trigger: e.trigger || '', oneTime: e.oneTime ? '✓' : '<span class="pill warn">無</span>',
-    flags: e.requiredFlags ? compact(e.requiredFlags) : '',
-    scenes: (e.scenes || []).length, speakers: [...new Set((e.scenes || []).map(s => s.character).filter(Boolean))].join('、')
-  }));
-  h += tbl(rows, [
-    { label: 'イベントID', key: 'id' }, { label: 'trigger', key: 'trigger' }, { label: '必要フラグ', key: 'flags' },
-    { label: 'oneTime', key: 'oneTime', raw: true }, { label: 'シーン数', key: 'scenes', num: true }, { label: '話者', key: 'speakers' }
+  h += '<h2>ストーリーイベント</h2>' + tbl(m.events.map(([id,e])=>({ id, trigger:e.trigger||'', oneTime:e.oneTime?'✓':'<span class="pill warn">無</span>', flags:e.requiredFlags?compact(e.requiredFlags):'', scenes:(e.scenes||[]).length, speakers:[...new Set((e.scenes||[]).map(s=>s.character).filter(Boolean))].join('、') })), [
+    { label:'イベントID', key:'id' }, { label:'trigger', key:'trigger' }, { label:'必要フラグ', key:'flags' }, { label:'oneTime', key:'oneTime', raw:true }, { label:'シーン', key:'scenes', num:true }, { label:'話者', key:'speakers' }
   ]);
   return h;
 };
 
 VIEWS['セーブ'] = (m) => {
-  if (!m.save) return '<div class="err-box">SaveSystem を読み込めませんでした</div>';
+  if (!m.save) return '<div class="err-box">SaveSystem 未読込</div>';
   let ls; try { ls = window.localStorage; } catch (e) { ls = null; }
-  if (!ls) return '<div class="err-box">localStorage にアクセスできません（file:// で開くとオリジンが別になります。GitHub Pages の /game-inspector.html で開くとゲームと同じセーブが見えます）</div>';
-  const slots = m.save.listSlots(ls);
-  const rows = slots.map((s, i) => ({
-    slot: i + 1,
-    state: s ? '✅ あり' : '<span class="muted">空</span>',
-    loc: s ? s.meta.location : '', lv: s ? s.meta.level : '', party: s ? s.meta.partyCount + '人' : '',
-    chapter: s ? s.meta.chapter : '', ts: s ? s.meta.timestamp : ''
-  }));
-  const legacy = ls.getItem(m.save.LEGACY_KEY) ? 'あり（旧単一セーブ）' : 'なし';
-  return tbl(rows, [
-    { label: 'スロット', key: 'slot', num: true }, { label: '状態', key: 'state', raw: true },
-    { label: '場所', key: 'loc' }, { label: 'Lv', key: 'lv', num: true }, { label: 'パーティ', key: 'party' },
-    { label: '章', key: 'chapter' }, { label: '保存日時', key: 'ts' }
-  ]) + `<p class="sub2" style="margin-top:10px">旧単一セーブ(${esc(m.save.LEGACY_KEY)})：${legacy}　／　このページとゲームが同一オリジンのときのみセーブが見えます。</p>`;
+  if (!ls) return '<div class="err-box">localStorage にアクセスできません（GitHub Pages の /game-inspector.html で開くとゲームと同じセーブが見えます）</div>';
+  const rows = m.save.listSlots(ls).map((s, i) => ({ slot:i+1, state:s?'✅ あり':'<span class="muted">空</span>', loc:s?s.meta.location:'', lv:s?s.meta.level:'', party:s?s.meta.partyCount+'人':'', chapter:s?s.meta.chapter:'', ts:s?s.meta.timestamp:'' }));
+  return tbl(rows, [ { label:'スロット', key:'slot', num:true }, { label:'状態', key:'state', raw:true }, { label:'場所', key:'loc' }, { label:'Lv', key:'lv', num:true }, { label:'パーティ', key:'party' }, { label:'章', key:'chapter' }, { label:'保存日時', key:'ts' } ]);
 };
 
-VIEWS['健全性チェック'] = (m) => {
-  const a = m.analysis;
-  const block = (cls, title, detail) => `<div class="h-item ${cls}"><h3>${title}</h3><div class="d">${detail}</div></div>`;
-  let h = '<div class="health">';
-  h += block(a.broken.length ? 'err' : 'ok', `${a.broken.length ? '❌' : '✅'} エンカウント→敵DB 参照`, a.broken.length ? '欠落参照: ' + a.broken.map(esc).join(' / ') : 'すべての参照が敵DBに存在します');
-  h += block(a.orphanEnemies.length ? '' : 'ok', `${a.orphanEnemies.length ? '⚠️' : '✅'} ランダム出現しない敵`, a.orphanEnemies.length ? '（多くはボス/召喚で正常）: ' + a.orphanEnemies.map(esc).join('、') : 'なし');
-  h += block(a.mapsNoNpc.length ? '' : 'ok', `${a.mapsNoNpc.length ? '⚠️' : '✅'} NPCのいないマップ`, a.mapsNoNpc.length ? a.mapsNoNpc.map(esc).join('、') : 'なし');
-  h += block(a.mapsNoExit.length ? '' : 'ok', `${a.mapsNoExit.length ? '⚠️' : '✅'} 出口のないマップ`, a.mapsNoExit.length ? a.mapsNoExit.map(esc).join('、') + '（屋内/最深部なら正常）' : 'なし');
-  h += block(a.exitsNoDir.length ? '' : 'ok', `${a.exitsNoDir.length ? '⚠️' : '✅'} 方向未設定の出口`, a.exitsNoDir.length ? a.exitsNoDir.slice(0, 20).map(esc).join('、') : 'なし');
-  h += block(a.eventsNoOneTime.length ? '' : 'ok', `${a.eventsNoOneTime.length ? '⚠️' : '✅'} oneTime未設定イベント`, a.eventsNoOneTime.length ? a.eventsNoOneTime.map(esc).join('、') + '（再発火の恐れ）' : 'なし');
-  h += block(a.eventsShort.length ? '' : 'ok', `ℹ️ シーン1つ以下のイベント`, a.eventsShort.length ? a.eventsShort.map(esc).join('、') + '（短い演出 or 仮置きの可能性）' : 'なし');
-  h += '</div>';
-  return h;
+VIEWS['健全性'] = (m) => {
+  const a = m.analysis; const b = (cls,t,d) => `<div class="h-item ${cls}"><h3>${t}</h3><div class="d">${d}</div></div>`;
+  return b(a.broken.length?'err':'ok', `${a.broken.length?'❌':'✅'} エンカウント→敵DB参照`, a.broken.length?'欠落: '+a.broken.map(esc).join(' / '):'整合OK') +
+    b(a.orphanEnemies.length?'':'ok', `${a.orphanEnemies.length?'⚠️':'✅'} ランダム非出現の敵`, a.orphanEnemies.length?'(多くはボス/召喚): '+a.orphanEnemies.map(esc).join('、'):'なし') +
+    b(a.mapsNoNpc.length?'':'ok', `${a.mapsNoNpc.length?'⚠️':'✅'} NPC無しマップ`, a.mapsNoNpc.length?a.mapsNoNpc.map(esc).join('、'):'なし') +
+    b(a.mapsNoExit.length?'':'ok', `${a.mapsNoExit.length?'⚠️':'✅'} 出口無しマップ`, a.mapsNoExit.length?a.mapsNoExit.map(esc).join('、')+'（屋内/最深部なら正常）':'なし') +
+    b(a.exitsNoDir.length?'':'ok', `${a.exitsNoDir.length?'⚠️':'✅'} 無方向の出口`, a.exitsNoDir.length?a.exitsNoDir.slice(0,20).map(esc).join('、'):'なし') +
+    b(a.eventsNoOneTime.length?'':'ok', `${a.eventsNoOneTime.length?'⚠️':'✅'} oneTime未設定`, a.eventsNoOneTime.length?a.eventsNoOneTime.map(esc).join('、'):'なし') +
+    b('', 'ℹ️ シーン1以下のイベント', a.eventsShort.length?a.eventsShort.map(esc).join('、')+'（仮置きの可能性）':'なし');
 };
 
-// ---- 起動 ----
+VIEWS['変更リクエスト'] = () => {
+  return `<p>編集した値の一覧です。<b>このテキストをコピーして Claude に渡す</b>と、ソース(.js)へ反映されます。</p>
+    <div style="margin-bottom:8px"><button class="btn" onclick="window._copyReq()">📋 コピー</button>
+    <button class="btn" onclick="window._refreshReq()">↻ 更新</button></div>
+    <textarea class="req" id="reqText" readonly>${esc(changeText())}</textarea>`;
+};
+
+// ===== マップ・プレビュー（背景＋オーバーレイ＋NPC/出口の座標編集） =====
+let CUR_MODEL = null;
+window._selectMap = function (id) {
+  const m = CUR_MODEL; const host = document.getElementById('mapHost'); if (!m || !host) return;
+  const map = m.maps[id]; const scale = map.worldScale || 1.55;
+  const ww = map.worldWidth || 1240, wh = map.worldHeight || 698;
+  const PW = Math.min(820, ww); const k = PW / ww; // プレビュー縮尺
+  const px = (v) => Math.round(v * k);
+  let stage = `<div class="map-stage" style="width:${px(ww)}px;height:${px(wh)}px">`;
+  if (map.image) stage += `<img class="bg" src="${esc(map.image)}" style="width:${px(ww)}px;height:${px(wh)}px" onerror="this.style.opacity=.15">`;
+  (map.walkableRects || []).forEach(r => { stage += `<div class="ov walk" style="left:${px(r.x)}px;top:${px(r.y)}px;width:${px(r.width)}px;height:${px(r.height)}px"></div>`; });
+  (map.buildings || []).forEach(r => { stage += `<div class="ov build" style="left:${px(r.x)}px;top:${px(r.y)}px;width:${px(r.width)}px;height:${px(r.height)}px"></div>`; });
+  (map.exits || []).forEach(r => { stage += `<div class="ov exit" style="left:${px(r.x)}px;top:${px(r.y)}px;width:${px(r.width||20)}px;height:${px(r.height||20)}px"></div>`; });
+  (map.npcs || []).forEach((n, i) => { stage += `<div class="marker" id="mk-${i}" style="left:${px(n.x)}px;top:${px(n.y)}px">${n.hostile ? '👾' : '🚶'}<span class="tag">${esc(n.name || '')}</span></div>`; });
+  stage += '</div>';
+  // サイド: NPCのbase座標編集
+  let side = `<div class="map-side"><h3>NPC（base座標を編集）</h3>`;
+  (map.npcs || []).forEach((n, i) => {
+    const bx = Math.round(n.x / scale), by = Math.round(n.y / scale);
+    side += `<div class="npc-row"><span class="nm">${n.hostile ? '👾' : '🚶'} ${esc(n.name || '(無名)')}</span>
+      x ${editCell('map-system.js','マップNPC',`map.${id}.npc.${esc(n.name||i)}.x`,`${id} / ${n.name||i}.x(base)`,bx)}
+      y ${editCell('map-system.js','マップNPC',`map.${id}.npc.${esc(n.name||i)}.y`,`${id} / ${n.name||i}.y(base)`,by)}</div>`;
+  });
+  side += `<h3>出口</h3>`;
+  (map.exits || []).forEach(e => { side += `<div class="npc-row"><span class="nm">→ ${esc(e.to || '?')}</span><span class="sub2">${esc(e.direction || '無方向')}</span></div>`; });
+  side += `<p class="sub2" style="margin-top:8px">座標を変えると右下「変更」に入ります。壁/障害の編集は専用エディタ（map-walkability-editor-v2.html / map-object-editor.html）。</p></div>`;
+  host.innerHTML = `<div class="map-wrap">${stage}${side}</div>`;
+};
+
+// ===== 起動 =====
+window._openChanges = function () { const t = [...document.querySelectorAll('.tab')].find(x => x.textContent === '変更リクエスト'); if (t) t.click(); };
+window._copyReq = function () { const t = document.getElementById('reqText'); if (t) { t.select(); try { document.execCommand('copy'); } catch (e) {} navigator.clipboard && navigator.clipboard.writeText(t.value).catch(() => {}); } };
+window._refreshReq = function () { const t = document.getElementById('reqText'); if (t) t.value = changeText(); };
+
 function boot() {
-  const m = buildModel();
-  window._model = m; // デバッグ用
+  const m = buildModel(); CUR_MODEL = m; window._model = m;
   const tabsEl = document.getElementById('tabs'), mainEl = document.getElementById('main');
-  if (m.errors.length) {
-    mainEl.insertAdjacentHTML('afterbegin', `<div class="err-box">一部システムを初期化できませんでした: ${esc(m.errors.join(', '))}（その項目は空表示になります）</div>`);
-  }
+  if (m.errors.length) mainEl.insertAdjacentHTML('afterbegin', `<div class="err-box">初期化失敗: ${esc(m.errors.join(', '))}（該当項目は空表示）</div>`);
   const names = Object.keys(VIEWS);
   names.forEach((name, i) => {
-    const b = document.createElement('button'); b.className = 'tab' + (i === 0 ? ' active' : ''); b.textContent = name;
-    b.onclick = () => {
+    const btn = document.createElement('button'); btn.className = 'tab' + (i === 0 ? ' active' : ''); btn.textContent = name;
+    btn.onclick = () => {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-      b.classList.add('active'); document.getElementById('view-' + i).classList.add('active');
+      btn.classList.add('active'); document.getElementById('view-' + i).classList.add('active');
+      if (name === '変更リクエスト') window._refreshReq();
+      if (name === 'マップ') { const sel = document.getElementById('mapSel'); if (sel && !document.querySelector('#mapHost .map-wrap')) window._selectMap(sel.value); }
     };
-    tabsEl.appendChild(b);
+    tabsEl.appendChild(btn);
     const v = document.createElement('div'); v.className = 'view' + (i === 0 ? ' active' : ''); v.id = 'view-' + i;
     try { v.innerHTML = VIEWS[name](m); } catch (e) { v.innerHTML = `<div class="err-box">表示エラー: ${esc(e.message)}</div>`; console.error(e); }
     mainEl.appendChild(v);
   });
+  // 編集の変更追跡（委譲）
+  mainEl.addEventListener('input', (e) => {
+    const t = e.target; if (!t.classList || !t.classList.contains('edit')) return;
+    t.classList.toggle('dirty', String(t.value) !== String(t.dataset.orig));
+    setChange(t.dataset.path, { label: t.dataset.label, orig: t.dataset.orig, val: t.value, file: t.dataset.file });
+  });
+  refreshFab();
 }
 window.addEventListener('DOMContentLoaded', boot);
 </script>
