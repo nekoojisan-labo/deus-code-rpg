@@ -5789,9 +5789,42 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
                 title: 'ステータス', items, selectedIndex: 0,
                 detailFor: (it) => menuStatusHtml(ms[it ? it.value : 0]),
-                onSelect: () => {},
+                onSelect: (v) => openCharSkills(v),   // ★決定でそのキャラの習得スキル一覧へ
                 onCancel: () => openMenu(),
-                hint: '↑↓ 選択 / X もどる'
+                hint: '↑↓ 選択 / Z スキル一覧 / X もどる'
+            });
+        }
+        // ★ステータス→キャラ決定→習得スキル一覧（左）＋スキル説明（右）。閲覧専用。
+        function skillTypeLabel(sk) {
+            const t = { healing: '回復', recovery: '回復', revive: '蘇生', offensive: '攻撃', support: '補助' }[sk.type] || '';
+            const tg = { single: '単体', all: '敵全体', allyAll: '味方全体', ally: '味方単体', self: '自分' }[sk.target] || '';
+            const el = { fire: '火', ice: '氷', thunder: '雷', dark: '闇', light: '光', none: '無' }[sk.element];
+            return [t, tg, el ? `${el}属性` : ''].filter(Boolean).join(' ・ ');
+        }
+        function charSkillDetailHtml(sk) {
+            if (!sk) return '<div class="ui-panel__dmuted" style="padding:8px;">スキルを選ぶと説明が出ます。</div>';
+            const pw = (sk.basePower != null && sk.basePower > 0) ? `<div class="ui-panel__dmuted">威力係数 ${sk.basePower}（${sk.scalingStat === 'attack' ? '力' : '魔力'}依存）</div>` : '';
+            return `<div class="ui-panel__dlead" style="align-items:center;">
+                  <div style="font-size:34px;width:50px;text-align:center;">${sk.emoji || '✨'}</div>
+                  <div><div class="ui-panel__dname">${UIPanel.esc(sk.name)}</div>
+                  <div class="ui-panel__dmuted">${skillTypeLabel(sk)}</div>
+                  <div style="font-size:13px;color:var(--accent);margin-top:2px;">消費 MP ${sk.mpCost || 0}</div>${pw}</div></div>
+                <div class="ui-panel__dmuted" style="padding:8px 2px;line-height:1.8;">${UIPanel.esc(sk.description || '')}</div>`;
+        }
+        function openCharSkills(memberIdx) {
+            const m = ((typeof getMenuMembers === 'function') ? getMenuMembers() : [player])[memberIdx];
+            const learned = (window.magicSystem && magicSystem.getLearnedMagic) ? (magicSystem.getLearnedMagic(m) || {}) : {};
+            const skills = Object.values(learned);
+            const items = skills.length
+                ? skills.map((sk, i) => ({ icon: sk.emoji || '✨', label: sk.name, right: `MP${sk.mpCost || 0}`, value: i }))
+                : [{ label: '習得しているスキルがありません', disabled: true }];
+            UIPanel.open({
+                host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
+                title: `📖 ${m.name || 'カイト'} のスキル`, items, selectedIndex: 0, columns: 1, pageSize: 9,
+                detailFor: (it) => charSkillDetailHtml(skills[it && it.value != null ? it.value : 0]),
+                onSelect: () => {},   // 閲覧のみ
+                onCancel: () => openStatusScreen(),
+                hint: '↑↓ スキル / X もどる'
             });
         }
 
