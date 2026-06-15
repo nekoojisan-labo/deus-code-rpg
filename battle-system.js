@@ -2055,58 +2055,127 @@ class BattleSystem {
         }, 2000);
     }
     
-    // ===== バトルメッセージ部品（全メッセージがここを通る。1行ずつ順次表示） =====
-    // addBattleLog: ログに積むだけ。表示は単一ポンプ _pumpBattleMsg が1行ずつ送る。
-    // → どこから addBattleLog しても自動で「1つずつ」になる（経路ごとの個別対応が不要）。
-    addBattleLog(message) {
-        this.battleLog.push(message);
-
-        // 旧バトルメッセージ枠（DOM互換）
+    // ===== バトルメッセージ部品（行動ごと「ビート」表示・自動送り＋明確な区切り） =====
+    // 1行動 = 1ビート{行動行→ダメージ行→任意の結果行}。ビートを1まとまりで出し切り、
+    // 完了後にパネルをクリア＋間を置いてから次ビート → 可視窓に2行動を混在させない。
+    // presentBeat が唯一の入口。addBattleLog は1行ビートのshim（既存全サイトは無改修でも安全）。
+    // 全ビート枯渇後/各境界で afterBattleMessages の進行(次行動/勝利/敗北)をテキストに同期発火。
+    presentBeat(lines) {
+        const arr = Array.isArray(lines) ? lines.filter(l => l != null).map(String) : [String(lines)];
+        if (arr.length === 0) return;
+        this._beatQueue = this._beatQueue || [];
+        this._beatQueue.push(Object.freeze({ lines: Object.freeze(arr.slice()) }));
+        // 旧バトルメッセージ枠(DOM互換)＋battleLogにも積む
+        arr.forEach(m => this.battleLog.push(m));
         const battleMessage = document.getElementById('battleMessage');
         if (battleMessage) {
             battleMessage.textContent = this.battleLog.slice(-4).join('\n');
             battleMessage.scrollTop = battleMessage.scrollHeight;
         }
-        // バトル中はキューを1行ずつ送る（pumpが止まっていれば再開）
-        if (this.inBattle && !this._msgPumping) this._pumpBattleMsg();
+        // idle かつ非ドレイン中なら送り開始（ドレインcb内での追加はpost-checkが継続）
+        const idle = (this._beatPhase === 'idle' || this._beatPhase == null);
+        if (this.inBattle && idle && !this._inDrain) this._pumpBattleMsg();
     }
 
-    // 単一ポンプ: battleLog を1行ずつ表示。溜まり過ぎたら少し速めに送り遅延を抑える。
+    // 後方互換shim: 単発 = 1行ビート（どこから呼ばれても自己完結ビート＝混ざらない）
+    addBattleLog(message) { this.presentBeat([message]); }
+
+    // 3相ビートマシン（タイマーは常に1本）: revealing(1行ずつ)→pausing(読ませる間)→clear→次ビート/idle
     _pumpBattleMsg() {
-        if (this._shownCount == null) this._shownCount = 0;
-        if (this._shownCount >= this.battleLog.length) {
-            this._msgPumping = false;
-            if (this._msgTimer) { clearTimeout(this._msgTimer); this._msgTimer = null; }
-            const cbs = this._msgDrainCbs || []; this._msgDrainCbs = [];
-            cbs.forEach(cb => { try { cb(); } catch (e) {} });
+        const PER_LINE_MS = 520, INTER_BEAT_PAUSE_MS = 360, CLEAR_GAP_MS = 140;
+        this._beatQueue = this._beatQueue || [];
+        if (this._beatIndex == null) this._beatIndex = -1;
+
+        // idle: 次ビートがあれば開始、無ければドレイン(進行発火)
+        if (this._beatPhase === 'idle' || this._beatPhase == null) {
+            if (this._beatIndex + 1 >= this._beatQueue.length) { this._runDrainCbs(); return; }
+            this._beatIndex++;
+            this._beatShown = 0;
+            this._beatPhase = 'revealing';
+        }
+
+        const beat = this._beatQueue[this._beatIndex];
+        if (!beat) { this._beatPhase = 'idle'; this._runDrainCbs(); return; }
+
+        if (this._beatPhase === 'revealing') {
+            this._beatShown++;
+            this._renderBeat(beat, this._beatShown);
+            if (this._beatShown >= beat.lines.length) {
+                this._beatPhase = 'pausing';                 // 全行表示→読ませる間
+                this._scheduleMsgTick(INTER_BEAT_PAUSE_MS);
+            } else {
+                this._scheduleMsgTick(PER_LINE_MS);          // 次の行
+            }
             return;
         }
-        this._msgPumping = true;
-        this._shownCount++;
-        const body = document.getElementById('gameMessageBody');
-        const isCommandMode = body && body.classList.contains('battle-cmd-mode');
-        if (!isCommandMode) {
-            BattlePanel.renderLog(this.battleLog.slice(0, this._shownCount));
-        } else {
-            this._flashCommandHeaderMessage(this.battleLog[this._shownCount - 1]);
+
+        if (this._beatPhase === 'pausing') {
+            this._clearBeatPanel();                          // クリア＝次ビートと混ざらない不変条件
+            this._beatPhase = 'idle';
+            if (this._beatIndex + 1 < this._beatQueue.length) {
+                this._scheduleMsgTick(CLEAR_GAP_MS);         // 区切りの空白→次ビート
+            } else {
+                if (this._msgTimer) { clearTimeout(this._msgTimer); this._msgTimer = null; }
+                this._runDrainCbs();                          // キュー枯渇→進行発火
+            }
+            return;
         }
-        const pending = this.battleLog.length - this._shownCount;
-        this._msgTimer = setTimeout(() => this._pumpBattleMsg(), pending > 2 ? 480 : 950);
     }
 
-    // 表示中メッセージが全部出てから cb を実行（行動間の進行をテキストに同期）
+    _scheduleMsgTick(ms) {
+        if (this._msgTimer) clearTimeout(this._msgTimer);
+        this._msgTimer = setTimeout(() => this._pumpBattleMsg(), ms);
+    }
+
+    // 現ビートの先頭shownCount行をパネルへ（cmd入力中はヘッダにフラッシュ）
+    _renderBeat(beat, shownCount) {
+        const body = document.getElementById('gameMessageBody');
+        const isCommandMode = body && body.classList.contains('battle-cmd-mode');
+        if (!isCommandMode) BattlePanel.renderLog(beat.lines.slice(0, shownCount));
+        else this._flashCommandHeaderMessage(beat.lines[shownCount - 1]);
+    }
+
+    // ビート間のクリア（log modeのみ。cmd中はフラッシュが自然消灯するので触らない）
+    _clearBeatPanel() {
+        const body = document.getElementById('gameMessageBody');
+        const isCommandMode = body && body.classList.contains('battle-cmd-mode');
+        if (!isCommandMode) BattlePanel.renderLog([]);
+    }
+
+    // ドレインcb実行。cbがpresentBeatすれば新ビートを継続。再入(cb内afterBattleMessages)も消化。
+    _runDrainCbs() {
+        this._beatPhase = 'idle';
+        this._inDrain = true;
+        // 新ビートが積まれない限り、溜まったcbを順に消化（cb内の追加cbも拾う）
+        while ((this._msgDrainCbs && this._msgDrainCbs.length) &&
+               (this._beatIndex + 1 >= this._beatQueue.length)) {
+            const cbs = this._msgDrainCbs; this._msgDrainCbs = [];
+            cbs.forEach(cb => { try { cb(); } catch (e) {} });
+        }
+        this._inDrain = false;
+        if (this._beatIndex + 1 < this._beatQueue.length) this._scheduleMsgTick(0);
+    }
+
+    // 表示中ビートが全部出て区切りも終わってから cb 実行（行動間の進行をテキストに同期）
     afterBattleMessages(cb) {
         if (!cb) return;
-        if (!this._msgPumping && (this._shownCount || 0) >= this.battleLog.length) { cb(); return; }
+        const idx = (this._beatIndex == null ? -1 : this._beatIndex);
+        const qlen = this._beatQueue ? this._beatQueue.length : 0;
+        const drained = (this._beatPhase === 'idle' || this._beatPhase == null) && (idx + 1 >= qlen);
+        if (drained && !this._inDrain) { cb(); return; }
         (this._msgDrainCbs = this._msgDrainCbs || []).push(cb);
     }
 
-    // バトル開始/終了でメッセージ部品をリセット
+    // バトル開始/終了/teardownでビート部品を完全リセット（保留ビート・タイマを残さない）
     _resetBattleMessages() {
-        this._shownCount = 0;
-        this._msgPumping = false;
+        this._beatQueue = [];
+        this._beatIndex = -1;
+        this._beatShown = 0;
+        this._beatPhase = 'idle';
+        this._inDrain = false;
         this._msgDrainCbs = [];
         if (this._msgTimer) { clearTimeout(this._msgTimer); this._msgTimer = null; }
+        if (this._flashTimer) { clearTimeout(this._flashTimer); this._flashTimer = null; }
     }
 
     // コマンド入力中に小さく警告ログを表示する

@@ -1,17 +1,19 @@
-// battle-msg-oracle.js — バトルメッセージ部品(単一ポンプ)を実コードで検証する計器。
-// DOMとsetTimeoutをスタブし、実際の addBattleLog→_pumpBattleMsg→afterBattleMessages を走らせて
-// 「複数メッセージを同期addしても一気出しせず1行ずつ出るか」「全部出てから進行が同期されるか」を観測する。
+// battle-msg-oracle.js — 戦闘「行動ごとビート」メッセージ部品を実コードで検証する計器。
+// DOMとsetTimeoutをスタブし、実際の presentBeat→_pumpBattleMsg→afterBattleMessages を走らせ、
+// 「2行動が可視窓に混在しない(ビート間でクリア)」「結果行が最後」「進行はビート+区切り完了後に発火」
+// 「枯渇時は即発火」「resetでビート/タイマが残らない」を観測する。
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.resolve(__dirname, '..');
 const read = (f) => fs.readFileSync(path.join(root, f), 'utf8');
 const noop = () => {};
 
-// --- 制御可能なクロック（setTimeout を手動 tick） ---
-const timers = [];
-const fakeSetTimeout = (fn, delay) => { timers.push({ fn, delay }); return timers.length; };
+// --- 制御可能なクロック（id付き。clearTimeoutで配列から除去・tickで先頭を実行） ---
+let timers = [], nextId = 1;
+const fakeSetTimeout = (fn) => { const id = nextId++; timers.push({ id, fn }); return id; };
+const fakeClearTimeout = (id) => { timers = timers.filter(t => t.id !== id); };
 const tick = () => { const t = timers.shift(); if (t) t.fn(); return !!t; };
 
-// --- DOMスタブ: id ごとに偏fake要素を返す。innerHTML を読んで「今表示中の行」を観測する ---
+// --- DOMスタブ: gameMessageBody.innerHTML を読んで「今表示中の行」を観測する ---
 const els = {};
 function fakeEl() {
   const cl = new Set();
@@ -24,53 +26,87 @@ function fakeEl() {
   };
 }
 const document = { getElementById: (id) => (els[id] = els[id] || fakeEl()), querySelector: () => null, createElement: () => fakeEl(), addEventListener: noop };
-const sb = { console, window: {}, document, setTimeout: fakeSetTimeout, clearTimeout: noop,
+const sb = { console, window: {}, document, setTimeout: fakeSetTimeout, clearTimeout: fakeClearTimeout,
   Math, JSON, Object, Array, Number, String, Boolean, Map, Set, Date: { now: () => 0 } };
 sb.window.location = { search: '' }; sb.globalThis = sb; vm.createContext(sb);
 vm.runInContext(read('ui-panel.js'), sb, { filename: 'ui-panel.js' }); // BattlePanelはUIPanelへforwardするので先にロード
 vm.runInContext(read('battle-system.js'), sb, { filename: 'battle-system.js' });
 
 const battle = new sb.window.BattleSystem();
-// 表示中の行を読む（gameMessageBody.innerHTML の <br> 区切り）
-const shownLines = () => { const h = els['gameMessageBody'] && els['gameMessageBody'].innerHTML || ''; return h ? h.split('<br>') : []; };
+const shownLines = () => { const h = (els['gameMessageBody'] && els['gameMessageBody'].innerHTML) || ''; return h ? h.split('<br>') : []; };
+const isPrefixOf = (shown, full) => shown.length <= full.length && shown.every((l, i) => full[i] === l);
+const reset = () => { battle.inBattle = true; battle.battleLog = []; battle._resetBattleMessages(); };
 
-console.log('\n=== バトルメッセージ部品 計器 ===\n');
+console.log('\n=== 戦闘ビートメッセージ部品 計器 ===\n');
 let pass = true;
-const chk = (label, cond, extra) => { console.log(`${cond ? '✅' : '❌'} ${label}${extra ? '  ('+extra+')' : ''}`); pass = pass && cond; };
+const chk = (label, cond, extra) => { console.log(`${cond ? '✅' : '❌'} ${label}${extra ? '  (' + extra + ')' : ''}`); pass = pass && cond; };
 
-// 戦闘開始相当をセット
-battle.inBattle = true;
-battle.battleLog = [];
+// ---------- (a) NO-MIX: 2行動が同一フレームに混ざらず、間でクリアされる ----------
+reset();
+const A = ['カイトの こうげき！', 'ケルベロスに 12 の ダメージ！'];
+const B = ['ケルベロスの こうげき！', 'カイトに 11 の ダメージ！'];
+battle.presentBeat(A);
+battle.presentBeat(B);
+let mixed = false, sawEmpty = false, sawAonly = false, sawBonly = false;
+const obs = [];
+const rec = () => {
+  const s = shownLines();
+  obs.push('[' + s.join('|') + ']');
+  if (s.length === 0) { sawEmpty = true; return; }
+  const pa = isPrefixOf(s, A), pb = isPrefixOf(s, B);
+  if (!pa && !pb) mixed = true;
+  if (pa && !pb) sawAonly = true;
+  if (pb && !pa) sawBonly = true;
+};
+rec(); // 同期キック直後: Aの1行目
+for (let i = 0; i < 24 && timers.length; i++) { tick(); rec(); }
+chk('NO-MIX: AとBの行が同一フレームに混在しない', !mixed, obs.join('→'));
+chk('NO-MIX: ビート間でパネルが空(クリア)になる', sawEmpty);
+chk('NO-MIX: 「Aのみ」と「Bのみ」を別々に観測（順次表示）', sawAonly && sawBonly);
+
+// ---------- (b) RESULT-LAST: 結果行はビートの最後の行 ----------
+reset();
+const R = ['カイトの こうげき！', '30 の ダメージ！', 'ケルベロスを たおした！'];
+battle.presentBeat(R);
+let resultEarly = false, maxLen = 0, finalLines = [];
+const recR = () => { const s = shownLines(); if (s.length > maxLen) { maxLen = s.length; finalLines = s; }
+  if (s.indexOf('ケルベロスを たおした！') >= 0 && s.length < 3) resultEarly = true; };
+recR();
+for (let i = 0; i < 12 && timers.length; i++) { tick(); recR(); }
+chk('RESULT-LAST: 全3行が1ビートで表示される', maxLen === 3, `maxLen=${maxLen}`);
+chk('RESULT-LAST: 結果行は最後の行のみ（途中で先に出ない）', !resultEarly && finalLines[2] === 'ケルベロスを たおした！');
+
+// ---------- (c) GATE-AFTER-PAUSE: 進行はビート全表示＋区切り完了後にのみ発火 ----------
+reset();
+let flow = false;
+battle.presentBeat(['カイトの こうげき！', '12 の ダメージ！']);
+battle.afterBattleMessages(() => { flow = true; });
+chk('GATE: ビート途中(1行目表示時点)では進行しない', flow === false);
+let firedAtEnd = false, prevTimers;
+for (let i = 0; i < 12; i++) {
+  const had = timers.length;
+  if (!had) break;
+  tick();
+  if (flow && shownLines().length === 0) firedAtEnd = true; // クリア後に発火
+}
+chk('GATE: 進行は最終的に発火する', flow === true);
+chk('GATE: 進行はビート+区切り完了後（クリア後）に発火', firedAtEnd);
+
+// ---------- (d) DRAINED-IMMEDIATE: 空＆idleでは afterBattleMessages 即発火 ----------
+reset();
+let imm = false;
+battle.afterBattleMessages(() => { imm = true; });
+chk('DRAINED: 空キュー&idleでは即発火', imm === true);
+
+// ---------- (e) RESET: ビート途中のresetでキュー/タイマが残らず、次は1行目から ----------
+reset();
+battle.presentBeat(['a', 'b', 'c']); // 1行目'a'表示・revealing中(タイマ保留)
+const hadTimerBefore = timers.length > 0;
 battle._resetBattleMessages();
+chk('RESET: _beatQueueが空・phaseがidle', battle._beatQueue.length === 0 && battle._beatPhase === 'idle');
+chk('RESET: 保留タイマが除去され、tick対象が無い', hadTimerBefore && timers.length === 0, `timers=${timers.length}`);
+battle.presentBeat(['x']);
+chk('RESET後: 次ビートは1行目から開始', shownLines().length === 1 && shownLines()[0] === 'x');
 
-// ★状態異常＋敵攻撃の "バースト" を同期で add（実ゲームで一気出しになっていた経路の再現）
-battle.addBattleLog('カイトは どくの ダメージを うけた！');
-battle.addBattleLog('カイトに 10の ダメージ！');
-battle.addBattleLog('カイトは しびれて うごけない！');
-battle.addBattleLog('ケルベロスの こうげき！');
-battle.addBattleLog('カイトに 11の ダメージ！');
-
-// 同期add直後: 表示は1行だけであるべき（=一気出ししない）
-chk('同期で5行addしても、表示は1行だけ（一気出ししない）', shownLines().length === 1, `shown=${shownLines().length}行`);
-
-// 進行同期: 全部出るまで afterBattleMessages の cb は発火しない
-let drainedAt = -1, step = 0;
-battle.afterBattleMessages(() => { drainedAt = step; });
-chk('afterBattleMessages: まだ全部出ていないので進行しない', drainedAt === -1);
-
-// クロックを進めて1行ずつ出ることを確認
-const seen = [shownLines().length];
-for (let i = 0; i < 10 && timers.length; i++) { step++; tick(); seen.push(shownLines().length); }
-// 表示行数が 1→2→3→4→5 と1つずつ増える（最大は直近6行窓だが今回5行なので全部）
-const grewOneByOne = seen.slice(0, 5).every((n, i) => n === i + 1);
-chk('クロックを進めると表示が1行ずつ増える', grewOneByOne, `推移=${seen.join('→')}`);
-chk('5行すべて出た時点で表示=5行', shownLines().length === 5);
-chk('全部出てから afterBattleMessages の進行が発火（同期OK）', drainedAt >= 0, `drainedAt=${drainedAt}`);
-
-// 既にドレイン済みなら afterBattleMessages は即発火
-let immediate = false;
-battle.afterBattleMessages(() => { immediate = true; });
-chk('ドレイン済みでは afterBattleMessages は即発火', immediate === true);
-
-console.log(`\n${pass ? '✅ 全PASS: バースト非一気出し／1行ずつ／全部出てから進行同期／即発火 を実コードで確認' : '❌ 不合格あり'}`);
+console.log(`\n${pass ? '✅ 全PASS: 混在ゼロ／結果行が最後／pause後ゲート／即時ドレイン／reset を実コードで確認' : '❌ 不合格あり'}`);
 process.exit(pass ? 0 : 1);
