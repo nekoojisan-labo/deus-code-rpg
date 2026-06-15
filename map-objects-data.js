@@ -2413,7 +2413,7 @@ window.MAP_OBJECTS = {
         "spawnY": 380,
         "autoEnter": true,
         "visible": false,
-        "requireFacing": "down"
+        "requireFacing": "up"
       }
     ],
     "objects": [
