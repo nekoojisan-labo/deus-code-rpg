@@ -156,33 +156,36 @@
     const ids = Object.keys(D.maps);
     cv.width = 1180; cv.height = 720;
     ctx.clearRect(0, 0, cv.width, cv.height); ctx.fillStyle = '#05080f'; ctx.fillRect(0, 0, cv.width, cv.height);
-    // simple deterministic layout: grid by index, grouped loosely
-    const cols = 6, cw = cv.width / cols, ch = cv.height / Math.ceil(ids.length / cols);
     const pos = {};
-    ids.forEach((id, i) => { pos[id] = { x: (i % cols) * cw + cw / 2, y: Math.floor(i / cols) * ch + ch / 2 }; });
-    // edges
-    ctx.font = '10px ui-monospace, monospace';
-    for (const id of ids) {
-      for (const e of D.maps[id].exits) {
-        if (!pos[e.to]) continue;
-        const a = pos[id], b = pos[e.to];
-        ctx.strokeStyle = 'rgba(120,180,255,.35)'; ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-        // arrowhead at midpoint
-        const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, ang = Math.atan2(b.y - a.y, b.x - a.x);
-        ctx.fillStyle = '#7fb4ff'; ctx.beginPath();
-        ctx.moveTo(mx, my); ctx.lineTo(mx - 8 * Math.cos(ang - .4), my - 8 * Math.sin(ang - .4)); ctx.lineTo(mx - 8 * Math.cos(ang + .4), my - 8 * Math.sin(ang + .4)); ctx.fill();
-      }
-    }
-    // nodes
+    ids.forEach(id => { const m = D.maps[id]; pos[id] = { x: m.graphX != null ? m.graphX : 100, y: m.graphY != null ? m.graphY : 100 }; });
     state._graphPos = pos;
-    for (const id of ids) {
-      const p = pos[id]; const sel = id === state.map;
-      ctx.fillStyle = sel ? '#22d3ee' : '#162338'; ctx.strokeStyle = sel ? '#22d3ee' : '#2c4870'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.roundRect(p.x - 52, p.y - 16, 104, 32, 7); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = sel ? '#04222a' : '#cfe2ff'; ctx.font = '11px Noto Sans JP, sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(id.length > 16 ? id.slice(0, 15) + '…' : id, p.x, p.y + 4); ctx.textAlign = 'left';
+    // edges: bidirectional = plain line, one-way = orange arrow
+    const eset = new Set();
+    for (const id of ids) for (const e of D.maps[id].exits) if (pos[e.to]) eset.add(id + '|' + e.to);
+    const drawn = new Set();
+    for (const key of eset) {
+      const ab = key.split('|'), a = ab[0], b = ab[1];
+      if (drawn.has(b + '|' + a)) continue;
+      const pa = pos[a], pb = pos[b], two = eset.has(b + '|' + a);
+      ctx.strokeStyle = two ? 'rgba(120,160,210,.5)' : 'rgba(255,170,70,.85)'; ctx.lineWidth = two ? 1.6 : 2.6;
+      ctx.beginPath(); ctx.moveTo(pa.x, pa.y); ctx.lineTo(pb.x, pb.y); ctx.stroke();
+      if (!two) { const ax = pa.x + (pb.x - pa.x) * .6, ay = pa.y + (pb.y - pa.y) * .6, an = Math.atan2(pb.y - pa.y, pb.x - pa.x); ctx.fillStyle = '#ffaa46'; ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax - 10 * Math.cos(an - .5), ay - 10 * Math.sin(an - .5)); ctx.lineTo(ax - 10 * Math.cos(an + .5), ay - 10 * Math.sin(an + .5)); ctx.fill(); }
+      drawn.add(key);
     }
+    // nodes (area-colored, Japanese name)
+    ctx.font = '12px Noto Sans JP, sans-serif';
+    for (const id of ids) {
+      const p = pos[id], m = D.maps[id], sel = id === state.map, c = m.areaColor || '#8aa0c2';
+      const label = m.name || id, tw = ctx.measureText(label).width, bw = tw + 18;
+      ctx.fillStyle = '#0e1626'; ctx.strokeStyle = sel ? '#ffffff' : c; ctx.lineWidth = sel ? 3.5 : 2.5;
+      ctx.beginPath(); ctx.roundRect(p.x - bw / 2, p.y - 14, bw, 28, 7); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#eaf2ff'; ctx.textAlign = 'center'; ctx.fillText(label, p.x, p.y + 4); ctx.textAlign = 'left';
+      p._bw = bw;
+    }
+    // legend
+    ctx.font = '11px Noto Sans JP, sans-serif';
+    ctx.strokeStyle = 'rgba(120,160,210,.5)'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(20, cv.height - 16); ctx.lineTo(50, cv.height - 16); ctx.stroke(); ctx.fillStyle = '#9fb4d0'; ctx.fillText('双方向(行き来できる)', 56, cv.height - 12);
+    ctx.strokeStyle = 'rgba(255,170,70,.85)'; ctx.lineWidth = 2.6; ctx.beginPath(); ctx.moveTo(220, cv.height - 16); ctx.lineTo(250, cv.height - 16); ctx.stroke(); ctx.fillStyle = '#ffaa46'; ctx.fillText('一方通行(矢印の向きだけ)', 256, cv.height - 12);
   }
 
   function render() { if (state.view === 'detail') renderDetail(); else renderGraph(); renderSide(); }
@@ -277,7 +280,7 @@
 
   function graphClick(ev) {
     const r = cv.getBoundingClientRect(), cx = ev.clientX - r.left, cy = ev.clientY - r.top, pos = state._graphPos || {};
-    for (const id of Object.keys(pos)) { const p = pos[id]; if (Math.abs(cx - p.x) < 52 && Math.abs(cy - p.y) < 16) { state.map = id; mapSel.value = id; setView('detail'); return; } }
+    for (const id of Object.keys(pos)) { const p = pos[id]; if (Math.abs(cx - p.x) < (p._bw ? p._bw / 2 + 6 : 60) && Math.abs(cy - p.y) < 16) { state.map = id; mapSel.value = id; setView('detail'); return; } }
   }
 
   // ---- export ----
@@ -308,7 +311,7 @@
   document.getElementById('exportBtn').onclick = exportData;
   // coordinate readout in topbar
   const ro = document.createElement('span'); ro.className = 'hint'; ro.innerHTML = '座標: <b id="coordReadout">(–, –)</b>'; document.querySelector('.topbar').appendChild(ro);
-  render();
+  if (location.hash === '#graph') setView('graph'); else render();
 })();
 </script>
 </body>
