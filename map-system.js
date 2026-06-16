@@ -2494,58 +2494,37 @@ class MapSystem {
 
         // walkability-editor で個別調整したショップの詳細データ
         const shopWalkabilityDetails = {
+            shop_weapon: {
+                walkableRects: [ { x: 16, y: 58, width: 768, height: 392 } ],
+                collisionRects: [ { x: 0, y: 0, width: 800, height: 142 }, { x: 0, y: 150, width: 100, height: 195 }, { x: 700, y: 150, width: 100, height: 195 }, { x: 0, y: 345, width: 28, height: 105 }, { x: 772, y: 345, width: 28, height: 105 }, { x: 308, y: 262, width: 184, height: 120 }, { x: 28, y: 390, width: 288, height: 20 }, { x: 484, y: 390, width: 288, height: 20 } ]
+            },
+            shop_armor: {
+                walkableRects: [ { x: 16, y: 58, width: 768, height: 392 } ],
+                collisionRects: [ { x: 0, y: 0, width: 800, height: 112 }, { x: 305, y: 112, width: 200, height: 24 }, { x: 0, y: 55, width: 140, height: 280 }, { x: 660, y: 55, width: 140, height: 280 }, { x: 272, y: 150, width: 260, height: 58 }, { x: 0, y: 360, width: 70, height: 90 }, { x: 730, y: 360, width: 70, height: 90 }, { x: 302, y: 372, width: 46, height: 24 }, { x: 452, y: 372, width: 46, height: 24 } ]
+            },
+            shop_item: {
+                walkableRects: [ { x: 16, y: 58, width: 768, height: 392 } ],
+                collisionRects: [ { x: 0, y: 0, width: 800, height: 115 }, { x: 0, y: 90, width: 130, height: 240 }, { x: 670, y: 90, width: 130, height: 240 }, { x: 195, y: 135, width: 405, height: 60 }, { x: 215, y: 370, width: 70, height: 55 }, { x: 515, y: 370, width: 70, height: 55 } ]
+            },
+            shop_magic: {
+                walkableRects: [ { x: 16, y: 58, width: 768, height: 392 } ],
+                collisionRects: [ { x: 0, y: 0, width: 12, height: 450 }, { x: 788, y: 0, width: 12, height: 450 }, { x: 0, y: 0, width: 800, height: 128 }, { x: 0, y: 128, width: 72, height: 80 }, { x: 8, y: 212, width: 72, height: 86 }, { x: 728, y: 128, width: 72, height: 75 }, { x: 720, y: 212, width: 76, height: 86 }, { x: 176, y: 150, width: 450, height: 58 }, { x: 252, y: 366, width: 70, height: 30 }, { x: 478, y: 366, width: 70, height: 30 } ]
+            },
+            shop_inn: {
+                walkableRects: [ { x: 16, y: 58, width: 768, height: 392 } ],
+                collisionRects: [ { x: 0, y: 0, width: 800, height: 70 }, { x: 0, y: 0, width: 18, height: 450 }, { x: 782, y: 0, width: 18, height: 450 }, { x: 330, y: 60, width: 150, height: 70 }, { x: 40, y: 150, width: 150, height: 85 }, { x: 610, y: 150, width: 150, height: 85 }, { x: 40, y: 300, width: 160, height: 80 }, { x: 600, y: 300, width: 160, height: 80 } ]
+            },
+            shop_guild: {
+                walkableRects: [ { x: 16, y: 58, width: 768, height: 392 } ],
+                collisionRects: [ { x: 0, y: 0, width: 800, height: 70 }, { x: 0, y: 70, width: 28, height: 320 }, { x: 772, y: 70, width: 28, height: 320 }, { x: 300, y: 70, width: 200, height: 78 }, { x: 60, y: 128, width: 145, height: 105 }, { x: 600, y: 128, width: 145, height: 105 }, { x: 28, y: 360, width: 120, height: 60 }, { x: 652, y: 360, width: 120, height: 60 } ]
+            },
             shop_bank: {
-                walkableRects: [
-                    // 出口マット: 床(345,353,99x48=y353-401)との間に4px隙間があると
-                    // box判定(半径12)で出口に到達できず退店不能になる → y395まで延長して連結
-                    { x: 345, y: 395, width: 105, height: 55  },
-                    { x: 125, y: 141, width: 103, height: 59  },
-                    { x: 554, y: 151, width: 147, height: 53  },
-                    { x: 234, y: 174, width: 316, height: 37  },
-                    { x: 158, y: 205, width: 86,  height: 179 },
-                    { x: 544, y: 203, width: 104, height: 184 },
-                    { x: 139, y: 330, width: 16,  height: 64  },
-                    { x: 247, y: 308, width: 296, height: 43  },
-                    { x: 489, y: 355, width: 57,  height: 35  },
-                    { x: 248, y: 357, width: 44,  height: 39  },
-                    { x: 345, y: 353, width: 99,  height: 48  }
-                ],
-                collisionRects: [
-                    { x: 0,   y: 0,   width: 800, height: 58  },
-                    { x: 0,   y: 0,   width: 24,  height: 450 },
-                    { x: 776, y: 0,   width: 24,  height: 450 },
-                    { x: 72,  y: 205, width: 82,  height: 121 },
-                    { x: 650, y: 205, width: 82,  height: 121 },
-                    { x: 246, y: 218, width: 296, height: 85  },
-                    { x: 230, y: 75,  width: 321, height: 95  },
-                    { x: 555, y: 64,  width: 201, height: 83  },
-                    { x: 707, y: 153, width: 67,  height: 45  },
-                    { x: 26,  y: 67,  width: 202, height: 71  },
-                    { x: 24,  y: 147, width: 101, height: 54  },
-                    { x: 80,  y: 331, width: 57,  height: 60  },
-                    { x: 83,  y: 399, width: 211, height: 36  },
-                    { x: 294, y: 355, width: 47,  height: 88  },
-                    { x: 445, y: 358, width: 39,  height: 43  },
-                    { x: 489, y: 393, width: 283, height: 52  },
-                    { x: 649, y: 328, width: 110, height: 55  }
-                ]
+                walkableRects: [ { x: 16, y: 58, width: 768, height: 392 } ],
+                collisionRects: [ { x: 0, y: 0, width: 800, height: 56 }, { x: 0, y: 56, width: 88, height: 338 }, { x: 776, y: 56, width: 24, height: 394 }, { x: 18, y: 50, width: 100, height: 68 }, { x: 172, y: 62, width: 246, height: 90 }, { x: 614, y: 12, width: 138, height: 98 }, { x: 694, y: 170, width: 96, height: 192 }, { x: 174, y: 158, width: 238, height: 70 }, { x: 266, y: 354, width: 44, height: 80 }, { x: 448, y: 354, width: 46, height: 42 } ]
             },
             shop_black_market: {
-                walkableRects: [
-                    { x: 350, y: 405, width: 100, height: 45  },
-                    { x: 338, y: 200, width: 126, height: 164 },
-                    { x: 352, y: 366, width: 98,  height: 42  }
-                ],
-                collisionRects: [
-                    { x: 0,   y: 0,   width: 800, height: 58  },
-                    { x: 0,   y: 0,   width: 24,  height: 450 },
-                    { x: 776, y: 0,   width: 24,  height: 450 },
-                    { x: 466, y: 189, width: 288, height: 218 },
-                    { x: 297, y: 122, width: 199, height: 77  },
-                    { x: 78,  y: 122, width: 250, height: 304 },
-                    { x: 452, y: 363, width: 24,  height: 68  },
-                    { x: 322, y: 368, width: 27,  height: 73  }
-                ]
+                walkableRects: [ { x: 16, y: 58, width: 768, height: 392 } ],
+                collisionRects: [ { x: 0, y: 0, width: 800, height: 18 }, { x: 0, y: 0, width: 14, height: 450 }, { x: 786, y: 0, width: 14, height: 450 }, { x: 14, y: 18, width: 772, height: 70 }, { x: 330, y: 88, width: 140, height: 55 }, { x: 40, y: 95, width: 130, height: 70 }, { x: 185, y: 95, width: 110, height: 60 }, { x: 505, y: 95, width: 110, height: 60 }, { x: 630, y: 95, width: 130, height: 70 }, { x: 40, y: 250, width: 120, height: 95 }, { x: 640, y: 250, width: 120, height: 95 }, { x: 60, y: 360, width: 150, height: 70 }, { x: 590, y: 360, width: 150, height: 70 } ]
             }
         };
 
