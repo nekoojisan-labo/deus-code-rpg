@@ -2672,48 +2672,19 @@ class MapSystem {
         let spawn;
         const FACE = { north: 'up', south: 'down', west: 'left', east: 'right' };
 
-        // ★店以外の通常遷移は「来た扉の真ん前」に統一(出発側spawnXYのバラつきを排除)。店/片道はフォールバックへ。
-        const fromMap = this.previousMap ? this.maps[this.normalizeMapId(this.previousMap)] : null;
-        const involvesShop = (fromMap && fromMap.area === 'shop') || (map && map.area === 'shop');
-        if (!involvesShop) {
-            const anchored = this.returnDoorSpawn(map, scale);
-            if (anchored) return anchored;
-        }
-
+        // ★完全手動方式: エディタ(map-nav-editor-v3)で確定した spawnX/spawnY を最優先（全マップ共通）。
+        //   位置=spawnXY×scale を歩行可へスナップ。向き=spawnFace（無ければ進入方向 exit.direction）。
+        //   全遷移の spawnXY は「来た扉の前」自動値(旧returnDoorSpawn相当)で種焼き込み済みのため、
+        //   この切替後も既定の挙動は不変。以後はエディタで動かした分だけが反映される。
         if (Number.isFinite(exit.spawnX) && Number.isFinite(exit.spawnY)) {
-            // 【店からの退出時のみ】手書きの spawnX/spawnY は worldScale(=1.55)と
-            // 噛み合わず、スケール後の入口判定の外側／壁の向こうに落ちて再入店不能になる。
-            // → 戻り先マップにある「元の店へ通じる入口」のスケール済みボックスの
-            //   直下（歩行可能床）へアンカーし直す。通常の街↔街遷移には影響させない。
-            const fromMapObj = this.previousMap
-                ? this.maps[this.normalizeMapId(this.previousMap)]
-                : null;
-            if (fromMapObj && fromMapObj.area === 'shop' && map && map.exits) {
-                const back = map.exits.find(e =>
-                    this.normalizeMapId(e.to) === this.normalizeMapId(this.previousMap));
-                if (back) {
-                    const doorScale = map.worldScale && map.worldScale > 0 ? map.worldScale : 1;
-                    // 入店時の向き(requireFacing)から「街路側=プレイヤーが立つ側」の外向き法線を決める。
-                    // 大半の店は下から上向き入店(街路=下)だが、闇市ドアは上から下向き入店(街路=上)。
-                    // ここを下固定にすると建物基部の壁へアンカーしてドア脇に湧く。
-                    const out = ({ up: { ox: 0, oy: 1 }, down: { ox: 0, oy: -1 },
-                                  left: { ox: 1, oy: 0 }, right: { ox: -1, oy: 0 } })[back.requireFacing]
-                                || { ox: 0, oy: 1 };
-                    const off = Math.round(28 * doorScale);
-                    const cx = back.x + back.width / 2 + out.ox * (back.width / 2 + off);
-                    const cy = back.y + back.height / 2 + out.oy * (back.height / 2 + off);
-                    return this.findClearSpawnPoint(map, cx, cy, 24, 3, out);
-                }
-            }
-
-            // ★作者が入口に合わせて置いた手書き spawnXY を尊重（上書きしない）。向きだけ進入方向(exit.direction)から付与。
-            spawn = {
-                x: Math.round(exit.spawnX * scale),
-                y: Math.round(exit.spawnY * scale)
-            };
-            const r = this.findSafeSpawnPoint(map, spawn.x, spawn.y, 24);
-            return FACE[exit.direction] ? { x: r.x, y: r.y, facing: FACE[exit.direction] } : r;
+            const safe = this.findSafeSpawnPoint(map, Math.round(exit.spawnX * scale), Math.round(exit.spawnY * scale), 24);
+            const facing = exit.spawnFace || FACE[exit.direction] || null;
+            return facing ? { x: safe.x, y: safe.y, facing } : safe;
         }
+
+        // spawnXY 未設定のフォールバック: 来た扉の前へ自動アンカー → 進入方向 → 中央。
+        const anchored = this.returnDoorSpawn(map, scale);
+        if (anchored) return anchored;
 
         const width = (canvas ? canvas.width : this.baseWidth) * scale;
         const height = (canvas ? canvas.height : this.baseHeight) * scale;

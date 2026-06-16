@@ -59,7 +59,7 @@
   <div class="side" id="side"></div>
 </div>
 
-<script src="map-nav-data.js?v=4"></script>
+<script src="map-nav-data.js?v=5"></script>
 <script>
 (function () {
   'use strict';
@@ -144,7 +144,7 @@
         ctx.beginPath(); ctx.arc(p.x, p.y, seld ? 11 : 8, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(255,91,208,.25)'; ctx.fill();
         ctx.strokeStyle = '#ff5bd0'; ctx.lineWidth = seld ? 4 : 2.5; ctx.stroke();
-        const f = a.exit.direction, F = { north: [0, -1], south: [0, 1], west: [-1, 0], east: [1, 0] }[f];
+        const F = FACEVEC[a.exit.spawnFace] || { north: [0, -1], south: [0, 1], west: [-1, 0], east: [1, 0] }[a.exit.direction];
         if (F) { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + F[0] * 16, p.y + F[1] * 16); ctx.strokeStyle = '#ff9be6'; ctx.lineWidth = 2; ctx.stroke(); }
         ctx.fillStyle = '#ff9be6'; ctx.fillText('←' + a.src, p.x + 11, p.y - 6);
       });
@@ -154,6 +154,8 @@
   // ======== STITCHED WORLD MAP (連結ワールドマップ) ========
   const LGAP = 60;                                   // gap between maps (world units)
   const OFF = { north: [0, -1], south: [0, 1], east: [1, 0], west: [-1, 0] };
+  const FACEVEC = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  function faceSel(val, id) { return '<select id="' + id + '"><option value="">(自動)</option>' + ['up', 'down', 'left', 'right'].map(d => '<option value="' + d + '"' + (d === val ? ' selected' : '') + '>' + d + '</option>').join('') + '</select>'; }
   function mapsInScope() {
     if (state.scope === '__all__') return Object.keys(D.maps);
     return Object.keys(D.maps).filter(id => D.maps[id].area === state.scope);
@@ -289,7 +291,7 @@
         const sel = state.sel && state.sel.kind === 'spawn' && state.sel.src === a.src && state.sel.exitIdx === a.exitIdx;
         ctx.beginPath(); ctx.arc(sp.x, sp.y, sel ? 9 : 7, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(255,91,208,.3)'; ctx.fill(); ctx.strokeStyle = '#ff5bd0'; ctx.lineWidth = sel ? 3.5 : 2.5; ctx.stroke();
-        const F = OFF[a.exit.direction];
+        const F = FACEVEC[a.exit.spawnFace] || OFF[a.exit.direction];
         if (F) { ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(sp.x + F[0] * 14, sp.y + F[1] * 14); ctx.strokeStyle = '#ff9be6'; ctx.lineWidth = 2; ctx.stroke(); }
         state.spawnHandles.push({ sx: sp.x, sy: sp.y, dest: id, src: a.src, exitIdx: a.exitIdx });
       }
@@ -330,7 +332,7 @@
         h += '<div class="sel-box is-spawn"><div class="side__h">到着spawn ←' + state.sel.src + '</div>';
         h += '<div class="hint">' + state.sel.src + ' から来た時、ここ(' + state.map + ')のどこに出るか。<br>※ 値はBASE座標(800×450)。世界座標=×' + m.worldScale + '</div>';
         h += coordRow('spawnX', e.spawnX, 'sp_x') + coordRow('spawnY', e.spawnY, 'sp_y');
-        h += '<div class="row"><label>facing(出る向き)</label>' + dirSel(e.direction, 'sp_dir') + '</div></div>';
+        h += '<div class="row"><label>facing(向き)</label>' + faceSel(e.spawnFace, 'sp_face') + '</div></div>';
       }
     } else {
       h += '<div class="hint" style="margin-top:10px">緑の出口 or ピンクの到着spawn を<b>ドラッグ</b>して移動。クリックで選択→数値で微調整。</div>';
@@ -349,7 +351,7 @@
       h += '<div class="sel-box is-spawn"><div class="side__h">spawn: ' + state.sel.src + ' → ' + state.sel.dest + '</div>';
       h += '<div class="hint">' + state.sel.src + ' から ' + state.sel.dest + ' に入った時の出現位置。<br>※ BASE座標(800×450)。世界座標=×' + dm.worldScale + '</div>';
       h += coordRow('spawnX', e.spawnX, 'sp_x') + coordRow('spawnY', e.spawnY, 'sp_y');
-      h += '<div class="row"><label>facing(出る向き)</label>' + dirSel(e.direction, 'sp_dir') + '</div></div>';
+      h += '<div class="row"><label>facing(向き)</label>' + faceSel(e.spawnFace, 'sp_face') + '</div></div>';
     } else {
       h += '<div class="hint" style="margin-top:10px">桃の到着spawnをクリックで選択→数値で微調整。<br>変なところ(壁・マップ外)に出ているspawnを、隣の出口に合わせて引っ張ってください。</div>';
     }
@@ -358,7 +360,7 @@
     if (state.sel && state.sel.kind === 'spawn') {
       const e = D.maps[state.sel.src].exits[state.sel.exitIdx];
       const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onchange = () => { fn(el.value); render(); }; };
-      on('sp_x', v => e.spawnX = +v); on('sp_y', v => e.spawnY = +v); on('sp_dir', v => e.direction = v);
+      on('sp_x', v => e.spawnX = +v); on('sp_y', v => e.spawnY = +v); on('sp_face', v => e.spawnFace = v);
     }
     document.getElementById('fitBtn').onclick = () => { state.world.zoom = null; render(); };
   }
@@ -372,7 +374,7 @@
       on('ex_x', v => e.x = +v); on('ex_y', v => e.y = +v); on('ex_w', v => e.width = +v); on('ex_h', v => e.height = +v); on('ex_dir', v => e.direction = v);
     } else if (state.sel) {
       const e = D.maps[state.sel.src].exits[state.sel.exitIdx];
-      on('sp_x', v => e.spawnX = +v); on('sp_y', v => e.spawnY = +v); on('sp_dir', v => e.direction = v);
+      on('sp_x', v => e.spawnX = +v); on('sp_y', v => e.spawnY = +v); on('sp_face', v => e.spawnFace = v);
     }
   }
 
@@ -443,7 +445,7 @@
   // ---- export ----
   function exportData() {
     const out = {};
-    for (const id of Object.keys(D.maps)) out[id] = D.maps[id].exits.map(e => ({ x: e.x, y: e.y, width: e.width, height: e.height, to: e.to, direction: e.direction, spawnX: e.spawnX, spawnY: e.spawnY }));
+    for (const id of Object.keys(D.maps)) out[id] = D.maps[id].exits.map(e => ({ x: e.x, y: e.y, width: e.width, height: e.height, to: e.to, direction: e.direction, spawnX: e.spawnX, spawnY: e.spawnY, spawnFace: e.spawnFace }));
     const txt = 'NAV_EXPORT = ' + JSON.stringify(out, null, 1);
     side.innerHTML = '<div class="side__h">エクスポート</div><div class="hint">このテキストを nekoojisan→Claude に貼ってください。Claudeが各マップのexits(spawnXY含む)をベイクします。</div><textarea id="exp">' + txt + '</textarea><button id="copyExp" style="margin-top:8px">📋 コピー</button>';
     document.getElementById('copyExp').onclick = () => { document.getElementById('exp').select(); document.execCommand('copy'); document.getElementById('copyExp').textContent = '✓ コピーした'; };
