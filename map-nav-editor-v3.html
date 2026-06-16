@@ -48,6 +48,7 @@
   <label class="hint">グリッド:</label>
   <select id="gridSel"><option value="25">25</option><option value="50" selected>50</option><option value="100">100</option></select>
   <button id="snapBtn" class="btn--on">スナップ ON</button>
+  <button id="layerBtn" class="btn--on">障害物/オブジェクト ON</button>
   <span style="flex:1"></span>
   <span class="legend"><span><span class="dot" style="background:var(--exit)"></span>出口</span><span><span class="dot" style="background:var(--spawn)"></span>到着spawn</span></span>
   <button id="exportBtn">📤 エクスポート</button>
@@ -59,7 +60,7 @@
   <div class="side" id="side"></div>
 </div>
 
-<script src="map-nav-data.js?v=5"></script>
+<script src="map-nav-data.js?v=6"></script>
 <script>
 (function () {
   'use strict';
@@ -74,7 +75,7 @@
   const AREA_JP = { city: '都心(広場/都庁前)', town: '商店街', shop: '店', market: '闇市', subway: '地下鉄', dungeon: 'ダンジョン', shrine: '神宮', garden: '庭園', house: '住居' };
   let state = {
     map: null, grid: 50, snap: true, view: 'detail', sel: null, drag: null, pan: null,
-    imgCache: {}, imgTried: {}, scope: '__all__',
+    imgCache: {}, imgTried: {}, scope: '__all__', layers: true, objCache: {},
     layout: null, layoutScope: null, world: { zoom: null, ox: 0, oy: 0 }, spawnHandles: []
   };
 
@@ -98,7 +99,31 @@
     const img = new Image();
     img.onload = () => { state.imgCache[mapId] = img; cb(img); };
     img.onerror = () => cb(null);
-    img.src = m.image + '?v=nav';
+    img.src = m.image + '?v=6';
+  }
+  // object-sprite loader (visible object layer)
+  function getObjImg(path) {
+    if (path in state.objCache) return state.objCache[path];
+    const img = new Image(); state.objCache[path] = img;
+    img.onload = () => render(); img.onerror = () => {};
+    img.src = path + '?v=6';
+    return img;
+  }
+  // draw obstacle(coll)/walkable/visible-object layers so the editor matches the in-game render.
+  // P(worldX, worldY) -> screen point (within-map world coords); sc = world->screen scale factor.
+  function drawLayers(m, P, sc) {
+    if (!state.layers) return;
+    if (m.walk && m.walk.length) { ctx.fillStyle = 'rgba(54,227,107,.09)'; for (const r of m.walk) { const p = P(r.x, r.y); ctx.fillRect(p.x, p.y, r.width * sc, r.height * sc); } }
+    if (m.objs && m.objs.length) {
+      for (const o of m.objs) {
+        const img = getObjImg(o.sprite), p = P(o.x - o.w / 2, o.y - o.h), w = o.w * sc, h = o.h * sc;
+        if (img && img.complete && img.naturalWidth > 0) {
+          if (o.flip) { ctx.save(); ctx.translate(p.x + w, p.y); ctx.scale(-1, 1); ctx.drawImage(img, 0, 0, w, h); ctx.restore(); }
+          else ctx.drawImage(img, p.x, p.y, w, h);
+        }
+      }
+    }
+    if (m.coll && m.coll.length) { ctx.fillStyle = 'rgba(239,68,68,.16)'; ctx.strokeStyle = 'rgba(239,68,68,.55)'; ctx.lineWidth = 1; for (const r of m.coll) { const p = P(r.x, r.y), w = r.width * sc, h = r.height * sc; ctx.fillRect(p.x, p.y, w, h); ctx.strokeRect(p.x, p.y, w, h); } }
   }
 
   // ---- coordinate transforms (canvas <-> world) for DETAIL view ----
@@ -127,6 +152,7 @@
         ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(cv.width, cy); ctx.stroke();
         if (gy % (state.grid * 2) === 0) { ctx.fillStyle = 'rgba(160,200,255,.7)'; ctx.fillText(gy, 2, cy + 11); }
       }
+      drawLayers(m, (x, y) => w2c(x, y), s);
       m.exits.forEach((e, i) => {
         const p = w2c(e.x, e.y), w = e.width * s, h = e.height * s;
         const seld = state.sel && state.sel.kind === 'exit' && state.sel.i === i;
@@ -256,6 +282,7 @@
     for (const id of ids) {
       const m = D.maps[id], tl = g2s(L.pos[id][0], L.pos[id][1]), tw = m.worldW * w.zoom, th = m.worldH * w.zoom, img = state.imgCache[id];
       if (img) ctx.drawImage(img, tl.x, tl.y, tw, th); else { ctx.fillStyle = '#0e1626'; ctx.fillRect(tl.x, tl.y, tw, th); }
+      drawLayers(m, (x, y) => g2s(L.pos[id][0] + x, L.pos[id][1] + y), w.zoom);
       ctx.strokeStyle = m.areaColor || '#8aa0c2'; ctx.lineWidth = 2; ctx.strokeRect(tl.x, tl.y, tw, th);
       ctx.fillStyle = 'rgba(8,12,22,.82)'; ctx.fillRect(tl.x, tl.y, tw, 18);
       ctx.fillStyle = '#eaf2ff'; ctx.font = '12px Noto Sans JP, sans-serif'; ctx.fillText(m.name || id, tl.x + 5, tl.y + 13);
@@ -473,6 +500,7 @@
   mapSel.onchange = () => { state.map = mapSel.value; state.sel = null; render(); };
   gridSel.onchange = () => { state.grid = +gridSel.value; render(); };
   snapBtn.onclick = () => { state.snap = !state.snap; snapBtn.classList.toggle('btn--on', state.snap); snapBtn.textContent = 'スナップ ' + (state.snap ? 'ON' : 'OFF'); render(); };
+  document.getElementById('layerBtn').onclick = () => { state.layers = !state.layers; const b = document.getElementById('layerBtn'); b.classList.toggle('btn--on', state.layers); b.textContent = '障害物/オブジェクト ' + (state.layers ? 'ON' : 'OFF'); render(); };
   document.getElementById('tabDetail').onclick = () => setView('detail');
   document.getElementById('tabGraph').onclick = () => setView('stitch');
   document.getElementById('exportBtn').onclick = exportData;
