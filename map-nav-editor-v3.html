@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Map Editor v3 — 接続 & spawn（グリッド数値）</title>
+<title>Map Editor v3 — 連結ワールドマップ & spawn</title>
 <style>
   :root { --bg:#0b0f1a; --panel:#121826; --line:#1f2a3d; --accent:#22d3ee; --exit:#36e36b; --spawn:#ff5bd0; --text:#e8eefc; --sub:#8aa0c2; }
   * { box-sizing:border-box; }
@@ -15,7 +15,7 @@
   button:hover { border-color:var(--accent); }
   button.btn--on { background:var(--accent); color:#04222a; border-color:var(--accent); font-weight:700; }
   .wrap { display:flex; gap:0; height:calc(100vh - 49px); }
-  .stage { flex:1; overflow:auto; padding:14px; position:relative; }
+  .stage { flex:1; overflow:hidden; padding:14px; position:relative; }
   .side { width:300px; flex:0 0 300px; background:var(--panel); border-left:1px solid var(--line); padding:12px; overflow:auto; }
   canvas { background:#05080f; border:1px solid var(--line); border-radius:8px; cursor:crosshair; display:block; }
   .side__h { font-weight:700; color:var(--accent); margin:2px 0 8px; font-size:12px; letter-spacing:.04em; text-transform:uppercase; }
@@ -32,21 +32,18 @@
   .legend span { display:inline-flex; align-items:center; gap:5px; margin-right:12px; }
   .dot { width:11px; height:11px; border-radius:3px; display:inline-block; }
   textarea { width:100%; height:160px; background:#05080f; color:var(--text); border:1px solid var(--line); border-radius:7px; font-family:ui-monospace, monospace; font-size:11px; padding:8px; }
-  .graph-node { cursor:pointer; }
-  #mapList { list-style:none; padding:0; margin:0; max-height:200px; overflow:auto; }
-  #mapList li { padding:5px 8px; border-radius:6px; cursor:pointer; color:var(--sub); }
-  #mapList li:hover { background:#0e1626; }
-  #mapList li.is-sel { background:var(--accent); color:#04222a; font-weight:700; }
 </style>
 </head>
 <body>
 <div class="topbar">
   <span class="topbar__title">🗺️ Map Editor v3</span>
   <button id="tabDetail" class="btn--on">マップ詳細(グリッド)</button>
-  <button id="tabGraph">ワールドマップ</button>
+  <button id="tabGraph">連結ワールドマップ</button>
   <span style="width:14px"></span>
   <label class="hint">マップ:</label>
   <select id="mapSel"></select>
+  <label class="hint" id="scopeLbl" style="display:none">範囲:</label>
+  <select id="scopeSel" style="display:none"></select>
   <span style="width:14px"></span>
   <label class="hint">グリッド:</label>
   <select id="gridSel"><option value="25">25</option><option value="50" selected>50</option><option value="100">100</option></select>
@@ -70,9 +67,16 @@
   if (!D) { document.body.innerHTML = '<p style="padding:20px;color:#f88">map-nav-data.js が読めません。ローカルサーバ(python3 -m http.server)で開いてください。</p>'; return; }
   const baseW = D.baseW, baseH = D.baseH;
   const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  const stage = document.getElementById('stage');
   const mapSel = document.getElementById('mapSel'), gridSel = document.getElementById('gridSel');
   const snapBtn = document.getElementById('snapBtn'), side = document.getElementById('side');
-  let state = { map: null, grid: 50, snap: true, view: 'detail', sel: null, drag: null, imgCache: {} };
+  const scopeSel = document.getElementById('scopeSel'), scopeLbl = document.getElementById('scopeLbl');
+  const AREA_JP = { city: '都心(広場/都庁前)', town: '商店街', shop: '店', market: '闇市', subway: '地下鉄', dungeon: 'ダンジョン', shrine: '神宮', garden: '庭園', house: '住居' };
+  let state = {
+    map: null, grid: 50, snap: true, view: 'detail', sel: null, drag: null, pan: null,
+    imgCache: {}, imgTried: {}, scope: '__all__',
+    layout: null, layoutScope: null, world: { zoom: null, ox: 0, oy: 0 }, spawnHandles: []
+  };
 
   // ---- arrivals: per map, incoming spawns come from OTHER maps' exits (to===map & spawnX set) ----
   function arrivalsFor(mapId) {
@@ -97,7 +101,7 @@
     img.src = m.image + '?v=nav';
   }
 
-  // ---- coordinate transforms (canvas <-> world) ----
+  // ---- coordinate transforms (canvas <-> world) for DETAIL view ----
   function dispScale() { const m = D.maps[state.map]; return cv.width / m.worldW; }
   function w2c(x, y) { const s = dispScale(); return { x: x * s, y: y * s }; }
   function c2w(x, y) { const s = dispScale(); return { x: x / s, y: y / s }; }
@@ -112,7 +116,6 @@
     getImg(state.map, (img) => {
       if (img) ctx.drawImage(img, 0, 0, cv.width, cv.height);
       else { ctx.fillStyle = '#0e1626'; ctx.fillRect(0, 0, cv.width, cv.height); }
-      // grid
       ctx.lineWidth = 1; ctx.font = '10px ui-monospace, monospace';
       for (let gx = 0; gx <= m.worldW; gx += state.grid) {
         const cx = gx * s; ctx.strokeStyle = gx % (state.grid * 4) === 0 ? 'rgba(120,180,255,.32)' : 'rgba(120,180,255,.12)';
@@ -124,7 +127,6 @@
         ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(cv.width, cy); ctx.stroke();
         if (gy % (state.grid * 2) === 0) { ctx.fillStyle = 'rgba(160,200,255,.7)'; ctx.fillText(gy, 2, cy + 11); }
       }
-      // exit boxes (this map's own exits)
       m.exits.forEach((e, i) => {
         const p = w2c(e.x, e.y), w = e.width * s, h = e.height * s;
         const seld = state.sel && state.sel.kind === 'exit' && state.sel.i === i;
@@ -133,9 +135,8 @@
         ctx.fillStyle = 'rgba(54,227,107,.13)'; ctx.fillRect(p.x, p.y, w, h);
         ctx.fillStyle = '#7dffb0'; ctx.fillText('→' + e.to + (e.direction ? ' ' + e.direction : ''), p.x + 2, p.y - 3);
       });
-      // arrivals (incoming spawn points): world pos = spawnXY * scale
       const arr = arrivalsFor(state.map);
-      arr.forEach((a, idx) => {
+      arr.forEach((a) => {
         const sc = scaleOf(state.map);
         const wp = { x: a.exit.spawnX * sc, y: a.exit.spawnY * sc };
         const p = w2c(wp.x, wp.y);
@@ -143,7 +144,6 @@
         ctx.beginPath(); ctx.arc(p.x, p.y, seld ? 11 : 8, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(255,91,208,.25)'; ctx.fill();
         ctx.strokeStyle = '#ff5bd0'; ctx.lineWidth = seld ? 4 : 2.5; ctx.stroke();
-        // facing arrow
         const f = a.exit.direction, F = { north: [0, -1], south: [0, 1], west: [-1, 0], east: [1, 0] }[f];
         if (F) { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + F[0] * 16, p.y + F[1] * 16); ctx.strokeStyle = '#ff9be6'; ctx.lineWidth = 2; ctx.stroke(); }
         ctx.fillStyle = '#ff9be6'; ctx.fillText('←' + a.src, p.x + 11, p.y - 6);
@@ -151,59 +151,174 @@
     });
   }
 
-  // ---- render: world graph ----
-  function renderGraph() {
-    const ids = Object.keys(D.maps);
-    cv.width = 1180; cv.height = 720;
-    ctx.clearRect(0, 0, cv.width, cv.height); ctx.fillStyle = '#05080f'; ctx.fillRect(0, 0, cv.width, cv.height);
+  // ======== STITCHED WORLD MAP (連結ワールドマップ) ========
+  const LGAP = 60;                                   // gap between maps (world units)
+  const OFF = { north: [0, -1], south: [0, 1], east: [1, 0], west: [-1, 0] };
+  function mapsInScope() {
+    if (state.scope === '__all__') return Object.keys(D.maps);
+    return Object.keys(D.maps).filter(id => D.maps[id].area === state.scope);
+  }
+  function computeLayout(ids) {
+    const set = new Set(ids);
+    const W = id => D.maps[id].worldW, H = id => D.maps[id].worldH;
     const pos = {};
-    ids.forEach(id => { const m = D.maps[id]; pos[id] = { x: m.graphX != null ? m.graphX : 100, y: m.graphY != null ? m.graphY : 100 }; });
-    state._graphPos = pos;
-    // edges: bidirectional = plain line, one-way = orange arrow
-    const eset = new Set();
-    for (const id of ids) for (const e of D.maps[id].exits) if (pos[e.to]) eset.add(id + '|' + e.to);
-    const drawn = new Set();
-    for (const key of eset) {
-      const ab = key.split('|'), a = ab[0], b = ab[1];
-      if (drawn.has(b + '|' + a)) continue;
-      const pa = pos[a], pb = pos[b], two = eset.has(b + '|' + a);
-      ctx.strokeStyle = two ? 'rgba(120,160,210,.5)' : 'rgba(255,170,70,.85)'; ctx.lineWidth = two ? 1.6 : 2.6;
-      ctx.beginPath(); ctx.moveTo(pa.x, pa.y); ctx.lineTo(pb.x, pb.y); ctx.stroke();
-      if (!two) { const ax = pa.x + (pb.x - pa.x) * .6, ay = pa.y + (pb.y - pa.y) * .6, an = Math.atan2(pb.y - pa.y, pb.x - pa.x); ctx.fillStyle = '#ffaa46'; ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax - 10 * Math.cos(an - .5), ay - 10 * Math.sin(an - .5)); ctx.lineTo(ax - 10 * Math.cos(an + .5), ay - 10 * Math.sin(an + .5)); ctx.fill(); }
-      drawn.add(key);
+    let start = ids.includes('shinjuku_center_plaza') && state.scope === '__all__' ? 'shinjuku_center_plaza' : ids[0];
+    if (state.scope !== '__all__') { // start from the most in-scope-connected map
+      let best = ids[0], bc = -1;
+      for (const id of ids) { const c = D.maps[id].exits.filter(e => set.has(e.to)).length; if (c > bc) { bc = c; best = id; } }
+      start = best;
     }
-    // nodes (area-colored, Japanese name)
-    ctx.font = '12px Noto Sans JP, sans-serif';
+    pos[start] = [0, 0];
+    function overlaps(id, x, y) {
+      const bw = W(id), bh = H(id);
+      for (const o in pos) {
+        if (o === id) continue; const ox = pos[o][0], oy = pos[o][1];
+        if (x < ox + W(o) + LGAP * 0.5 && x + bw + LGAP * 0.5 > ox && y < oy + H(o) + LGAP * 0.5 && y + bh + LGAP * 0.5 > oy) return true;
+      }
+      return false;
+    }
+    function place(id, x, y, dx, dy) { // ring search from ideal pos, prefer the correct side of parent
+      const step = LGAP * 0.6;
+      for (let r = 0; r <= 100; r++) {
+        let best = null, bestScore = Infinity;
+        for (let ix = -r; ix <= r; ix++) for (let iy = -r; iy <= r; iy++) {
+          if (Math.max(Math.abs(ix), Math.abs(iy)) !== r) continue;
+          const nx = x + ix * step, ny = y + iy * step;
+          if (overlaps(id, nx, ny)) continue;
+          let pen = 0;
+          if (dx > 0 && ix < 0) pen += 1000; if (dx < 0 && ix > 0) pen += 1000;
+          if (dy > 0 && iy < 0) pen += 1000; if (dy < 0 && iy > 0) pen += 1000;
+          const score = pen + Math.abs(ix) + Math.abs(iy);
+          if (score < bestScore) { bestScore = score; best = [nx, ny]; }
+        }
+        if (best) return best;
+      }
+      return [x, y];
+    }
+    const q = [];
+    function bfs(dirOnly) {
+      while (q.length) {
+        const a = q.shift(); const ax = pos[a][0], ay = pos[a][1];
+        for (const e of D.maps[a].exits) {
+          const b = e.to;
+          if (!set.has(b) || pos[b]) continue;
+          const d = e.direction;
+          if (dirOnly && !OFF[d]) continue;
+          if (OFF[d]) {
+            const ox = OFF[d][0], oy = OFF[d][1];
+            let bx = ax + (ox > 0 ? (W(a) + LGAP) : 0) - (ox < 0 ? (W(b) + LGAP) : 0);
+            let by = ay + (oy > 0 ? (H(a) + LGAP) : 0) - (oy < 0 ? (H(b) + LGAP) : 0);
+            if (ox === 0) bx = ax; if (oy === 0) by = ay;
+            pos[b] = place(b, bx, by, ox, oy);
+          } else {
+            pos[b] = place(b, ax + W(a) + LGAP, ay, 1, 0);
+          }
+          q.push(b);
+        }
+      }
+    }
+    q.push(start); bfs(true);
+    for (const a in pos) q.push(a); bfs(false);
+    // leftovers (unreachable within scope): stack below
+    let ymax = 0; for (const id in pos) ymax = Math.max(ymax, pos[id][1] + H(id));
+    let lx = 0;
+    for (const id of ids) { if (!pos[id]) { pos[id] = [lx, ymax + LGAP]; lx += W(id) + LGAP; } }
+    let minx = 1e9, miny = 1e9, maxx = -1e9, maxy = -1e9;
+    for (const id of ids) { const x = pos[id][0], y = pos[id][1]; minx = Math.min(minx, x); miny = Math.min(miny, y); maxx = Math.max(maxx, x + W(id)); maxy = Math.max(maxy, y + H(id)); }
+    return { pos, minx, miny, maxx, maxy };
+  }
+  function ensureLayout() {
+    if (!state.layout || state.layoutScope !== state.scope) {
+      state.layout = computeLayout(mapsInScope()); state.layoutScope = state.scope; state.world.zoom = null;
+    }
+  }
+  function fitWorld() {
+    const L = state.layout, bw = L.maxx - L.minx, bh = L.maxy - L.miny;
+    const z = Math.min(cv.width / bw, cv.height / bh) * 0.95;
+    state.world.zoom = z; state.world.ox = (cv.width - bw * z) / 2; state.world.oy = (cv.height - bh * z) / 2;
+  }
+  function g2s(gx, gy) { const w = state.world, L = state.layout; return { x: (gx - L.minx) * w.zoom + w.ox, y: (gy - L.miny) * w.zoom + w.oy }; }
+  function s2g(sx, sy) { const w = state.world, L = state.layout; return { x: (sx - w.ox) / w.zoom + L.minx, y: (sy - w.oy) / w.zoom + L.miny }; }
+
+  function renderStitch() {
+    cv.width = Math.max(320, stage.clientWidth - 28);
+    cv.height = Math.max(320, stage.clientHeight - 28);
+    ensureLayout();
+    if (state.world.zoom == null) fitWorld();
+    const ids = mapsInScope(), inScope = new Set(ids), L = state.layout, w = state.world;
+    ctx.clearRect(0, 0, cv.width, cv.height); ctx.fillStyle = '#05080f'; ctx.fillRect(0, 0, cv.width, cv.height);
+    // preload missing images once (no retry loop)
+    const missing = ids.filter(id => D.maps[id].image && !state.imgCache[id] && !state.imgTried[id]);
+    if (missing.length) { missing.forEach(id => { state.imgTried[id] = 1; }); let left = missing.length; missing.forEach(id => getImg(id, () => { if (--left === 0) render(); })); }
+    // map tiles
     for (const id of ids) {
-      const p = pos[id], m = D.maps[id], sel = id === state.map, c = m.areaColor || '#8aa0c2';
-      const label = m.name || id, tw = ctx.measureText(label).width, bw = tw + 18;
-      ctx.fillStyle = '#0e1626'; ctx.strokeStyle = sel ? '#ffffff' : c; ctx.lineWidth = sel ? 3.5 : 2.5;
-      ctx.beginPath(); ctx.roundRect(p.x - bw / 2, p.y - 14, bw, 28, 7); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#eaf2ff'; ctx.textAlign = 'center'; ctx.fillText(label, p.x, p.y + 4); ctx.textAlign = 'left';
-      p._bw = bw;
+      const m = D.maps[id], tl = g2s(L.pos[id][0], L.pos[id][1]), tw = m.worldW * w.zoom, th = m.worldH * w.zoom, img = state.imgCache[id];
+      if (img) ctx.drawImage(img, tl.x, tl.y, tw, th); else { ctx.fillStyle = '#0e1626'; ctx.fillRect(tl.x, tl.y, tw, th); }
+      ctx.strokeStyle = m.areaColor || '#8aa0c2'; ctx.lineWidth = 2; ctx.strokeRect(tl.x, tl.y, tw, th);
+      ctx.fillStyle = 'rgba(8,12,22,.82)'; ctx.fillRect(tl.x, tl.y, tw, 18);
+      ctx.fillStyle = '#eaf2ff'; ctx.font = '12px Noto Sans JP, sans-serif'; ctx.fillText(m.name || id, tl.x + 5, tl.y + 13);
     }
-    // legend
-    ctx.font = '11px Noto Sans JP, sans-serif';
-    ctx.strokeStyle = 'rgba(120,160,210,.5)'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(20, cv.height - 16); ctx.lineTo(50, cv.height - 16); ctx.stroke(); ctx.fillStyle = '#9fb4d0'; ctx.fillText('双方向(行き来できる)', 56, cv.height - 12);
-    ctx.strokeStyle = 'rgba(255,170,70,.85)'; ctx.lineWidth = 2.6; ctx.beginPath(); ctx.moveTo(220, cv.height - 16); ctx.lineTo(250, cv.height - 16); ctx.stroke(); ctx.fillStyle = '#ffaa46'; ctx.fillText('一方通行(矢印の向きだけ)', 256, cv.height - 12);
+    // seam lines: exit-center -> destination spawn-center (both in scope)
+    for (const id of ids) {
+      const m = D.maps[id], gx = L.pos[id][0], gy = L.pos[id][1];
+      for (const e of m.exits) {
+        if (!inScope.has(e.to)) continue;
+        const ex = g2s(gx + e.x + e.width / 2, gy + e.y + e.height / 2);
+        const dm = D.maps[e.to], dx = L.pos[e.to][0], dy = L.pos[e.to][1], dsc = dm.worldScale || 1;
+        const sp = e.spawnX != null ? g2s(dx + e.spawnX * dsc, dy + e.spawnY * dsc) : g2s(dx + dm.worldW / 2, dy + dm.worldH / 2);
+        ctx.strokeStyle = 'rgba(110,150,210,.55)'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(ex.x, ex.y); ctx.lineTo(sp.x, sp.y); ctx.stroke();
+      }
+    }
+    // exit boxes (green)
+    for (const id of ids) {
+      const m = D.maps[id], gx = L.pos[id][0], gy = L.pos[id][1];
+      for (const e of m.exits) {
+        if (!inScope.has(e.to)) continue;
+        const p = g2s(gx + e.x, gy + e.y);
+        ctx.strokeStyle = '#36e36b'; ctx.lineWidth = 2; ctx.strokeRect(p.x, p.y, e.width * w.zoom, e.height * w.zoom);
+      }
+    }
+    // arrival spawns (pink, on top) + hit handles. Only when source map is also in scope.
+    state.spawnHandles = [];
+    for (const id of ids) {
+      const dsc = D.maps[id].worldScale || 1, gx = L.pos[id][0], gy = L.pos[id][1];
+      for (const a of arrivalsFor(id)) {
+        if (!inScope.has(a.src) || a.exit.spawnX == null) continue;
+        const sp = g2s(gx + a.exit.spawnX * dsc, gy + a.exit.spawnY * dsc);
+        const sel = state.sel && state.sel.kind === 'spawn' && state.sel.src === a.src && state.sel.exitIdx === a.exitIdx;
+        ctx.beginPath(); ctx.arc(sp.x, sp.y, sel ? 9 : 7, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,91,208,.3)'; ctx.fill(); ctx.strokeStyle = '#ff5bd0'; ctx.lineWidth = sel ? 3.5 : 2.5; ctx.stroke();
+        const F = OFF[a.exit.direction];
+        if (F) { ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(sp.x + F[0] * 14, sp.y + F[1] * 14); ctx.strokeStyle = '#ff9be6'; ctx.lineWidth = 2; ctx.stroke(); }
+        state.spawnHandles.push({ sx: sp.x, sy: sp.y, dest: id, src: a.src, exitIdx: a.exitIdx });
+      }
+    }
+  }
+  function pickSpawnStitch(cx, cy) {
+    for (const h of state.spawnHandles) if (Math.hypot(cx - h.sx, cy - h.sy) < 11) return { kind: 'spawn', src: h.src, exitIdx: h.exitIdx, dest: h.dest };
+    return null;
+  }
+  function dragSpawnStitch(cx, cy) {
+    const h = state.drag.hit, L = state.layout, dm = D.maps[h.dest], dsc = dm.worldScale || 1;
+    const g = s2g(cx, cy), dx = L.pos[h.dest][0], dy = L.pos[h.dest][1];
+    const e = D.maps[h.src].exits[h.exitIdx];
+    e.spawnX = Math.max(0, Math.min(baseW, Math.round(snapV(g.x - dx) / dsc)));
+    e.spawnY = Math.max(0, Math.min(baseH, Math.round(snapV(g.y - dy) / dsc)));
   }
 
-  function render() { if (state.view === 'detail') renderDetail(); else renderGraph(); renderSide(); }
+  function render() { if (state.view === 'detail') renderDetail(); else renderStitch(); renderSide(); }
 
   // ---- side panel ----
   function renderSide() {
+    if (state.view === 'stitch') { renderSideStitch(); return; }
     const m = D.maps[state.map];
-    if (state.view === 'graph') {
-      side.innerHTML = '<div class="side__h">ワールドマップ</div><div class="hint">ノード(マップ)をクリックすると、そのマップの詳細グリッドへ。矢印=出口の向き。<br><br>マップ数: ' + Object.keys(D.maps).length + '<br>接続数: ' + Object.values(D.maps).reduce((s, x) => s + x.exits.length, 0) + '</div>';
-      return;
-    }
     let h = '<div class="side__h">' + state.map + '</div>';
     h += '<div class="kv"><span>area</span><b>' + m.area + '</b></div>';
     h += '<div class="kv"><span>world</span><b>' + m.worldW + '×' + m.worldH + '</b></div>';
     h += '<div class="kv"><span>scale</span><b>' + m.worldScale + '</b></div>';
     h += '<div class="kv"><span>出口</span><b>' + m.exits.length + '</b></div>';
     h += '<div class="kv"><span>到着spawn</span><b>' + arrivalsFor(state.map).length + '</b></div>';
-    // selected element editor
     if (state.sel) {
       if (state.sel.kind === 'exit') {
         const e = m.exits[state.sel.i];
@@ -218,10 +333,34 @@
         h += '<div class="row"><label>facing(出る向き)</label>' + dirSel(e.direction, 'sp_dir') + '</div></div>';
       }
     } else {
-      h += '<div class="hint" style="margin-top:10px">緑の出口 or ピンクの到着spawn を<b>ドラッグ</b>して移動。クリックで選択→数値で微調整。<br><br>到着spawnは「その出発マップの出口の spawnXY」なので、ここで動かすと出発側のデータが更新されます。</div>';
+      h += '<div class="hint" style="margin-top:10px">緑の出口 or ピンクの到着spawn を<b>ドラッグ</b>して移動。クリックで選択→数値で微調整。</div>';
     }
     side.innerHTML = h;
     bindSideInputs();
+  }
+  function renderSideStitch() {
+    let h = '<div class="side__h">連結ワールドマップ</div>';
+    h += '<div class="hint">実マップを方角どおりに連結。<b style="color:var(--spawn)">桃=到着spawn</b>を<b>ドラッグ</b>して、隣マップの<b style="color:var(--exit)">緑=出口</b>に揃える。<br>背景ドラッグ=移動 / ホイール=ズーム / ダブルクリック=そのマップの詳細へ。</div>';
+    h += '<div class="kv" style="margin-top:8px"><span>表示範囲</span><b>' + (state.scope === '__all__' ? '全域' : (AREA_JP[state.scope] || state.scope)) + '</b></div>';
+    h += '<div class="kv"><span>マップ数</span><b>' + mapsInScope().length + '</b></div>';
+    h += '<div class="kv"><span>表示中のspawn</span><b>' + state.spawnHandles.length + '</b></div>';
+    if (state.sel && state.sel.kind === 'spawn') {
+      const e = D.maps[state.sel.src].exits[state.sel.exitIdx], dm = D.maps[state.sel.dest];
+      h += '<div class="sel-box is-spawn"><div class="side__h">spawn: ' + state.sel.src + ' → ' + state.sel.dest + '</div>';
+      h += '<div class="hint">' + state.sel.src + ' から ' + state.sel.dest + ' に入った時の出現位置。<br>※ BASE座標(800×450)。世界座標=×' + dm.worldScale + '</div>';
+      h += coordRow('spawnX', e.spawnX, 'sp_x') + coordRow('spawnY', e.spawnY, 'sp_y');
+      h += '<div class="row"><label>facing(出る向き)</label>' + dirSel(e.direction, 'sp_dir') + '</div></div>';
+    } else {
+      h += '<div class="hint" style="margin-top:10px">桃の到着spawnをクリックで選択→数値で微調整。<br>変なところ(壁・マップ外)に出ているspawnを、隣の出口に合わせて引っ張ってください。</div>';
+    }
+    h += '<button id="fitBtn" style="margin-top:12px;width:100%">🔍 全体表示にリセット</button>';
+    side.innerHTML = h;
+    if (state.sel && state.sel.kind === 'spawn') {
+      const e = D.maps[state.sel.src].exits[state.sel.exitIdx];
+      const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onchange = () => { fn(el.value); render(); }; };
+      on('sp_x', v => e.spawnX = +v); on('sp_y', v => e.spawnY = +v); on('sp_dir', v => e.direction = v);
+    }
+    document.getElementById('fitBtn').onclick = () => { state.world.zoom = null; render(); };
   }
   function coordRow(label, val, id) { return '<div class="row"><label>' + label + '</label><input class="coord-input" id="' + id + '" type="number" value="' + (val == null ? 0 : val) + '"></div>'; }
   function dirSel(val, id) { return '<select id="' + id + '"><option value="">(無し)</option>' + ['north', 'south', 'east', 'west'].map(d => '<option value="' + d + '"' + (d === val ? ' selected' : '') + '>' + d + '</option>').join('') + '</select>'; }
@@ -237,10 +376,9 @@
     }
   }
 
-  // ---- hit testing + drag ----
+  // ---- detail hit testing ----
   function pickAt(cx, cy) {
     const m = D.maps[state.map], sc = scaleOf(state.map);
-    // spawns first (smaller targets)
     const arr = arrivalsFor(state.map);
     for (const a of arr) {
       const wp = w2c(a.exit.spawnX * sc, a.exit.spawnY * sc);
@@ -252,9 +390,16 @@
     }
     return null;
   }
+
+  // ---- mouse handling (dispatch by view) ----
   cv.addEventListener('mousedown', ev => {
-    if (state.view === 'graph') { graphClick(ev); return; }
     const r = cv.getBoundingClientRect(), cx = ev.clientX - r.left, cy = ev.clientY - r.top;
+    if (state.view === 'stitch') {
+      const hit = pickSpawnStitch(cx, cy);
+      if (hit) { state.sel = hit; state.drag = { hit }; }
+      else { state.sel = null; state.pan = { cx, cy, ox: state.world.ox, oy: state.world.oy }; }
+      render(); return;
+    }
     const hit = pickAt(cx, cy);
     state.sel = hit;
     if (hit) state.drag = { startC: { cx, cy }, hit };
@@ -262,9 +407,15 @@
   });
   window.addEventListener('mousemove', ev => {
     const r = cv.getBoundingClientRect(), cx = ev.clientX - r.left, cy = ev.clientY - r.top;
-    if (state.view === 'detail') { const w = c2w(cx, cy); document.getElementById('coordReadout') && (document.getElementById('coordReadout').textContent = '(' + Math.round(w.x) + ', ' + Math.round(w.y) + ')'); }
+    if (state.view === 'stitch') {
+      if (state.drag) { dragSpawnStitch(cx, cy); render(); }
+      else if (state.pan) { state.world.ox = state.pan.ox + (cx - state.pan.cx); state.world.oy = state.pan.oy + (cy - state.pan.cy); render(); }
+      return;
+    }
+    const w = c2w(cx, cy);
+    const ro = document.getElementById('coordReadout'); if (ro) ro.textContent = '(' + Math.round(w.x) + ', ' + Math.round(w.y) + ')';
     if (!state.drag) return;
-    const m = D.maps[state.map], sc = scaleOf(state.map), w = c2w(cx, cy);
+    const m = D.maps[state.map], sc = scaleOf(state.map);
     if (state.drag.hit.kind === 'exit') {
       const e = m.exits[state.drag.hit.i];
       e.x = Math.max(0, Math.min(m.worldW - e.width, snapV(w.x - e.width / 2)));
@@ -276,12 +427,18 @@
     }
     render();
   });
-  window.addEventListener('mouseup', () => { state.drag = null; });
-
-  function graphClick(ev) {
-    const r = cv.getBoundingClientRect(), cx = ev.clientX - r.left, cy = ev.clientY - r.top, pos = state._graphPos || {};
-    for (const id of Object.keys(pos)) { const p = pos[id]; if (Math.abs(cx - p.x) < (p._bw ? p._bw / 2 + 6 : 60) && Math.abs(cy - p.y) < 16) { state.map = id; mapSel.value = id; setView('detail'); return; } }
-  }
+  window.addEventListener('mouseup', () => { state.drag = null; state.pan = null; });
+  cv.addEventListener('wheel', ev => {
+    if (state.view !== 'stitch') return; ev.preventDefault();
+    const r = cv.getBoundingClientRect(), cx = ev.clientX - r.left, cy = ev.clientY - r.top, w = state.world, L = state.layout;
+    const g = s2g(cx, cy); w.zoom *= ev.deltaY < 0 ? 1.12 : 1 / 1.12;
+    w.ox = cx - (g.x - L.minx) * w.zoom; w.oy = cy - (g.y - L.miny) * w.zoom; render();
+  }, { passive: false });
+  cv.addEventListener('dblclick', ev => {
+    if (state.view !== 'stitch') return;
+    const r = cv.getBoundingClientRect(), cx = ev.clientX - r.left, cy = ev.clientY - r.top, g = s2g(cx, cy), L = state.layout;
+    for (const id of mapsInScope()) { const gx = L.pos[id][0], gy = L.pos[id][1], m = D.maps[id]; if (g.x >= gx && g.x <= gx + m.worldW && g.y >= gy && g.y <= gy + m.worldH) { state.map = id; mapSel.value = id; setView('detail'); return; } }
+  });
 
   // ---- export ----
   function exportData() {
@@ -296,22 +453,30 @@
   function setView(v) {
     state.view = v; state.sel = null;
     document.getElementById('tabDetail').classList.toggle('btn--on', v === 'detail');
-    document.getElementById('tabGraph').classList.toggle('btn--on', v === 'graph');
+    document.getElementById('tabGraph').classList.toggle('btn--on', v === 'stitch');
+    const show = v === 'stitch' ? '' : 'none';
+    scopeSel.style.display = show; scopeLbl.style.display = show;
+    if (v === 'stitch') state.world.zoom = null;
     render();
   }
 
   // ---- init ----
   Object.keys(D.maps).sort().forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = id; mapSel.appendChild(o); });
   state.map = mapSel.value = Object.keys(D.maps).sort()[0];
+  // scope options
+  const areas = [...new Set(Object.values(D.maps).map(m => m.area))];
+  scopeSel.innerHTML = '<option value="__all__">全域 (' + Object.keys(D.maps).length + ')</option>' +
+    areas.map(a => { const n = Object.values(D.maps).filter(m => m.area === a).length; return '<option value="' + a + '">' + (AREA_JP[a] || a) + ' (' + n + ')</option>'; }).join('');
+  scopeSel.onchange = () => { state.scope = scopeSel.value; state.sel = null; state.layout = null; state.world.zoom = null; render(); };
   mapSel.onchange = () => { state.map = mapSel.value; state.sel = null; render(); };
   gridSel.onchange = () => { state.grid = +gridSel.value; render(); };
   snapBtn.onclick = () => { state.snap = !state.snap; snapBtn.classList.toggle('btn--on', state.snap); snapBtn.textContent = 'スナップ ' + (state.snap ? 'ON' : 'OFF'); render(); };
   document.getElementById('tabDetail').onclick = () => setView('detail');
-  document.getElementById('tabGraph').onclick = () => setView('graph');
+  document.getElementById('tabGraph').onclick = () => setView('stitch');
   document.getElementById('exportBtn').onclick = exportData;
-  // coordinate readout in topbar
+  window.addEventListener('resize', () => { if (state.view === 'stitch') { state.world.zoom = null; render(); } });
   const ro = document.createElement('span'); ro.className = 'hint'; ro.innerHTML = '座標: <b id="coordReadout">(–, –)</b>'; document.querySelector('.topbar').appendChild(ro);
-  if (location.hash === '#graph') setView('graph'); else render();
+  if (location.hash === '#graph' || location.hash === '#world') setView('stitch'); else render();
 })();
 </script>
 </body>
