@@ -43,7 +43,7 @@
 <div class="topbar">
   <span class="topbar__title">🗺️ Map Editor v3</span>
   <button id="tabDetail" class="btn--on">マップ詳細(グリッド)</button>
-  <button id="tabGraph">ワールドグラフ</button>
+  <button id="tabGraph">ワールドマップ</button>
   <span style="width:14px"></span>
   <label class="hint">マップ:</label>
   <select id="mapSel"></select>
@@ -62,7 +62,7 @@
   <div class="side" id="side"></div>
 </div>
 
-<script src="map-nav-data.js?v=3"></script>
+<script src="map-nav-data.js?v=4"></script>
 <script>
 (function () {
   'use strict';
@@ -194,7 +194,7 @@
   function renderSide() {
     const m = D.maps[state.map];
     if (state.view === 'graph') {
-      side.innerHTML = '<div class="side__h">ワールドグラフ</div><div class="hint">ノード(マップ)をクリックすると、そのマップの詳細グリッドへ。矢印=出口の向き。<br><br>マップ数: ' + Object.keys(D.maps).length + '<br>接続数: ' + Object.values(D.maps).reduce((s, x) => s + x.exits.length, 0) + '</div>';
+      side.innerHTML = '<div class="side__h">ワールドマップ</div><div class="hint">ノード(マップ)をクリックすると、そのマップの詳細グリッドへ。矢印=出口の向き。<br><br>マップ数: ' + Object.keys(D.maps).length + '<br>接続数: ' + Object.values(D.maps).reduce((s, x) => s + x.exits.length, 0) + '</div>';
       return;
     }
     let h = '<div class="side__h">' + state.map + '</div>';
