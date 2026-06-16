@@ -2634,12 +2634,51 @@ class MapSystem {
         };
     }
 
+    // ★全遷移共通: 来た扉(目的地B側の「Aへ戻る出口」=入ってきた扉)の真ん前に、マップ内を向いて出す。
+    //   扉ボックスの内側エッジへ最小オフセットでアンカー→findClearSpawnPointで歩行可へスナップ。
+    //   出発側の手書きspawnXYは場所ごとにバラつくため、通常遷移はこれで「来た扉の前」に統一する。
+    returnDoorSpawn(map, scale) {
+        if (!this.previousMap || !map || !Array.isArray(map.exits)) return null;
+        const from = this.normalizeMapId(this.previousMap);
+        const back = map.exits.find(e => this.normalizeMapId(e.to) === from);
+        if (!back) return null;
+        const WW = this.baseWidth * scale, WH = this.baseHeight * scale;
+        const cx = back.x + (back.width || 0) / 2, cy = back.y + (back.height || 0) / 2;
+        // 扉のある辺を direction(無ければ座標)で判定 → 内向き法線と facing。
+        let edge = back.direction;
+        if (!edge) {
+            if (cx < WW * 0.15) edge = 'west';
+            else if (cx > WW * 0.85) edge = 'east';
+            else if (cy < WH * 0.15) edge = 'north';
+            else edge = 'south';
+        }
+        const FACE = { west: 'right', east: 'left', north: 'down', south: 'up' };
+        const NRM = { west: { ox: 1, oy: 0 }, east: { ox: -1, oy: 0 }, north: { ox: 0, oy: 1 }, south: { ox: 0, oy: -1 } };
+        const nrm = NRM[edge] || { ox: 0, oy: 1 };
+        const pad = Math.round(8 * scale);
+        let ax, ay;
+        if (edge === 'south') { ax = cx; ay = back.y - pad; }
+        else if (edge === 'north') { ax = cx; ay = back.y + (back.height || 0) + pad; }
+        else if (edge === 'west') { ax = back.x + (back.width || 0) + pad; ay = cy; }
+        else { ax = back.x - pad; ay = cy; }
+        const p = this.findClearSpawnPoint(map, Math.round(ax), Math.round(ay), 24, 3, nrm);
+        return { x: p.x, y: p.y, facing: FACE[edge] || 'down' };
+    }
+
     getSpawnPoint(exit, canvas) {
         const targetMap = this.normalizeMapId(exit.to);
         const map = this.maps[targetMap];
         const scale = this.getMapScale(targetMap);
         let spawn;
         const FACE = { north: 'up', south: 'down', west: 'left', east: 'right' };
+
+        // ★店以外の通常遷移は「来た扉の真ん前」に統一(出発側spawnXYのバラつきを排除)。店/片道はフォールバックへ。
+        const fromMap = this.previousMap ? this.maps[this.normalizeMapId(this.previousMap)] : null;
+        const involvesShop = (fromMap && fromMap.area === 'shop') || (map && map.area === 'shop');
+        if (!involvesShop) {
+            const anchored = this.returnDoorSpawn(map, scale);
+            if (anchored) return anchored;
+        }
 
         if (Number.isFinite(exit.spawnX) && Number.isFinite(exit.spawnY)) {
             // 【店からの退出時のみ】手書きの spawnX/spawnY は worldScale(=1.55)と
