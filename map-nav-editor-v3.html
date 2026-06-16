@@ -49,6 +49,13 @@
   <select id="gridSel"><option value="25">25</option><option value="50" selected>50</option><option value="100">100</option></select>
   <button id="snapBtn" class="btn--on">スナップ ON</button>
   <button id="layerBtn" class="btn--on">障害物/オブジェクト ON</button>
+  <span id="walkTools" style="display:none">
+    <span class="hint">可動域:</span>
+    <button id="toolSelect" class="btn--on">選択</button>
+    <button id="toolBlock">壁(赤)</button>
+    <button id="toolAllow">床(緑)</button>
+    <button id="toolErase">削除</button>
+  </span>
   <span style="flex:1"></span>
   <span class="legend"><span><span class="dot" style="background:var(--exit)"></span>出口</span><span><span class="dot" style="background:var(--spawn)"></span>到着spawn</span></span>
   <button id="exportBtn">📤 エクスポート</button>
@@ -76,6 +83,7 @@
   let state = {
     map: null, grid: 50, snap: true, view: 'detail', sel: null, drag: null, pan: null,
     imgCache: {}, imgTried: {}, scope: '__all__', layers: true, objCache: {},
+    tool: 'select', walkSel: null, drawing: null,
     layout: null, layoutScope: null, world: { zoom: null, ox: 0, oy: 0 }, spawnHandles: []
   };
 
@@ -174,7 +182,40 @@
         if (F) { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + F[0] * 16, p.y + F[1] * 16); ctx.strokeStyle = '#ff9be6'; ctx.lineWidth = 2; ctx.stroke(); }
         ctx.fillStyle = '#ff9be6'; ctx.fillText('←' + a.src, p.x + 11, p.y - 6);
       });
+      drawWalkRects(m, s);
     });
+  }
+  // editable walkability rects (walkAllow=green / walkBlock=red, WORLD coords) + in-progress draw
+  function drawWalkRects(m, s) {
+    const set = (arr, kindName, stroke, fill) => {
+      (arr || []).forEach((rr, i) => {
+        const p = w2c(rr.x, rr.y), w = rr.width * s, h = rr.height * s;
+        const sel = state.walkSel && state.walkSel.kind === kindName && state.walkSel.i === i;
+        ctx.fillStyle = fill; ctx.fillRect(p.x, p.y, w, h);
+        ctx.strokeStyle = stroke; ctx.lineWidth = sel ? 3 : 1.8; ctx.strokeRect(p.x, p.y, w, h);
+        ctx.fillStyle = stroke; ctx.fillRect(p.x + w - 5, p.y + h - 5, 10, 10);
+      });
+    };
+    set(m.walkAllow, 'allow', '#36e36b', 'rgba(54,227,107,.26)');
+    set(m.walkBlock, 'block', '#ff5b5b', 'rgba(255,70,70,.26)');
+    if (state.drawing) {
+      const d = state.drawing, p = w2c(d.x, d.y);
+      ctx.setLineDash([6, 4]); ctx.lineWidth = 2; ctx.strokeStyle = d.kind === 'allow' ? '#36e36b' : '#ff5b5b';
+      ctx.strokeRect(p.x, p.y, d.width * s, d.height * s); ctx.setLineDash([]);
+    }
+  }
+  function pickWalk(cx, cy) {
+    const m = D.maps[state.map], s = dispScale();
+    for (const kindName of ['block', 'allow']) {
+      const arr = kindName === 'allow' ? m.walkAllow : m.walkBlock;
+      if (!arr) continue;
+      for (let i = arr.length - 1; i >= 0; i--) {
+        const rr = arr[i], p = w2c(rr.x, rr.y), w = rr.width * s, h = rr.height * s;
+        if (Math.abs(cx - (p.x + w)) < 9 && Math.abs(cy - (p.y + h)) < 9) return { kind: kindName, i, handle: 'br' };
+        if (cx >= p.x && cx <= p.x + w && cy >= p.y && cy <= p.y + h) return { kind: kindName, i, handle: 'move' };
+      }
+    }
+    return null;
   }
 
   // ======== STITCHED WORLD MAP (連結ワールドマップ) ========
@@ -348,7 +389,14 @@
     h += '<div class="kv"><span>scale</span><b>' + m.worldScale + '</b></div>';
     h += '<div class="kv"><span>出口</span><b>' + m.exits.length + '</b></div>';
     h += '<div class="kv"><span>到着spawn</span><b>' + arrivalsFor(state.map).length + '</b></div>';
-    if (state.sel) {
+    h += '<div class="kv"><span>可動域 床緑/壁赤</span><b>' + ((m.walkAllow || []).length) + ' / ' + ((m.walkBlock || []).length) + '</b></div>';
+    if (state.walkSel) {
+      const arr = state.walkSel.kind === 'allow' ? m.walkAllow : m.walkBlock, rr = arr[state.walkSel.i], isAllow = state.walkSel.kind === 'allow';
+      h += '<div class="sel-box" style="border-color:' + (isAllow ? '#36e36b' : '#ff5b5b') + '"><div class="side__h">' + (isAllow ? '床(緑=歩ける)' : '壁(赤=歩けない)') + ' 矩形</div>';
+      h += '<div class="hint">WORLD座標。ゲームの可動域に直接効く(緑は壁を上書きして歩行可)。</div>';
+      h += coordRow('x', rr.x, 'wk_x') + coordRow('y', rr.y, 'wk_y') + coordRow('w', rr.width, 'wk_w') + coordRow('h', rr.height, 'wk_h');
+      h += '<button id="wkDel" style="margin-top:6px;border-color:#ff5b5b">この矩形を削除</button></div>';
+    } else if (state.sel) {
       if (state.sel.kind === 'exit') {
         const e = m.exits[state.sel.i];
         h += '<div class="sel-box is-exit"><div class="side__h">出口 →' + e.to + '</div>';
@@ -362,10 +410,16 @@
         h += '<div class="row"><label>facing(向き)</label>' + faceSel(e.spawnFace, 'sp_face') + '</div></div>';
       }
     } else {
-      h += '<div class="hint" style="margin-top:10px">緑の出口 or ピンクの到着spawn を<b>ドラッグ</b>して移動。クリックで選択→数値で微調整。</div>';
+      h += '<div class="hint" style="margin-top:10px">出口/spawnは<b>選択</b>でドラッグ。可動域は <b>壁(赤)/床(緑)</b> で範囲をドラッグ作成→角でリサイズ／本体ドラッグで移動／<b>削除</b>でクリック消去。緑(床)は壁より優先で歩行可になる。</div>';
     }
     side.innerHTML = h;
     bindSideInputs();
+    if (state.walkSel) {
+      const arr = state.walkSel.kind === 'allow' ? m.walkAllow : m.walkBlock, rr = arr[state.walkSel.i];
+      const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onchange = () => { fn(+el.value); render(); }; };
+      on('wk_x', v => rr.x = Math.round(v)); on('wk_y', v => rr.y = Math.round(v)); on('wk_w', v => rr.width = Math.max(8, Math.round(v))); on('wk_h', v => rr.height = Math.max(8, Math.round(v)));
+      const del = document.getElementById('wkDel'); if (del) del.onclick = () => { arr.splice(state.walkSel.i, 1); state.walkSel = null; render(); };
+    }
   }
   function renderSideStitch() {
     let h = '<div class="side__h">連結ワールドマップ</div>';
@@ -429,10 +483,24 @@
       else { state.sel = null; state.pan = { cx, cy, ox: state.world.ox, oy: state.world.oy }; }
       render(); return;
     }
+    // detail view — tool dispatch
+    const wp = c2w(cx, cy);
+    if (state.tool === 'block' || state.tool === 'allow') {
+      const sx = snapV(wp.x), sy = snapV(wp.y);
+      state.drawing = { kind: state.tool, x: sx, y: sy, width: 0, height: 0, ox: sx, oy: sy };
+      render(); return;
+    }
+    if (state.tool === 'erase') {
+      const e = pickWalk(cx, cy);
+      if (e) { (e.kind === 'allow' ? D.maps[state.map].walkAllow : D.maps[state.map].walkBlock).splice(e.i, 1); state.walkSel = null; render(); }
+      return;
+    }
+    // select: spawns/exits (precise) first, then walk rects
     const hit = pickAt(cx, cy);
-    state.sel = hit;
-    if (hit) state.drag = { startC: { cx, cy }, hit };
-    render();
+    if (hit) { state.sel = hit; state.walkSel = null; state.drag = { startC: { cx, cy }, hit }; render(); return; }
+    const e = pickWalk(cx, cy);
+    if (e) { state.walkSel = { kind: e.kind, i: e.i }; state.sel = null; state.drag = { walk: e }; render(); return; }
+    state.sel = null; state.walkSel = null; state.drag = null; render();
   });
   window.addEventListener('mousemove', ev => {
     const r = cv.getBoundingClientRect(), cx = ev.clientX - r.left, cy = ev.clientY - r.top;
@@ -443,7 +511,19 @@
     }
     const w = c2w(cx, cy);
     const ro = document.getElementById('coordReadout'); if (ro) ro.textContent = '(' + Math.round(w.x) + ', ' + Math.round(w.y) + ')';
+    if (state.drawing) {
+      const ox = state.drawing.ox, oy = state.drawing.oy, nx = snapV(w.x), ny = snapV(w.y);
+      state.drawing.x = Math.min(ox, nx); state.drawing.y = Math.min(oy, ny);
+      state.drawing.width = Math.abs(nx - ox); state.drawing.height = Math.abs(ny - oy);
+      render(); return;
+    }
     if (!state.drag) return;
+    if (state.drag.walk) {
+      const e = state.drag.walk, arr = e.kind === 'allow' ? D.maps[state.map].walkAllow : D.maps[state.map].walkBlock, rr = arr[e.i];
+      if (e.handle === 'br') { rr.width = Math.max(8, snapV(w.x) - rr.x); rr.height = Math.max(8, snapV(w.y) - rr.y); }
+      else { rr.x = Math.max(0, snapV(w.x - rr.width / 2)); rr.y = Math.max(0, snapV(w.y - rr.height / 2)); }
+      render(); return;
+    }
     const m = D.maps[state.map], sc = scaleOf(state.map);
     if (state.drag.hit.kind === 'exit') {
       const e = m.exits[state.drag.hit.i];
@@ -456,7 +536,19 @@
     }
     render();
   });
-  window.addEventListener('mouseup', () => { state.drag = null; state.pan = null; });
+  window.addEventListener('mouseup', () => {
+    if (state.drawing) {
+      const d = state.drawing;
+      if (d.width >= 8 && d.height >= 8) {
+        const m = D.maps[state.map];
+        const arr = d.kind === 'allow' ? (m.walkAllow = m.walkAllow || []) : (m.walkBlock = m.walkBlock || []);
+        arr.push({ x: d.x, y: d.y, width: d.width, height: d.height });
+        state.walkSel = { kind: d.kind, i: arr.length - 1 };
+      }
+      state.drawing = null; render();
+    }
+    state.drag = null; state.pan = null;
+  });
   cv.addEventListener('wheel', ev => {
     if (state.view !== 'stitch') return; ev.preventDefault();
     const r = cv.getBoundingClientRect(), cx = ev.clientX - r.left, cy = ev.clientY - r.top, w = state.world, L = state.layout;
@@ -472,19 +564,20 @@
   // ---- export ----
   function exportData() {
     const out = {};
-    for (const id of Object.keys(D.maps)) out[id] = D.maps[id].exits.map(e => ({ x: e.x, y: e.y, width: e.width, height: e.height, to: e.to, direction: e.direction, spawnX: e.spawnX, spawnY: e.spawnY, spawnFace: e.spawnFace }));
+    for (const id of Object.keys(D.maps)) out[id] = { exits: D.maps[id].exits.map(e => ({ x: e.x, y: e.y, width: e.width, height: e.height, to: e.to, direction: e.direction, spawnX: e.spawnX, spawnY: e.spawnY, spawnFace: e.spawnFace })), walkAllow: D.maps[id].walkAllow || [], walkBlock: D.maps[id].walkBlock || [] };
     const txt = 'NAV_EXPORT = ' + JSON.stringify(out, null, 1);
-    side.innerHTML = '<div class="side__h">エクスポート</div><div class="hint">このテキストを nekoojisan→Claude に貼ってください。Claudeが各マップのexits(spawnXY含む)をベイクします。</div><textarea id="exp">' + txt + '</textarea><button id="copyExp" style="margin-top:8px">📋 コピー</button>';
+    side.innerHTML = '<div class="side__h">エクスポート</div><div class="hint">このテキストを nekoojisan→Claude に貼ってください。Claudeが各マップの 出口/spawn/可動域(緑床・赤壁) をベイクします。</div><textarea id="exp">' + txt + '</textarea><button id="copyExp" style="margin-top:8px">📋 コピー</button>';
     document.getElementById('copyExp').onclick = () => { document.getElementById('exp').select(); document.execCommand('copy'); document.getElementById('copyExp').textContent = '✓ コピーした'; };
   }
 
   // ---- view switching ----
   function setView(v) {
-    state.view = v; state.sel = null;
+    state.view = v; state.sel = null; state.walkSel = null; state.drawing = null;
     document.getElementById('tabDetail').classList.toggle('btn--on', v === 'detail');
     document.getElementById('tabGraph').classList.toggle('btn--on', v === 'stitch');
     const show = v === 'stitch' ? '' : 'none';
     scopeSel.style.display = show; scopeLbl.style.display = show;
+    document.getElementById('walkTools').style.display = v === 'detail' ? '' : 'none';
     if (v === 'stitch') state.world.zoom = null;
     render();
   }
@@ -501,12 +594,15 @@
   gridSel.onchange = () => { state.grid = +gridSel.value; render(); };
   snapBtn.onclick = () => { state.snap = !state.snap; snapBtn.classList.toggle('btn--on', state.snap); snapBtn.textContent = 'スナップ ' + (state.snap ? 'ON' : 'OFF'); render(); };
   document.getElementById('layerBtn').onclick = () => { state.layers = !state.layers; const b = document.getElementById('layerBtn'); b.classList.toggle('btn--on', state.layers); b.textContent = '障害物/オブジェクト ' + (state.layers ? 'ON' : 'OFF'); render(); };
+  const toolBtns = { select: 'toolSelect', block: 'toolBlock', allow: 'toolAllow', erase: 'toolErase' };
+  function setTool(t) { state.tool = t; state.walkSel = null; for (const k in toolBtns) document.getElementById(toolBtns[k]).classList.toggle('btn--on', k === t); render(); }
+  for (const k in toolBtns) document.getElementById(toolBtns[k]).onclick = () => setTool(k);
   document.getElementById('tabDetail').onclick = () => setView('detail');
   document.getElementById('tabGraph').onclick = () => setView('stitch');
   document.getElementById('exportBtn').onclick = exportData;
   window.addEventListener('resize', () => { if (state.view === 'stitch') { state.world.zoom = null; render(); } });
   const ro = document.createElement('span'); ro.className = 'hint'; ro.innerHTML = '座標: <b id="coordReadout">(–, –)</b>'; document.querySelector('.topbar').appendChild(ro);
-  if (location.hash === '#graph' || location.hash === '#world') setView('stitch'); else render();
+  if (location.hash === '#graph' || location.hash === '#world') setView('stitch'); else setView('detail');
 })();
 </script>
 </body>

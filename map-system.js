@@ -2027,6 +2027,17 @@ class MapSystem {
                 if (exits.length > 0) map.exits = exits;
             }
 
+            // ★可動域の手動調整(エディタ由来) — WORLD座標で保存(collisionRectsのBASE慣習とは別機構)。
+            //   walkAllow=緑(強制歩行可・carve)、walkBlock=赤(追加ブロック)。isMapPositionWalkableが直接参照。
+            //   object-layer/scale経路に干渉しないよう、ここではスケールせずWORLDのまま保持する。
+            const worldRect = rect => {
+                const x = Number(rect.x), y = Number(rect.y), w = Number(rect.width), h = Number(rect.height);
+                if (![x, y, w, h].every(Number.isFinite) || w <= 0 || h <= 0) return null;
+                return { x: Math.round(x), y: Math.round(y), width: Math.round(w), height: Math.round(h) };
+            };
+            if (Array.isArray(data.walkAllow)) map.walkAllow = data.walkAllow.map(worldRect).filter(Boolean);
+            if (Array.isArray(data.walkBlock)) map.walkBlock = data.walkBlock.map(worldRect).filter(Boolean);
+
             this.constrainMapNPCsToWalkable(map);
             console.log(`[Map] Applied walkability override: ${mapId} -> ${targetMapId}`);
         });
@@ -3670,6 +3681,13 @@ class MapSystem {
             return false;
         }
 
+        // ★可動域手動調整(緑=強制歩行可): box が完全に内側なら、壁/障害物より優先して歩行可。
+        if (map.walkAllow && map.walkAllow.length) {
+            for (const w of map.walkAllow) {
+                if (box.left >= w.x && box.right <= w.x + w.width && box.top >= w.y && box.bottom <= w.y + w.height) return true;
+            }
+        }
+
         if (!this.isObjectLayerMap(map) && map.walkableRects && map.walkableRects.length > 0) {
             if (!this.isBoxCoveredByWalkableRects(box, map.walkableRects)) return false;
         }
@@ -3684,6 +3702,13 @@ class MapSystem {
                 ) {
                     return false;
                 }
+            }
+        }
+
+        // ★可動域手動調整(赤=追加ブロック): box が重なれば歩行不可。
+        if (map.walkBlock && map.walkBlock.length) {
+            for (const b of map.walkBlock) {
+                if (box.right > b.x && box.left < b.x + b.width && box.bottom > b.y && box.top < b.y + b.height) return false;
             }
         }
 
