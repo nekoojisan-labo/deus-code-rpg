@@ -3958,6 +3958,7 @@ class MapSystem {
         const map = this.maps[this.currentMap];
         if (!map || this.transitioning || this.isTransitionCoolingDown()) return null;
 
+        const backTo = this.previousMap ? this.normalizeMapId(this.previousMap) : null;
         for (const exit of (map.exits || [])) {
             // autoEnterドアは接触では発火させない（checkAutoEnterAheadの「向きを合わせて
             // 歩き込んだ時」のみ）。退店スポーンがドア余白に掛かっても再入店ループしない
@@ -3967,11 +3968,20 @@ class MapSystem {
             // 方向制限付きの出口（建物入口など）はプレイヤーの向きが一致する時だけ反応
             if (exit.requireFacing && playerFacing && exit.requireFacing !== playerFacing) continue;
 
-            // 縁遷移を少し寛容化：出口の判定箱を数px外側へ広げ、ピンポイント当たりを緩和
-            const M = 8;
-            if (playerX >= exit.x - M && playerX <= exit.x + exit.width + M &&
-                playerY >= exit.y - M && playerY <= exit.y + exit.height + M) {
+            // ★中心1点ではなくプレイヤーの体(箱)が出口箱に重なったら発火＝少し広く、脇をすり抜けない。
+            //   ドアは上の requireFacing/autoEnter ゲートで誤発火を防止。
+            const HALF = 12, M = 0;
+            const inTrig = (playerX + HALF + M >= exit.x && playerX - HALF - M <= exit.x + exit.width &&
+                playerY + HALF + M >= exit.y && playerY - HALF - M <= exit.y + exit.height);
 
+            // ★逆戻り防止: 戻り出口(来た扉)は、到着後プレイヤーが一度トリガーから出るまで発火させない。
+            //   spawnは扉の真横に出るので、判定を広げると即逆戻りし得る。位置ベースで「一度離れたら武装」。
+            if (backTo && this.normalizeMapId(exit.to) === backTo && !this._backExitArmed) {
+                if (!inTrig) this._backExitArmed = true; // 一度出た → 以後は通常通り発火（=戻れる）
+                continue;
+            }
+
+            if (inTrig) {
                 // ロック/章進行フラグゲートのチェック
                 const gate = this.evalExitGate(exit);
                 if (gate) return gate;
@@ -3979,7 +3989,7 @@ class MapSystem {
                 return { nextMap: this.normalizeMapId(exit.to), exit: exit };
             }
         }
-        
+
         return null;
     }
 
@@ -4055,6 +4065,8 @@ class MapSystem {
         // currentMap は下の setTimeout 内で書き換わり、getSpawnPoint 実行時には
         // 既に遷移先になっている為、ここで控える）
         this.previousMap = this.currentMap;
+        // ★逆戻り防止: 到着先の「戻り出口」は、プレイヤーが一度そのトリガーから出るまで武装解除。
+        this._backExitArmed = false;
 
         this.loadMapImage(mapId);
         this.preloadSpriteImages(mapId);
@@ -4175,9 +4187,16 @@ class MapSystem {
                 }
                 if (dist > GIVEUP) { npc._approaching = false; npc.isMoving = false; continue; }
                 const len = dist || 1;
-                npc.x += (dx / len) * SPEED;
-                npc.y += (dy / len) * SPEED;
-                npc.isMoving = true;
+                const nx = npc.x + (dx / len) * SPEED;
+                const ny = npc.y + (dy / len) * SPEED;
+                // ★壁/建物/可動域編集にめり込まないよう、移動の確定は isMapPositionWalkable に通す
+                //   （プレイヤー移動と同じ唯一の関所。壁に当たったら軸スライドで沿って進む）。
+                //   到達(REACH)/会話トリガーは壁で詰まらせない為このまま据え置き(GIVEUP=240で旅程は上限あり)。
+                let movedNpc = false;
+                if (this.isMapPositionWalkable(map, nx, ny, 22)) { npc.x = nx; npc.y = ny; movedNpc = true; }
+                else if (this.isMapPositionWalkable(map, nx, npc.y, 22)) { npc.x = nx; movedNpc = true; }
+                else if (this.isMapPositionWalkable(map, npc.x, ny, 22)) { npc.y = ny; movedNpc = true; }
+                npc.isMoving = movedNpc;
                 npc.animTime = (npc.animTime || 0) + 16;
                 npc.facing = faceDir;
             } else if (dist <= TRIGGER && dist > REACH) {
