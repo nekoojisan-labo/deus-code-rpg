@@ -80,6 +80,7 @@
   const snapBtn = document.getElementById('snapBtn'), side = document.getElementById('side');
   const scopeSel = document.getElementById('scopeSel'), scopeLbl = document.getElementById('scopeLbl');
   const AREA_JP = { city: '都心(広場/都庁前)', town: '商店街', shop: '店', market: '闇市', subway: '地下鉄', dungeon: 'ダンジョン', shrine: '神宮', garden: '庭園', house: '住居' };
+  const SPAWN_DEF = 40; // spawn箱の既定サイズ(BASE)。中心=実spawn点、箱は範囲選択/掴み用。
   let state = {
     map: null, grid: 50, snap: false, view: 'detail', sel: null, drag: null, pan: null,
     imgCache: {}, imgTried: {}, scope: '__all__', layers: true, objCache: {},
@@ -185,15 +186,17 @@
       const arr = arrivalsFor(state.map);
       arr.forEach((a) => {
         const sc = scaleOf(state.map);
-        const wp = { x: a.exit.spawnX * sc, y: a.exit.spawnY * sc };
-        const p = w2c(wp.x, wp.y);
+        const cwx = a.exit.spawnX * sc, cwy = a.exit.spawnY * sc;                 // 中心(WORLD)=実spawn点
+        const hw = ((a.exit.spawnW || SPAWN_DEF) / 2) * sc, hh = ((a.exit.spawnH || SPAWN_DEF) / 2) * sc;
+        const tl = w2c(cwx - hw, cwy - hh), bw = 2 * hw * s, bh = 2 * hh * s, c = w2c(cwx, cwy);
         const seld = state.sel && state.sel.kind === 'spawn' && state.sel.src === a.src && state.sel.exitIdx === a.exitIdx;
-        ctx.beginPath(); ctx.arc(p.x, p.y, seld ? 11 : 8, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255,91,208,.25)'; ctx.fill();
-        ctx.strokeStyle = '#ff5bd0'; ctx.lineWidth = seld ? 4 : 2.5; ctx.stroke();
+        ctx.fillStyle = 'rgba(255,91,208,.16)'; ctx.fillRect(tl.x, tl.y, bw, bh);
+        ctx.strokeStyle = '#ff5bd0'; ctx.lineWidth = seld ? 3 : 2; ctx.strokeRect(tl.x, tl.y, bw, bh);
+        ctx.beginPath(); ctx.arc(c.x, c.y, 3, 0, Math.PI * 2); ctx.fillStyle = '#ff5bd0'; ctx.fill();   // 中心点(実spawn)
+        if (seld) { ctx.fillStyle = '#ff5bd0'; ctx.fillRect(tl.x + bw - 5, tl.y + bh - 5, 10, 10); }     // リサイズ角
         const F = FACEVEC[a.exit.spawnFace] || { north: [0, -1], south: [0, 1], west: [-1, 0], east: [1, 0] }[a.exit.direction];
-        if (F) { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + F[0] * 16, p.y + F[1] * 16); ctx.strokeStyle = '#ff9be6'; ctx.lineWidth = 2; ctx.stroke(); }
-        ctx.fillStyle = '#ff9be6'; ctx.fillText('←' + a.src, p.x + 11, p.y - 6);
+        if (F) { ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(c.x + F[0] * 16, c.y + F[1] * 16); ctx.strokeStyle = '#ff9be6'; ctx.lineWidth = 2; ctx.stroke(); }
+        ctx.fillStyle = '#ff9be6'; ctx.fillText('←' + a.src, c.x + 9, c.y - 6);
       });
       drawWalkRects(m, s);
     });
@@ -379,8 +382,10 @@
         if (!inScope.has(a.src) || a.exit.spawnX == null) continue;
         const sp = g2s(gx + a.exit.spawnX * dsc, gy + a.exit.spawnY * dsc);
         const sel = state.sel && state.sel.kind === 'spawn' && state.sel.src === a.src && state.sel.exitIdx === a.exitIdx;
-        ctx.beginPath(); ctx.arc(sp.x, sp.y, sel ? 9 : 7, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255,91,208,.3)'; ctx.fill(); ctx.strokeStyle = '#ff5bd0'; ctx.lineWidth = sel ? 3.5 : 2.5; ctx.stroke();
+        const bw = (a.exit.spawnW || SPAWN_DEF) * dsc * w.zoom, bh = (a.exit.spawnH || SPAWN_DEF) * dsc * w.zoom;
+        ctx.fillStyle = 'rgba(255,91,208,.16)'; ctx.fillRect(sp.x - bw / 2, sp.y - bh / 2, bw, bh);
+        ctx.strokeStyle = '#ff5bd0'; ctx.lineWidth = sel ? 3 : 2; ctx.strokeRect(sp.x - bw / 2, sp.y - bh / 2, bw, bh);
+        ctx.beginPath(); ctx.arc(sp.x, sp.y, sel ? 5 : 3.5, 0, Math.PI * 2); ctx.fillStyle = '#ff5bd0'; ctx.fill();
         const F = FACEVEC[a.exit.spawnFace] || OFF[a.exit.direction];
         if (F) { ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(sp.x + F[0] * 14, sp.y + F[1] * 14); ctx.strokeStyle = '#ff9be6'; ctx.lineWidth = 2; ctx.stroke(); }
         state.spawnHandles.push({ sx: sp.x, sy: sp.y, dest: id, src: a.src, exitIdx: a.exitIdx });
@@ -431,7 +436,9 @@
         const e = D.maps[state.sel.src].exits[state.sel.exitIdx];
         h += '<div class="sel-box is-spawn"><div class="side__h">到着spawn ←' + state.sel.src + '</div>';
         h += '<div class="hint">' + state.sel.src + ' から来た時、ここ(' + state.map + ')のどこに出るか。座標=地図の実座標(ワールド)。グリッドに関係なく1px単位で自由に置けます(数値直接入力も可)。</div>';
-        h += coordRow('X(実座標)', Math.round(e.spawnX * m.worldScale), 'sp_x') + coordRow('Y(実座標)', Math.round(e.spawnY * m.worldScale), 'sp_y');
+        h += coordRow('X(中心)', Math.round(e.spawnX * m.worldScale), 'sp_x') + coordRow('Y(中心)', Math.round(e.spawnY * m.worldScale), 'sp_y');
+        h += coordRow('幅W', Math.round((e.spawnW || SPAWN_DEF) * m.worldScale), 'sp_w') + coordRow('高H', Math.round((e.spawnH || SPAWN_DEF) * m.worldScale), 'sp_h');
+        h += '<div class="hint">桃の箱をドラッグ=中心(実spawn)を移動／角=範囲サイズ変更。</div>';
         h += '<div class="row"><label>facing(向き)</label>' + faceSel(e.spawnFace, 'sp_face') + '</div></div>';
       }
     } else {
@@ -457,7 +464,8 @@
       const e = D.maps[state.sel.src].exits[state.sel.exitIdx], dm = D.maps[state.sel.dest];
       h += '<div class="sel-box is-spawn"><div class="side__h">spawn: ' + state.sel.src + ' → ' + state.sel.dest + '</div>';
       h += '<div class="hint">' + state.sel.src + ' から ' + state.sel.dest + ' に入った時の出現位置。座標=実座標(ワールド)・グリッドなしで1px自由配置(数値直接入力も可)。</div>';
-      h += coordRow('X(実座標)', Math.round(e.spawnX * dm.worldScale), 'sp_x') + coordRow('Y(実座標)', Math.round(e.spawnY * dm.worldScale), 'sp_y');
+      h += coordRow('X(中心)', Math.round(e.spawnX * dm.worldScale), 'sp_x') + coordRow('Y(中心)', Math.round(e.spawnY * dm.worldScale), 'sp_y');
+      h += coordRow('幅W', Math.round((e.spawnW || SPAWN_DEF) * dm.worldScale), 'sp_w') + coordRow('高H', Math.round((e.spawnH || SPAWN_DEF) * dm.worldScale), 'sp_h');
       h += '<div class="row"><label>facing(向き)</label>' + faceSel(e.spawnFace, 'sp_face') + '</div></div>';
     } else {
       h += '<div class="hint" style="margin-top:10px">桃の到着spawnをクリックで選択→数値で微調整。<br>変なところ(壁・マップ外)に出ているspawnを、隣の出口に合わせて引っ張ってください。</div>';
@@ -467,7 +475,9 @@
     if (state.sel && state.sel.kind === 'spawn') {
       const e = D.maps[state.sel.src].exits[state.sel.exitIdx], scD = (D.maps[state.sel.dest].worldScale || 1);
       const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onchange = () => { fn(el.value); render(); }; };
-      on('sp_x', v => e.spawnX = Math.round(+v / scD)); on('sp_y', v => e.spawnY = Math.round(+v / scD)); on('sp_face', v => e.spawnFace = v);
+      on('sp_x', v => e.spawnX = Math.round(+v / scD)); on('sp_y', v => e.spawnY = Math.round(+v / scD));
+      on('sp_w', v => e.spawnW = Math.max(16, Math.round(+v / scD))); on('sp_h', v => e.spawnH = Math.max(16, Math.round(+v / scD)));
+      on('sp_face', v => e.spawnFace = v);
     }
     document.getElementById('fitBtn').onclick = () => { state.world.zoom = null; render(); };
   }
@@ -481,17 +491,22 @@
       on('ex_x', v => e.x = +v); on('ex_y', v => e.y = +v); on('ex_w', v => e.width = +v); on('ex_h', v => e.height = +v); on('ex_dir', v => e.direction = v);
     } else if (state.sel) {
       const e = D.maps[state.sel.src].exits[state.sel.exitIdx], scD = m.worldScale || 1;
-      on('sp_x', v => e.spawnX = Math.round(+v / scD)); on('sp_y', v => e.spawnY = Math.round(+v / scD)); on('sp_face', v => e.spawnFace = v);
+      on('sp_x', v => e.spawnX = Math.round(+v / scD)); on('sp_y', v => e.spawnY = Math.round(+v / scD));
+      on('sp_w', v => e.spawnW = Math.max(16, Math.round(+v / scD))); on('sp_h', v => e.spawnH = Math.max(16, Math.round(+v / scD)));
+      on('sp_face', v => e.spawnFace = v);
     }
   }
 
   // ---- detail hit testing ----
   function pickAt(cx, cy) {
-    const m = D.maps[state.map], sc = scaleOf(state.map);
+    const m = D.maps[state.map], sc = scaleOf(state.map), s = dispScale();
     const arr = arrivalsFor(state.map);
     for (const a of arr) {
-      const wp = w2c(a.exit.spawnX * sc, a.exit.spawnY * sc);
-      if (Math.hypot(cx - wp.x, cy - wp.y) < 12) return { kind: 'spawn', src: a.src, exitIdx: a.exitIdx };
+      const cwx = a.exit.spawnX * sc, cwy = a.exit.spawnY * sc;
+      const hw = ((a.exit.spawnW || SPAWN_DEF) / 2) * sc, hh = ((a.exit.spawnH || SPAWN_DEF) / 2) * sc;
+      const tl = w2c(cwx - hw, cwy - hh), bw = 2 * hw * s, bh = 2 * hh * s;
+      if (Math.abs(cx - (tl.x + bw)) < 9 && Math.abs(cy - (tl.y + bh)) < 9) return { kind: 'spawn', src: a.src, exitIdx: a.exitIdx, handle: 'resize' };
+      if (cx >= tl.x && cx <= tl.x + bw && cy >= tl.y && cy <= tl.y + bh) return { kind: 'spawn', src: a.src, exitIdx: a.exitIdx, handle: 'move' };
     }
     for (let i = m.exits.length - 1; i >= 0; i--) {
       const e = m.exits[i], p = w2c(e.x, e.y), s = dispScale();
@@ -566,8 +581,16 @@
       e.y = Math.max(0, Math.min(m.worldH - e.height, snapV(w.y - e.height / 2)));
     } else {
       const e = D.maps[state.drag.hit.src].exits[state.drag.hit.exitIdx];
-      e.spawnX = Math.max(0, Math.min(baseW, Math.round(w.x / sc)));   // spawnはグリッドに合わせず1px自由配置
-      e.spawnY = Math.max(0, Math.min(baseH, Math.round(w.y / sc)));
+      if (state.drag.hit.handle === 'resize') {
+        // 角ドラッグ=中心固定でサイズ変更(範囲選択)。
+        const cwx = e.spawnX * sc, cwy = e.spawnY * sc;
+        e.spawnW = Math.max(16, Math.round(2 * Math.abs(w.x - cwx) / sc));
+        e.spawnH = Math.max(16, Math.round(2 * Math.abs(w.y - cwy) / sc));
+      } else {
+        // 本体ドラッグ=中心(実spawn点)を移動。グリッドに合わせず1px自由配置。
+        e.spawnX = Math.max(0, Math.min(baseW, Math.round(w.x / sc)));
+        e.spawnY = Math.max(0, Math.min(baseH, Math.round(w.y / sc)));
+      }
     }
     render();
   });
@@ -599,7 +622,7 @@
   // ---- export ----
   function exportData() {
     const out = {};
-    for (const id of Object.keys(D.maps)) out[id] = { exits: D.maps[id].exits.map(e => ({ x: e.x, y: e.y, width: e.width, height: e.height, to: e.to, direction: e.direction, spawnX: e.spawnX, spawnY: e.spawnY, spawnFace: e.spawnFace })), walkAllow: D.maps[id].walkAllow || [], walkBlock: D.maps[id].walkBlock || [], collDelete: D.maps[id].collDelete || [], ignoreBase: !!D.maps[id].ignoreBase };
+    for (const id of Object.keys(D.maps)) out[id] = { exits: D.maps[id].exits.map(e => ({ x: e.x, y: e.y, width: e.width, height: e.height, to: e.to, direction: e.direction, spawnX: e.spawnX, spawnY: e.spawnY, spawnFace: e.spawnFace, spawnW: e.spawnW, spawnH: e.spawnH })), walkAllow: D.maps[id].walkAllow || [], walkBlock: D.maps[id].walkBlock || [], collDelete: D.maps[id].collDelete || [], ignoreBase: !!D.maps[id].ignoreBase };
     const txt = 'NAV_EXPORT = ' + JSON.stringify(out, null, 1);
     side.innerHTML = '<div class="side__h">エクスポート</div><div class="hint">このテキストを nekoojisan→Claude に貼ってください。Claudeが各マップの 出口/spawn/可動域(緑床・赤壁) をベイクします。</div><textarea id="exp">' + txt + '</textarea><button id="copyExp" style="margin-top:8px">📋 コピー</button>';
     document.getElementById('copyExp').onclick = () => { document.getElementById('exp').select(); document.execCommand('copy'); document.getElementById('copyExp').textContent = '✓ コピーした'; };
