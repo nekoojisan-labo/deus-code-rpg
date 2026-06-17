@@ -812,8 +812,8 @@ window.MAP_OBJECTS = {
     "spawnFace": "down"
    },
    {
-    "x": 99,
-    "y": 147,
+    "x": 115,
+    "y": 87,
     "width": 40,
     "height": 37,
     "to": "shop_weapon",
@@ -826,8 +826,8 @@ window.MAP_OBJECTS = {
     "spawnFace": "up"
    },
    {
-    "x": 634,
-    "y": 149,
+    "x": 633,
+    "y": 101,
     "width": 34,
     "height": 41,
     "to": "shop_magic",
@@ -840,8 +840,8 @@ window.MAP_OBJECTS = {
     "spawnFace": "up"
    },
    {
-    "x": 104,
-    "y": 342,
+    "x": 98,
+    "y": 331,
     "width": 31,
     "height": 28,
     "to": "shop_armor",
@@ -854,8 +854,8 @@ window.MAP_OBJECTS = {
     "spawnFace": "up"
    },
    {
-    "x": 656,
-    "y": 352,
+    "x": 665,
+    "y": 332,
     "width": 34,
     "height": 27,
     "to": "shop_item",
@@ -884,8 +884,8 @@ window.MAP_OBJECTS = {
     "spawnFace": "right"
    },
    {
-    "x": 595,
-    "y": 404,
+    "x": 652,
+    "y": 352,
     "width": 75,
     "height": 46,
     "to": "subway_concourse_a",
@@ -1479,8 +1479,8 @@ window.MAP_OBJECTS = {
     "spawnFace": "right"
    },
    {
-    "x": 76,
-    "y": 316,
+    "x": 101,
+    "y": 350,
     "width": 30,
     "height": 28,
     "to": "black_market_entrance",
@@ -1509,8 +1509,8 @@ window.MAP_OBJECTS = {
     "spawnFace": "up"
    },
    {
-    "x": 554,
-    "y": 145,
+    "x": 592,
+    "y": 150,
     "width": 32,
     "height": 48,
     "to": "shop_guild",
@@ -2016,8 +2016,8 @@ window.MAP_OBJECTS = {
     "spawnFace": "left"
    },
    {
-    "x": 454,
-    "y": 158,
+    "x": 415,
+    "y": 149,
     "width": 26,
     "height": 30,
     "to": "house_1",
@@ -2426,8 +2426,8 @@ window.MAP_OBJECTS = {
     "spawnFace": "right"
    },
    {
-    "x": 448,
-    "y": 292,
+    "x": 374,
+    "y": 152,
     "width": 50,
     "height": 40,
     "to": "shop_black_market",
@@ -3401,8 +3401,8 @@ window.MAP_OBJECTS = {
     "spawnFace": "left"
    },
    {
-    "x": 302,
-    "y": 0,
+    "x": 328,
+    "y": 43,
     "width": 196,
     "height": 80,
     "to": "tokyo_gov_floor2",
