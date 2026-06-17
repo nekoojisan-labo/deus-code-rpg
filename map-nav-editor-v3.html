@@ -47,7 +47,7 @@
   <span style="width:14px"></span>
   <label class="hint">グリッド:</label>
   <select id="gridSel"><option value="25">25</option><option value="50" selected>50</option><option value="100">100</option></select>
-  <button id="snapBtn" class="btn--on">スナップ ON</button>
+  <button id="snapBtn">スナップ OFF</button>
   <button id="layerBtn" class="btn--on">障害物/オブジェクト ON</button>
   <span id="walkTools" style="display:none">
     <span class="hint">可動域:</span>
@@ -81,7 +81,7 @@
   const scopeSel = document.getElementById('scopeSel'), scopeLbl = document.getElementById('scopeLbl');
   const AREA_JP = { city: '都心(広場/都庁前)', town: '商店街', shop: '店', market: '闇市', subway: '地下鉄', dungeon: 'ダンジョン', shrine: '神宮', garden: '庭園', house: '住居' };
   let state = {
-    map: null, grid: 50, snap: true, view: 'detail', sel: null, drag: null, pan: null,
+    map: null, grid: 50, snap: false, view: 'detail', sel: null, drag: null, pan: null,
     imgCache: {}, imgTried: {}, scope: '__all__', layers: true, objCache: {},
     tool: 'select', walkSel: null, drawing: null,
     layout: null, layoutScope: null, world: { zoom: null, ox: 0, oy: 0 }, spawnHandles: []
@@ -121,7 +121,7 @@
   // P(worldX, worldY) -> screen point (within-map world coords); sc = world->screen scale factor.
   function drawLayers(m, P, sc) {
     if (!state.layers) return;
-    if (m.walk && m.walk.length) { ctx.fillStyle = 'rgba(54,227,107,.09)'; for (const r of m.walk) { const p = P(r.x, r.y); ctx.fillRect(p.x, p.y, r.width * sc, r.height * sc); } }
+    if (m.walk && m.walk.length && !m.ignoreBase) { ctx.fillStyle = 'rgba(54,227,107,.09)'; for (const r of m.walk) { const p = P(r.x, r.y); ctx.fillRect(p.x, p.y, r.width * sc, r.height * sc); } }
     if (m.objs && m.objs.length) {
       for (const o of m.objs) {
         const img = getObjImg(o.sprite), p = P(o.x - o.w / 2, o.y - o.h), w = o.w * sc, h = o.h * sc;
@@ -131,8 +131,8 @@
         }
       }
     }
-    if (m.coll && m.coll.length) {
-      const allow = m.walkAllow || [], ignored = !!m.ignoreBase;
+    if (m.coll && m.coll.length && !m.ignoreBase) {
+      const allow = m.walkAllow || [], ignored = false;
       const carved = r => ignored || allow.some(w => r.x >= w.x && r.y >= w.y && r.x + r.width <= w.x + w.width && r.y + r.height <= w.y + w.height);
       ctx.lineWidth = 1;
       for (const r of m.coll) {
@@ -394,8 +394,8 @@
     const h = state.drag.hit, L = state.layout, dm = D.maps[h.dest], dsc = dm.worldScale || 1;
     const g = s2g(cx, cy), dx = L.pos[h.dest][0], dy = L.pos[h.dest][1];
     const e = D.maps[h.src].exits[h.exitIdx];
-    e.spawnX = Math.max(0, Math.min(baseW, Math.round(snapV(g.x - dx) / dsc)));
-    e.spawnY = Math.max(0, Math.min(baseH, Math.round(snapV(g.y - dy) / dsc)));
+    e.spawnX = Math.max(0, Math.min(baseW, Math.round((g.x - dx) / dsc)));   // spawnは自由配置(グリッドなし)
+    e.spawnY = Math.max(0, Math.min(baseH, Math.round((g.y - dy) / dsc)));
   }
 
   function render() { if (state.view === 'detail') renderDetail(); else renderStitch(); renderSide(); }
@@ -411,8 +411,8 @@
     h += '<div class="kv"><span>出口</span><b>' + m.exits.length + '</b></div>';
     h += '<div class="kv"><span>到着spawn</span><b>' + arrivalsFor(state.map).length + '</b></div>';
     h += '<div class="kv"><span>追加 可動(緑)/非可動(赤)</span><b>' + ((m.walkAllow || []).length) + ' / ' + ((m.walkBlock || []).length) + '</b></div>';
-    h += '<button id="resetBaseBtn" style="width:100%;margin:8px 0;border-color:' + (m.ignoreBase ? '#f59e42' : 'var(--line)') + (m.ignoreBase ? ';background:#3a2a14;color:#ffd9a8' : '') + '">' + (m.ignoreBase ? '⚠ 原の可動域=破棄中(全可動から作り直し) → 元に戻す' : '原の可動域を破棄して作り直す') + '</button>';
-    if (m.ignoreBase) h += '<div class="hint" style="color:#ffd9a8">原の非可動域(点線)は無視中。<b>非可動+(赤)</b>で本当の壁だけを引いてください(通路は開いたまま)。</div>';
+    h += '<button id="resetBaseBtn" style="width:100%;margin:8px 0;border-color:' + (m.ignoreBase ? '#f59e42' : 'var(--line)') + (m.ignoreBase ? ';background:#3a2a14;color:#ffd9a8' : '') + '">' + (m.ignoreBase ? '✓ 原の非可動域=全消去(引き直しモード) → 元に戻す' : '原の非可動域を全部消す(ゼロから引き直す)') + '</button>';
+    if (m.ignoreBase) h += '<div class="hint" style="color:#ffd9a8">原の非可動域は<b>全消去</b>。今この地図は全可動(まっさら)。背景の構造物を見ながら <b>非可動+(赤)</b> で壁を引き直してください。</div>';
     if (state.walkSel) {
       const arr = state.walkSel.kind === 'allow' ? m.walkAllow : m.walkBlock, rr = arr[state.walkSel.i], isAllow = state.walkSel.kind === 'allow';
       h += '<div class="sel-box" style="border-color:' + (isAllow ? '#36e36b' : '#ff5b5b') + '"><div class="side__h">' + (isAllow ? '可動域(緑=歩ける)' : '非可動域(赤=歩けない)') + ' 矩形</div>';
@@ -428,8 +428,8 @@
       } else {
         const e = D.maps[state.sel.src].exits[state.sel.exitIdx];
         h += '<div class="sel-box is-spawn"><div class="side__h">到着spawn ←' + state.sel.src + '</div>';
-        h += '<div class="hint">' + state.sel.src + ' から来た時、ここ(' + state.map + ')のどこに出るか。<br>※ 値はBASE座標(800×450)。世界座標=×' + m.worldScale + '</div>';
-        h += coordRow('spawnX', e.spawnX, 'sp_x') + coordRow('spawnY', e.spawnY, 'sp_y');
+        h += '<div class="hint">' + state.sel.src + ' から来た時、ここ(' + state.map + ')のどこに出るか。座標=地図の実座標(ワールド)。グリッドに関係なく1px単位で自由に置けます(数値直接入力も可)。</div>';
+        h += coordRow('X(実座標)', Math.round(e.spawnX * m.worldScale), 'sp_x') + coordRow('Y(実座標)', Math.round(e.spawnY * m.worldScale), 'sp_y');
         h += '<div class="row"><label>facing(向き)</label>' + faceSel(e.spawnFace, 'sp_face') + '</div></div>';
       }
     } else {
@@ -454,8 +454,8 @@
     if (state.sel && state.sel.kind === 'spawn') {
       const e = D.maps[state.sel.src].exits[state.sel.exitIdx], dm = D.maps[state.sel.dest];
       h += '<div class="sel-box is-spawn"><div class="side__h">spawn: ' + state.sel.src + ' → ' + state.sel.dest + '</div>';
-      h += '<div class="hint">' + state.sel.src + ' から ' + state.sel.dest + ' に入った時の出現位置。<br>※ BASE座標(800×450)。世界座標=×' + dm.worldScale + '</div>';
-      h += coordRow('spawnX', e.spawnX, 'sp_x') + coordRow('spawnY', e.spawnY, 'sp_y');
+      h += '<div class="hint">' + state.sel.src + ' から ' + state.sel.dest + ' に入った時の出現位置。座標=実座標(ワールド)・グリッドなしで1px自由配置(数値直接入力も可)。</div>';
+      h += coordRow('X(実座標)', Math.round(e.spawnX * dm.worldScale), 'sp_x') + coordRow('Y(実座標)', Math.round(e.spawnY * dm.worldScale), 'sp_y');
       h += '<div class="row"><label>facing(向き)</label>' + faceSel(e.spawnFace, 'sp_face') + '</div></div>';
     } else {
       h += '<div class="hint" style="margin-top:10px">桃の到着spawnをクリックで選択→数値で微調整。<br>変なところ(壁・マップ外)に出ているspawnを、隣の出口に合わせて引っ張ってください。</div>';
@@ -463,9 +463,9 @@
     h += '<button id="fitBtn" style="margin-top:12px;width:100%">🔍 全体表示にリセット</button>';
     side.innerHTML = h;
     if (state.sel && state.sel.kind === 'spawn') {
-      const e = D.maps[state.sel.src].exits[state.sel.exitIdx];
+      const e = D.maps[state.sel.src].exits[state.sel.exitIdx], scD = (D.maps[state.sel.dest].worldScale || 1);
       const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onchange = () => { fn(el.value); render(); }; };
-      on('sp_x', v => e.spawnX = +v); on('sp_y', v => e.spawnY = +v); on('sp_face', v => e.spawnFace = v);
+      on('sp_x', v => e.spawnX = Math.round(+v / scD)); on('sp_y', v => e.spawnY = Math.round(+v / scD)); on('sp_face', v => e.spawnFace = v);
     }
     document.getElementById('fitBtn').onclick = () => { state.world.zoom = null; render(); };
   }
@@ -478,8 +478,8 @@
       const e = m.exits[state.sel.i];
       on('ex_x', v => e.x = +v); on('ex_y', v => e.y = +v); on('ex_w', v => e.width = +v); on('ex_h', v => e.height = +v); on('ex_dir', v => e.direction = v);
     } else if (state.sel) {
-      const e = D.maps[state.sel.src].exits[state.sel.exitIdx];
-      on('sp_x', v => e.spawnX = +v); on('sp_y', v => e.spawnY = +v); on('sp_face', v => e.spawnFace = v);
+      const e = D.maps[state.sel.src].exits[state.sel.exitIdx], scD = m.worldScale || 1;
+      on('sp_x', v => e.spawnX = Math.round(+v / scD)); on('sp_y', v => e.spawnY = Math.round(+v / scD)); on('sp_face', v => e.spawnFace = v);
     }
   }
 
@@ -564,8 +564,8 @@
       e.y = Math.max(0, Math.min(m.worldH - e.height, snapV(w.y - e.height / 2)));
     } else {
       const e = D.maps[state.drag.hit.src].exits[state.drag.hit.exitIdx];
-      e.spawnX = Math.max(0, Math.min(baseW, Math.round(snapV(w.x) / sc)));
-      e.spawnY = Math.max(0, Math.min(baseH, Math.round(snapV(w.y) / sc)));
+      e.spawnX = Math.max(0, Math.min(baseW, Math.round(w.x / sc)));   // spawnはグリッドに合わせず1px自由配置
+      e.spawnY = Math.max(0, Math.min(baseH, Math.round(w.y / sc)));
     }
     render();
   });
