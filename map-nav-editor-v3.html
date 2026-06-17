@@ -132,8 +132,8 @@
       }
     }
     if (m.coll && m.coll.length) {
-      const allow = m.walkAllow || [];
-      const carved = r => allow.some(w => r.x >= w.x && r.y >= w.y && r.x + r.width <= w.x + w.width && r.y + r.height <= w.y + w.height);
+      const allow = m.walkAllow || [], ignored = !!m.ignoreBase;
+      const carved = r => ignored || allow.some(w => r.x >= w.x && r.y >= w.y && r.x + r.width <= w.x + w.width && r.y + r.height <= w.y + w.height);
       ctx.lineWidth = 1;
       for (const r of m.coll) {
         const p = P(r.x, r.y), w = r.width * sc, h = r.height * sc, c = carved(r);
@@ -411,6 +411,8 @@
     h += '<div class="kv"><span>出口</span><b>' + m.exits.length + '</b></div>';
     h += '<div class="kv"><span>到着spawn</span><b>' + arrivalsFor(state.map).length + '</b></div>';
     h += '<div class="kv"><span>追加 可動(緑)/非可動(赤)</span><b>' + ((m.walkAllow || []).length) + ' / ' + ((m.walkBlock || []).length) + '</b></div>';
+    h += '<button id="resetBaseBtn" style="width:100%;margin:8px 0;border-color:' + (m.ignoreBase ? '#f59e42' : 'var(--line)') + (m.ignoreBase ? ';background:#3a2a14;color:#ffd9a8' : '') + '">' + (m.ignoreBase ? '⚠ 原の可動域=破棄中(全可動から作り直し) → 元に戻す' : '原の可動域を破棄して作り直す') + '</button>';
+    if (m.ignoreBase) h += '<div class="hint" style="color:#ffd9a8">原の非可動域(点線)は無視中。<b>非可動+(赤)</b>で本当の壁だけを引いてください(通路は開いたまま)。</div>';
     if (state.walkSel) {
       const arr = state.walkSel.kind === 'allow' ? m.walkAllow : m.walkBlock, rr = arr[state.walkSel.i], isAllow = state.walkSel.kind === 'allow';
       h += '<div class="sel-box" style="border-color:' + (isAllow ? '#36e36b' : '#ff5b5b') + '"><div class="side__h">' + (isAllow ? '可動域(緑=歩ける)' : '非可動域(赤=歩けない)') + ' 矩形</div>';
@@ -435,6 +437,7 @@
     }
     side.innerHTML = h;
     bindSideInputs();
+    const rb = document.getElementById('resetBaseBtn'); if (rb) rb.onclick = () => { m.ignoreBase = !m.ignoreBase; state.walkSel = null; render(); };
     if (state.walkSel) {
       const arr = state.walkSel.kind === 'allow' ? m.walkAllow : m.walkBlock, rr = arr[state.walkSel.i];
       const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onchange = () => { fn(+el.value); render(); }; };
@@ -594,7 +597,7 @@
   // ---- export ----
   function exportData() {
     const out = {};
-    for (const id of Object.keys(D.maps)) out[id] = { exits: D.maps[id].exits.map(e => ({ x: e.x, y: e.y, width: e.width, height: e.height, to: e.to, direction: e.direction, spawnX: e.spawnX, spawnY: e.spawnY, spawnFace: e.spawnFace })), walkAllow: D.maps[id].walkAllow || [], walkBlock: D.maps[id].walkBlock || [] };
+    for (const id of Object.keys(D.maps)) out[id] = { exits: D.maps[id].exits.map(e => ({ x: e.x, y: e.y, width: e.width, height: e.height, to: e.to, direction: e.direction, spawnX: e.spawnX, spawnY: e.spawnY, spawnFace: e.spawnFace })), walkAllow: D.maps[id].walkAllow || [], walkBlock: D.maps[id].walkBlock || [], ignoreBase: !!D.maps[id].ignoreBase };
     const txt = 'NAV_EXPORT = ' + JSON.stringify(out, null, 1);
     side.innerHTML = '<div class="side__h">エクスポート</div><div class="hint">このテキストを nekoojisan→Claude に貼ってください。Claudeが各マップの 出口/spawn/可動域(緑床・赤壁) をベイクします。</div><textarea id="exp">' + txt + '</textarea><button id="copyExp" style="margin-top:8px">📋 コピー</button>';
     document.getElementById('copyExp').onclick = () => { document.getElementById('exp').select(); document.execCommand('copy'); document.getElementById('copyExp').textContent = '✓ コピーした'; };

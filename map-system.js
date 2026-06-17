@@ -2037,6 +2037,9 @@ class MapSystem {
             };
             if (Array.isArray(data.walkAllow)) map.walkAllow = data.walkAllow.map(worldRect).filter(Boolean);
             if (Array.isArray(data.walkBlock)) map.walkBlock = data.walkBlock.map(worldRect).filter(Boolean);
+            // ★作り直しモード: trueなら原の非可動域(whitelist/footprint等)を無視し、既定で全可動。
+            //   walkBlock(赤)で引いた壁だけが非可動になる。大きすぎる原の壁を破棄して引き直す用。
+            if ('ignoreBaseCollision' in data) map.ignoreBaseCollision = !!data.ignoreBaseCollision;
 
             this.constrainMapNPCsToWalkable(map);
             console.log(`[Map] Applied walkability override: ${mapId} -> ${targetMapId}`);
@@ -3688,19 +3691,23 @@ class MapSystem {
             }
         }
 
-        if (!this.isObjectLayerMap(map) && map.walkableRects && map.walkableRects.length > 0) {
-            if (!this.isBoxCoveredByWalkableRects(box, map.walkableRects)) return false;
-        }
+        // ★作り直しモード(ignoreBaseCollision): 原設定(whitelist/footprint等の元の非可動域)を無視。
+        //   既定で全可動 → 下の walkBlock(赤)で引いた壁だけが非可動になる。
+        if (!map.ignoreBaseCollision) {
+            if (!this.isObjectLayerMap(map) && map.walkableRects && map.walkableRects.length > 0) {
+                if (!this.isBoxCoveredByWalkableRects(box, map.walkableRects)) return false;
+            }
 
-        if (map.buildings) {
-            for (const b of map.buildings) {
-                if (
-                    box.right > b.x &&
-                    box.left < b.x + b.width &&
-                    box.bottom > b.y &&
-                    box.top < b.y + b.height
-                ) {
-                    return false;
+            if (map.buildings) {
+                for (const b of map.buildings) {
+                    if (
+                        box.right > b.x &&
+                        box.left < b.x + b.width &&
+                        box.bottom > b.y &&
+                        box.top < b.y + b.height
+                    ) {
+                        return false;
+                    }
                 }
             }
         }
