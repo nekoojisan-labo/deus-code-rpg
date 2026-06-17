@@ -131,7 +131,19 @@
         }
       }
     }
-    if (m.coll && m.coll.length) { ctx.fillStyle = 'rgba(239,68,68,.16)'; ctx.strokeStyle = 'rgba(239,68,68,.55)'; ctx.lineWidth = 1; for (const r of m.coll) { const p = P(r.x, r.y), w = r.width * sc, h = r.height * sc; ctx.fillRect(p.x, p.y, w, h); ctx.strokeRect(p.x, p.y, w, h); } }
+    if (m.coll && m.coll.length) {
+      const allow = m.walkAllow || [];
+      const carved = r => allow.some(w => r.x >= w.x && r.y >= w.y && r.x + r.width <= w.x + w.width && r.y + r.height <= w.y + w.height);
+      ctx.lineWidth = 1;
+      for (const r of m.coll) {
+        const p = P(r.x, r.y), w = r.width * sc, h = r.height * sc, c = carved(r);
+        ctx.fillStyle = c ? 'rgba(130,130,130,.08)' : 'rgba(239,68,68,.16)';
+        ctx.strokeStyle = c ? 'rgba(150,150,150,.45)' : 'rgba(239,68,68,.55)';
+        if (c) ctx.setLineDash([4, 3]);
+        ctx.fillRect(p.x, p.y, w, h); ctx.strokeRect(p.x, p.y, w, h);
+        if (c) ctx.setLineDash([]);
+      }
+    }
   }
 
   // ---- coordinate transforms (canvas <-> world) for DETAIL view ----
@@ -214,6 +226,15 @@
         if (Math.abs(cx - (p.x + w)) < 9 && Math.abs(cy - (p.y + h)) < 9) return { kind: kindName, i, handle: 'br' };
         if (cx >= p.x && cx <= p.x + w && cy >= p.y && cy <= p.y + h) return { kind: kindName, i, handle: 'move' };
       }
+    }
+    return null;
+  }
+  // pick an ORIGINAL collision rect (the pre-set non-walkable boxes derived from the game)
+  function pickColl(cx, cy) {
+    const m = D.maps[state.map], arr = m.coll || [], s = dispScale();
+    for (let i = arr.length - 1; i >= 0; i--) {
+      const rr = arr[i], p = w2c(rr.x, rr.y), w = rr.width * s, h = rr.height * s;
+      if (cx >= p.x && cx <= p.x + w && cy >= p.y && cy <= p.y + h) return i;
     }
     return null;
   }
@@ -410,7 +431,7 @@
         h += '<div class="row"><label>facing(向き)</label>' + faceSel(e.spawnFace, 'sp_face') + '</div></div>';
       }
     } else {
-      h += '<div class="hint" style="margin-top:10px">出口/spawnは<b>選択</b>でドラッグ。可動域は <b>壁(赤)/床(緑)</b> で範囲をドラッグ作成→角でリサイズ／本体ドラッグで移動／<b>削除</b>でクリック消去。緑(床)は壁より優先で歩行可になる。</div>';
+      h += '<div class="hint" style="margin-top:10px">出口/spawnは<b>選択</b>でドラッグ。可動域は <b>壁(赤)/床(緑)</b> で範囲をドラッグ作成→角リサイズ／本体ドラッグ移動。<br><b>削除</b>で<b>原設定の赤い壁</b>をクリック→そこを歩行可にする(点線＝消した壁／もう一度クリックで戻る)。追加した壁/床もクリックで消える。緑(床)は壁より優先。</div>';
     }
     side.innerHTML = h;
     bindSideInputs();
@@ -492,7 +513,16 @@
     }
     if (state.tool === 'erase') {
       const e = pickWalk(cx, cy);
-      if (e) { (e.kind === 'allow' ? D.maps[state.map].walkAllow : D.maps[state.map].walkBlock).splice(e.i, 1); state.walkSel = null; render(); }
+      if (e) { (e.kind === 'allow' ? D.maps[state.map].walkAllow : D.maps[state.map].walkBlock).splice(e.i, 1); state.walkSel = null; render(); return; }
+      // クリックした原・非可動域(赤)を歩行可にcarve(緑walkAllowをパディング付きで生成)。再度押すと上の緑が消えて元に戻る。
+      const ci = pickColl(cx, cy);
+      if (ci != null) {
+        const mm = D.maps[state.map], rr = mm.coll[ci], pad = 12;
+        const x0 = Math.max(0, rr.x - pad), y0 = Math.max(0, rr.y - pad);
+        const x1 = Math.min(mm.worldW, rr.x + rr.width + pad), y1 = Math.min(mm.worldH, rr.y + rr.height + pad);
+        (mm.walkAllow = mm.walkAllow || []).push({ x: Math.round(x0), y: Math.round(y0), width: Math.round(x1 - x0), height: Math.round(y1 - y0) });
+        render(); return;
+      }
       return;
     }
     // select: spawns/exits (precise) first, then walk rects
