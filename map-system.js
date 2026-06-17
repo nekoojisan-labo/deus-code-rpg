@@ -2037,6 +2037,8 @@ class MapSystem {
             };
             if (Array.isArray(data.walkAllow)) map.walkAllow = data.walkAllow.map(worldRect).filter(Boolean);
             if (Array.isArray(data.walkBlock)) map.walkBlock = data.walkBlock.map(worldRect).filter(Boolean);
+            // ★原・非可動域(buildings)のうち、エディタで「削除」された矩形(WORLD座標)。判定時にスキップ=真の削除。
+            if (Array.isArray(data.collDelete)) map.collDelete = data.collDelete.map(worldRect).filter(Boolean);
             // ★作り直しモード: trueなら原の非可動域(whitelist/footprint等)を無視し、既定で全可動。
             //   walkBlock(赤)で引いた壁だけが非可動になる。大きすぎる原の壁を破棄して引き直す用。
             if ('ignoreBaseCollision' in data) map.ignoreBaseCollision = !!data.ignoreBaseCollision;
@@ -3699,7 +3701,10 @@ class MapSystem {
             }
 
             if (map.buildings) {
+                const del = map.collDelete;
                 for (const b of map.buildings) {
+                    // エディタで「削除」された原・非可動域はスキップ(=歩ける)。
+                    if (del && del.length && del.some(d => Math.abs(d.x - b.x) <= 2 && Math.abs(d.y - b.y) <= 2 && Math.abs(d.width - b.width) <= 2 && Math.abs(d.height - b.height) <= 2)) continue;
                     if (
                         box.right > b.x &&
                         box.left < b.x + b.width &&

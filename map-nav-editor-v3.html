@@ -54,7 +54,7 @@
     <button id="toolSelect" class="btn--on">選択</button>
     <button id="toolBlock">非可動+(赤)</button>
     <button id="toolAllow">可動+(緑)</button>
-    <button id="toolErase">非可動を消す</button>
+    <button id="toolErase">削除</button>
   </span>
   <span style="flex:1"></span>
   <span class="legend"><span><span class="dot" style="background:var(--exit)"></span>出口</span><span><span class="dot" style="background:var(--spawn)"></span>到着spawn</span></span>
@@ -132,16 +132,17 @@
       }
     }
     if (m.coll && m.coll.length && !m.ignoreBase) {
-      const allow = m.walkAllow || [], ignored = false;
-      const carved = r => ignored || allow.some(w => r.x >= w.x && r.y >= w.y && r.x + r.width <= w.x + w.width && r.y + r.height <= w.y + w.height);
+      const allow = m.walkAllow || [], del = m.collDelete || [];
+      const isDel = r => del.some(d => d.x === r.x && d.y === r.y && d.width === r.width && d.height === r.height);
+      const carved = r => allow.some(w => r.x >= w.x && r.y >= w.y && r.x + r.width <= w.x + w.width && r.y + r.height <= w.y + w.height);
       ctx.lineWidth = 1;
       for (const r of m.coll) {
-        const p = P(r.x, r.y), w = r.width * sc, h = r.height * sc, c = carved(r);
-        ctx.fillStyle = c ? 'rgba(130,130,130,.08)' : 'rgba(239,68,68,.16)';
-        ctx.strokeStyle = c ? 'rgba(150,150,150,.45)' : 'rgba(239,68,68,.55)';
-        if (c) ctx.setLineDash([4, 3]);
+        const p = P(r.x, r.y), w = r.width * sc, h = r.height * sc, faint = isDel(r) || carved(r);
+        ctx.fillStyle = faint ? 'rgba(120,120,120,.05)' : 'rgba(239,68,68,.16)';
+        ctx.strokeStyle = faint ? 'rgba(150,150,150,.35)' : 'rgba(239,68,68,.55)';
+        if (faint) ctx.setLineDash([4, 3]);
         ctx.fillRect(p.x, p.y, w, h); ctx.strokeRect(p.x, p.y, w, h);
-        if (c) ctx.setLineDash([]);
+        if (faint) ctx.setLineDash([]);
       }
     }
   }
@@ -411,6 +412,7 @@
     h += '<div class="kv"><span>出口</span><b>' + m.exits.length + '</b></div>';
     h += '<div class="kv"><span>到着spawn</span><b>' + arrivalsFor(state.map).length + '</b></div>';
     h += '<div class="kv"><span>追加 可動(緑)/非可動(赤)</span><b>' + ((m.walkAllow || []).length) + ' / ' + ((m.walkBlock || []).length) + '</b></div>';
+    h += '<div class="kv"><span>削除した原・非可動</span><b>' + ((m.collDelete || []).length) + '</b></div>';
     h += '<button id="resetBaseBtn" style="width:100%;margin:8px 0;border-color:' + (m.ignoreBase ? '#f59e42' : 'var(--line)') + (m.ignoreBase ? ';background:#3a2a14;color:#ffd9a8' : '') + '">' + (m.ignoreBase ? '✓ 原の非可動域=全消去(引き直しモード) → 元に戻す' : '原の非可動域を全部消す(ゼロから引き直す)') + '</button>';
     if (m.ignoreBase) h += '<div class="hint" style="color:#ffd9a8">原の非可動域は<b>全消去</b>。今この地図は全可動(まっさら)。背景の構造物を見ながら <b>非可動+(赤)</b> で壁を引き直してください。</div>';
     if (state.walkSel) {
@@ -433,7 +435,7 @@
         h += '<div class="row"><label>facing(向き)</label>' + faceSel(e.spawnFace, 'sp_face') + '</div></div>';
       }
     } else {
-      h += '<div class="hint" style="margin-top:10px">出口/spawnは<b>選択</b>でドラッグ。<br><b>非可動を消す</b>=原設定の<b>非可動域(赤)</b>をクリック→その「歩けない」設定を消して<b>可動域(歩ける)</b>にする(点線＝可動化した所／再クリックで元に戻す)。<br>足りなければ <b>非可動+(赤)</b>=歩けない所を足す／<b>可動+(緑)</b>=歩ける所を足す(ドラッグ作成→角リサイズ/本体移動)。可動(緑)は非可動より優先。</div>';
+      h += '<div class="hint" style="margin-top:10px"><b>3つの操作は独立です(混ざりません):</b><br>• <b>非可動+(赤)</b> = 歩けない所を<b>セット</b>(ドラッグで矩形作成)<br>• <b>可動+(緑)</b> = 歩ける所を<b>セット</b>(赤より優先)<br>• <b>削除</b> = 矩形をクリックで<b>削除</b>。原の赤も<b>真に消える</b>(点線=削除済/再クリックで復活)。追加した赤緑もクリックで消える<br>• <b>選択</b> = 出口/spawn/追加矩形をドラッグ・数値調整</div>';
     }
     side.innerHTML = h;
     bindSideInputs();
@@ -517,13 +519,13 @@
     if (state.tool === 'erase') {
       const e = pickWalk(cx, cy);
       if (e) { (e.kind === 'allow' ? D.maps[state.map].walkAllow : D.maps[state.map].walkBlock).splice(e.i, 1); state.walkSel = null; render(); return; }
-      // クリックした原・非可動域(赤)を歩行可にcarve(緑walkAllowをパディング付きで生成)。再度押すと上の緑が消えて元に戻る。
+      // 原・非可動域(赤)をクリック→真に削除(collDeleteへ登録=ゲーム判定でスキップ)。再クリックで復活。上書きはしない。
       const ci = pickColl(cx, cy);
       if (ci != null) {
-        const mm = D.maps[state.map], rr = mm.coll[ci], pad = 12;
-        const x0 = Math.max(0, rr.x - pad), y0 = Math.max(0, rr.y - pad);
-        const x1 = Math.min(mm.worldW, rr.x + rr.width + pad), y1 = Math.min(mm.worldH, rr.y + rr.height + pad);
-        (mm.walkAllow = mm.walkAllow || []).push({ x: Math.round(x0), y: Math.round(y0), width: Math.round(x1 - x0), height: Math.round(y1 - y0) });
+        const mm = D.maps[state.map], rr = mm.coll[ci];
+        mm.collDelete = mm.collDelete || [];
+        const di = mm.collDelete.findIndex(d => d.x === rr.x && d.y === rr.y && d.width === rr.width && d.height === rr.height);
+        if (di >= 0) mm.collDelete.splice(di, 1); else mm.collDelete.push({ x: rr.x, y: rr.y, width: rr.width, height: rr.height });
         render(); return;
       }
       return;
@@ -597,7 +599,7 @@
   // ---- export ----
   function exportData() {
     const out = {};
-    for (const id of Object.keys(D.maps)) out[id] = { exits: D.maps[id].exits.map(e => ({ x: e.x, y: e.y, width: e.width, height: e.height, to: e.to, direction: e.direction, spawnX: e.spawnX, spawnY: e.spawnY, spawnFace: e.spawnFace })), walkAllow: D.maps[id].walkAllow || [], walkBlock: D.maps[id].walkBlock || [], ignoreBase: !!D.maps[id].ignoreBase };
+    for (const id of Object.keys(D.maps)) out[id] = { exits: D.maps[id].exits.map(e => ({ x: e.x, y: e.y, width: e.width, height: e.height, to: e.to, direction: e.direction, spawnX: e.spawnX, spawnY: e.spawnY, spawnFace: e.spawnFace })), walkAllow: D.maps[id].walkAllow || [], walkBlock: D.maps[id].walkBlock || [], collDelete: D.maps[id].collDelete || [], ignoreBase: !!D.maps[id].ignoreBase };
     const txt = 'NAV_EXPORT = ' + JSON.stringify(out, null, 1);
     side.innerHTML = '<div class="side__h">エクスポート</div><div class="hint">このテキストを nekoojisan→Claude に貼ってください。Claudeが各マップの 出口/spawn/可動域(緑床・赤壁) をベイクします。</div><textarea id="exp">' + txt + '</textarea><button id="copyExp" style="margin-top:8px">📋 コピー</button>';
     document.getElementById('copyExp').onclick = () => { document.getElementById('exp').select(); document.execCommand('copy'); document.getElementById('copyExp').textContent = '✓ コピーした'; };
