@@ -4240,49 +4240,14 @@ class MapSystem {
         const map = this.maps[this.currentMap];
         if (!map) return false;
 
-        const playerRadius = playerSize / 2;
-        const playerBox = {
-            left: x - playerRadius,
-            right: x + playerRadius,
-            top: y - playerRadius,
-            bottom: y + playerRadius
-        };
+        // 出口ゾーンは通行可能（遷移トリガーのため）。
+        if ((map.exits || []).some(exit => this.isPointInsideRect(x, y, exit))) return false;
 
-        const inExit = (map.exits || []).some(exit => this.isPointInsideRect(x, y, exit));
-        if (inExit) {
-            return false; // 出口は通行可能
-        }
-
-        const boundsWidth = map.worldWidth || this.baseWidth;
-        const boundsHeight = map.worldHeight || this.baseHeight;
-        if (
-            playerBox.left < 0 ||
-            playerBox.top < 0 ||
-            playerBox.right > boundsWidth ||
-            playerBox.bottom > boundsHeight
-        ) {
-            return true;
-        }
-
-        if (!this.isObjectLayerMap(map) && map.walkableRects && map.walkableRects.length > 0) {
-            if (!this.isBoxCoveredByWalkableRects(playerBox, map.walkableRects)) {
-                return true; // 歩行可能領域外
-            }
-        }
-
-        // 建物 / 障害物の衝突は引き続きボックス判定
-        for (const building of (map.buildings || [])) {
-            const bLeft = building.x;
-            const bRight = building.x + building.width;
-            const bTop = building.y;
-            const bBottom = building.y + building.height;
-
-            if (playerBox.right > bLeft && playerBox.left < bRight && playerBox.bottom > bTop && playerBox.top < bBottom) {
-                return true;
-            }
-        }
-
-        return false;
+        // ★衝突＝「歩行可能でない」。可動域判定の唯一の関所 isMapPositionWalkable に委譲する。
+        //   これで walkAllow(緑)/walkBlock(赤)/collDelete(削除)/ignoreBaseCollision/whitelist/buildings/bounds
+        //   をプレイヤー移動でも完全に反映する（旧実装は同ロジックを二重化しており、可動域編集が
+        //   isMapPositionWalkable 側にしか入らず実機の移動に効かなかった＝動けない原因）。
+        return !this.isMapPositionWalkable(map, x, y, playerSize);
     }
     
     // 衝突判定（NPC）
