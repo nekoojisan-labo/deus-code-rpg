@@ -52,9 +52,9 @@
   <span id="walkTools" style="display:none">
     <span class="hint">可動域:</span>
     <button id="toolSelect" class="btn--on">選択</button>
-    <button id="toolBlock">壁(赤)</button>
-    <button id="toolAllow">床(緑)</button>
-    <button id="toolErase">削除</button>
+    <button id="toolBlock">非可動+(赤)</button>
+    <button id="toolAllow">可動+(緑)</button>
+    <button id="toolErase">非可動を消す</button>
   </span>
   <span style="flex:1"></span>
   <span class="legend"><span><span class="dot" style="background:var(--exit)"></span>出口</span><span><span class="dot" style="background:var(--spawn)"></span>到着spawn</span></span>
@@ -410,11 +410,11 @@
     h += '<div class="kv"><span>scale</span><b>' + m.worldScale + '</b></div>';
     h += '<div class="kv"><span>出口</span><b>' + m.exits.length + '</b></div>';
     h += '<div class="kv"><span>到着spawn</span><b>' + arrivalsFor(state.map).length + '</b></div>';
-    h += '<div class="kv"><span>可動域 床緑/壁赤</span><b>' + ((m.walkAllow || []).length) + ' / ' + ((m.walkBlock || []).length) + '</b></div>';
+    h += '<div class="kv"><span>追加 可動(緑)/非可動(赤)</span><b>' + ((m.walkAllow || []).length) + ' / ' + ((m.walkBlock || []).length) + '</b></div>';
     if (state.walkSel) {
       const arr = state.walkSel.kind === 'allow' ? m.walkAllow : m.walkBlock, rr = arr[state.walkSel.i], isAllow = state.walkSel.kind === 'allow';
-      h += '<div class="sel-box" style="border-color:' + (isAllow ? '#36e36b' : '#ff5b5b') + '"><div class="side__h">' + (isAllow ? '床(緑=歩ける)' : '壁(赤=歩けない)') + ' 矩形</div>';
-      h += '<div class="hint">WORLD座標。ゲームの可動域に直接効く(緑は壁を上書きして歩行可)。</div>';
+      h += '<div class="sel-box" style="border-color:' + (isAllow ? '#36e36b' : '#ff5b5b') + '"><div class="side__h">' + (isAllow ? '可動域(緑=歩ける)' : '非可動域(赤=歩けない)') + ' 矩形</div>';
+      h += '<div class="hint">WORLD座標。ゲームの可動域に直接効く(可動(緑)は非可動より優先＝歩ける)。</div>';
       h += coordRow('x', rr.x, 'wk_x') + coordRow('y', rr.y, 'wk_y') + coordRow('w', rr.width, 'wk_w') + coordRow('h', rr.height, 'wk_h');
       h += '<button id="wkDel" style="margin-top:6px;border-color:#ff5b5b">この矩形を削除</button></div>';
     } else if (state.sel) {
@@ -431,7 +431,7 @@
         h += '<div class="row"><label>facing(向き)</label>' + faceSel(e.spawnFace, 'sp_face') + '</div></div>';
       }
     } else {
-      h += '<div class="hint" style="margin-top:10px">出口/spawnは<b>選択</b>でドラッグ。可動域は <b>壁(赤)/床(緑)</b> で範囲をドラッグ作成→角リサイズ／本体ドラッグ移動。<br><b>削除</b>で<b>原設定の赤い壁</b>をクリック→そこを歩行可にする(点線＝消した壁／もう一度クリックで戻る)。追加した壁/床もクリックで消える。緑(床)は壁より優先。</div>';
+      h += '<div class="hint" style="margin-top:10px">出口/spawnは<b>選択</b>でドラッグ。<br><b>非可動を消す</b>=原設定の<b>非可動域(赤)</b>をクリック→その「歩けない」設定を消して<b>可動域(歩ける)</b>にする(点線＝可動化した所／再クリックで元に戻す)。<br>足りなければ <b>非可動+(赤)</b>=歩けない所を足す／<b>可動+(緑)</b>=歩ける所を足す(ドラッグ作成→角リサイズ/本体移動)。可動(緑)は非可動より優先。</div>';
     }
     side.innerHTML = h;
     bindSideInputs();
