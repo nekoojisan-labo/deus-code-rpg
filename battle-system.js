@@ -411,6 +411,30 @@ class BattleSystem {
                     skillChance: 0.6
                 }
             },
+            fallen_life_god: {
+                name: '囚われし生命の神',
+                emoji: '🌿',
+                hp: 240,
+                maxHp: 240,
+                mp: 40,
+                attack: 22,
+                defense: 14,
+                magicDefense: 12,
+                exp: 150,
+                gold: 0,
+                type: 'boss',
+                boss: true,
+                skills: ['vine_lance', 'life_drain', 'withering_cry'],
+                description: 'アークに囚われ、堕神と化した生命の神。育んだ無数の命の声で哭く。',
+                bossId: 'fallen_life_god',
+                dropTable: [],
+                aiPattern: {
+                    lowHpThreshold: 0.3,
+                    lowHpAction: 'skill',
+                    normalAction: 'attack',
+                    skillChance: 0.5
+                }
+            },
             rogue_ai_core: {
                 name: '暴走AIコア',
                 emoji: '⚡',

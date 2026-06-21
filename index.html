@@ -3691,17 +3691,17 @@
     <script src="se-system.js?v=1"></script>
     <script src="ui-panel.js?v=7"></script>
     <script src="save-system.js?v=2"></script>
-    <script src="battle-system.js?v=81"></script>
+    <script src="battle-system.js?v=82"></script>
     <script src="map-walkability-data.js?v=21"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=30"></script>
-    <script src="map-system.js?v=96"></script>
+    <script src="map-system.js?v=97"></script>
     <script src="map-system-grid.js"></script>
     <script src="player-grid-movement.js"></script>
     <script src="bgm-system.js?v=36"></script>
     <script src="party-system.js?v=50"></script>
     <script src="quest-system.js?v=7"></script>
-    <script src="story-events.js?v=59"></script>
+    <script src="story-events.js?v=60"></script>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -5317,30 +5317,34 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         // リク＝戦闘の試練。話しかける→（神託後）前口上→試練の戦闘→勝利で加入。
         function engageRiku(npc) {
             if (storyFlags.rikuJoined) { showMessage('リク：「共に行こう。アークを止めるまでな。」'); return; }
-            // ★アカリ加入(Ω戦)後に解禁。Ω撃破後の地下でリクを迎える(party 2→3)
-            if (!storyFlags.akariJoined) { showMessage('リク：「…誰だ。今は構っている場合ではない。下がっていろ。」'); return; }
-            if (storyFlags.rikuTrialSeen) { startRikuTrial(); return; }  // 敗北後の再挑戦は前口上を省略
+            // ★植物園(神託=metPriest後に到達)で出会う多段加入: 出会い(拒否)→もう一度話す→堕神と対面→堕神戦→加入。
+            if (!storyFlags.metPriest) { showMessage('リク：「…誰だ。俺に構うな。この奥には、触れていいものなどない。」'); return; }
+            if (storyFlags.rikuTrialSeen) { startFallenGodTrial(); return; }  // 敗北後の再挑戦は前口上を省略
+            if (!storyFlags.rikuMet) {
+                storyFlags.rikuMet = true;
+                showMessage('リク：「…この奥の祭壇に、アークに囚われたものがある。生命を司る神の、成れの果てだ。\n…俺には、触れる資格がない。だが、お前は——。覚悟が決まったら、もう一度、声をかけてくれ。」');
+                return;
+            }
             if (storyEventSystem) storyEventSystem.triggerEvent('recruit_riku', { storyFlags, player, partySystem, magicSystem });
-            else startRikuTrial();
+            else startFallenGodTrial();
         }
-        function startRikuTrial() {
+        function startFallenGodTrial() {
             if (!battleSystem || battleSystem.inBattle) return;
-            const base = battleSystem.enemyDatabase.security_drone;
-            const hp = Math.round(base.hp * 1.7);
-            const trial = {
-                ...base, name: '守護の試練機',
-                hp: hp, maxHp: hp, currentHp: hp,
-                attack: Math.round(base.attack * 1.25), defense: Math.round(base.defense * 1.1),
-                exp: 0, gold: 0, dropTable: []
+            const base = battleSystem.enemyDatabase.fallen_life_god;
+            if (!base) return;
+            const enemy = {
+                ...base,
+                hp: base.hp, maxHp: base.maxHp || base.hp, currentHp: base.hp, currentMp: base.mp || 0,
+                boss: true, bossId: base.bossId || 'fallen_life_god'
             };
             storyFlags.rikuTrialStarted = true;
-            battleSystem.startBattle(trial, true, () => onRikuTrialWin());  // 勝利時のみコールバック（敗北=通常GO）
+            battleSystem.startBattle(enemy, true, () => onRikuTrialWin());  // 勝利時のみ→加入（敗北=通常GO）
         }
         function onRikuTrialWin() {
             if (storyEventSystem) storyEventSystem.triggerEvent('recruit_riku_join', { storyFlags, player, partySystem, magicSystem });
             else { joinMember('riku'); showMessage('リクが仲間に加わった！'); }
         }
-        window.startRikuTrial = startRikuTrial;
+        window.startFallenGodTrial = startFallenGodTrial;
         window.onRikuTrialWin = onRikuTrialWin;
 
         // アカリ＝第1章は駅で「再会のみ」(同行保留＝単騎続行)。正式加入は第2章のΩ戦(checkInteractions側)。
@@ -5371,7 +5375,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                     storyFlags.metPriest = true; storyFlags.chapter2_started = true;
                 }
             } else {
-                showMessage(`老神主: 「リクは既に汝と在る。残るは闇市のヤミ。彼女を仲間にし、都庁のアークを討つのじゃ。」`);
+                showMessage(`老神主: 「同志は二人。囚われし生命の神の庭・植物園に守りの戦士リク、闇市に魔を操るヤミ。二人を仲間とし、都庁のアークを討つのじゃ。」`);
             }
             refreshObjective();
         }

@@ -177,7 +177,7 @@ class MapSystem {
                 { x: 0, y: 200, width: 30, height: 200, to: 'shrine_path', direction: 'west' }
             ],
             npcs: [
-                { x: 400, y: 300, emoji: '🧑‍🔧', name: 'リク', dialogue: '本物の植物を見たことがなかったんだ...これも作り物だけど、美しいね。' }
+                { x: 400, y: 300, emoji: '🛡️', name: 'リク', dialogue: '…誰だ。俺に、構うな。' }
             ]
         };
         
@@ -1172,10 +1172,8 @@ class MapSystem {
                     { x: 653, y: 34, width: 43, height: 59, to: 'shinjuku_station_gate', direction: 'north', spawnX: 550, spawnY: 380 }
                 ],
                 npcs: [
-                    { x: 400, y: 245, emoji: '🤖', name: '暴走ドローン', dialogue: '警告...感情反応を検知。', hostile: true },
-                    // ★リクをバイオドームから前倒し配置。第1章ボス手前で加入（hp150ボスを壁役つき3人で迎える）。
-                    // 駆け寄り型。ボスNPCは isNPCHidden で rikuJoined まで非表示＝リク加入前にボスへ到達できない
-                    { x: 400, y: 360, emoji: '🛡️', name: 'リク', dialogue: '…この奥で、暴走したドローンが暴れている。お前、戦えるのか？' }
+                    { x: 400, y: 245, emoji: '🤖', name: '暴走ドローン', dialogue: '警告...感情反応を検知。', hostile: true }
+                    // ★リクはバイオドーム(植物園)で第2章に加入する設計に戻した(堕神戦)。ここには配置しない。
                 ]
             },
             shopping_street_north: {
