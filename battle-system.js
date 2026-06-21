@@ -258,7 +258,7 @@ class BattleSystem {
                 dropTable: [
                     { id: 'heal_potion', rate: 0.25 },
                     { id: 'mega_heal_potion', rate: 0.1 },
-                    { id: 'iron_sword', rate: 0.05 }
+                    { id: 'steel_saber', rate: 0.05 }
                 ],
                 aiPattern: {
                     lowHpThreshold: 0.25,
@@ -282,8 +282,8 @@ class BattleSystem {
                 description: 'スクラップから生まれた巨人。防御力が高い。',
                 dropTable: [
                     { id: 'heal_potion', rate: 0.2 },
-                    { id: 'iron_helmet', rate: 0.08 },
-                    { id: 'leather_armor', rate: 0.06 }
+                    { id: 'scale_coif', rate: 0.08 },
+                    { id: 'scale_vest', rate: 0.06 }
                 ],
                 aiPattern: {
                     lowHpThreshold: 0.4,
@@ -333,7 +333,7 @@ class BattleSystem {
                 dropTable: [
                     { id: 'mega_heal_potion', rate: 0.25 },
                     { id: 'mega_energy_core', rate: 0.15 },
-                    { id: 'plasma_blade', rate: 0.03 }
+                    { id: 'officer_blade', rate: 0.03 }
                 ],
                 aiPattern: {
                     lowHpThreshold: 0.3,
@@ -372,7 +372,7 @@ class BattleSystem {
                 hp: 52, maxHp: 52, mp: 14, attack: 13, defense: 15, exp: 78, gold: 48,
                 type: 'drone', skills: ['barrier', 'laser_scan', 'guard'],
                 description: '園内警備の重装機。装甲が厚い。',
-                dropTable: [ { id: 'iron_helmet', rate: 0.1 }, { id: 'leather_armor', rate: 0.08 } ],
+                dropTable: [ { id: 'scale_coif', rate: 0.1 }, { id: 'scale_vest', rate: 0.08 } ],
                 aiPattern: { lowHpThreshold: 0.4, lowHpAction: 'defend', normalAction: 'attack', skillChance: 0.25 }
             },
             shadow_entity: {
@@ -388,7 +388,7 @@ class BattleSystem {
                 hp: 75, maxHp: 75, mp: 12, attack: 17, defense: 22, exp: 135, gold: 75,
                 type: 'construct', skills: ['heavy_slam', 'guard', 'barrier'],
                 description: 'アーク中枢を守る重装甲兵。極めて硬い。',
-                dropTable: [ { id: 'iron_gauntlets', rate: 0.1 }, { id: 'chain_mail', rate: 0.06 } ],
+                dropTable: [ { id: 'scale_gauntlets', rate: 0.1 }, { id: 'riot_plate', rate: 0.06 } ],
                 aiPattern: { lowHpThreshold: 0.4, lowHpAction: 'defend', normalAction: 'attack', skillChance: 0.3 }
             },
             glitch_spirit: {
@@ -404,7 +404,7 @@ class BattleSystem {
                 hp: 85, maxHp: 85, mp: 22, attack: 19, defense: 15, exp: 220, gold: 110,
                 type: 'construct', skills: ['summon_brood', 'venom_fang', 'rush'],
                 description: '深層に君臨する母蜘蛛。深層トンネルの精鋭。',
-                dropTable: [ { id: 'full_heal_potion', rate: 0.15 }, { id: 'power_gloves', rate: 0.05 }, { id: 'revival_stone', rate: 0.05 } ],
+                dropTable: [ { id: 'full_heal_potion', rate: 0.15 }, { id: 'riot_grips', rate: 0.05 }, { id: 'revival_stone', rate: 0.05 } ],
                 aiPattern: { lowHpThreshold: 0.3, lowHpAction: 'attack', normalAction: 'attack', skillChance: 0.4 }
             },
             // ボスエネミー
@@ -426,7 +426,7 @@ class BattleSystem {
                 dropTable: [
                     { id: 'full_heal_potion', rate: 0.8 },
                     { id: 'elixir', rate: 0.5 },
-                    { id: 'plasma_blade', rate: 0.3 }
+                    { id: 'officer_blade', rate: 0.3 }
                 ],
                 aiPattern: {
                     lowHpThreshold: 0.25,
@@ -503,8 +503,11 @@ class BattleSystem {
                 bossId: 'rogue_ai_core',
                 dropTable: [
                     { id: 'elixir', rate: 1.0 },
-                    { id: 'kamui_katana', rate: 0.5 },
-                    { id: 'cyber_armor', rate: 0.4 }
+                    { id: 'guardian_carapace', rate: 0.05 },
+                    { id: 'kamui_katana', rate: 0.04 },
+                    { id: 'deus_crown', rate: 0.05 },
+                    { id: 'deus_gauntlets', rate: 0.05 },
+                    { id: 'cosmos_orb', rate: 0.05 }
                 ],
                 aiPattern: {
                     lowHpThreshold: 0.2,
@@ -548,9 +551,9 @@ class BattleSystem {
             glacier_titan: { id: 'glacier_titan', name: 'グレイシアタイタン', emoji: '🧊', hp: 500, maxHp: 500, attack: 50, defense: 56, magicDefense: 30, mp: 0, exp: 270, gold: 190, element: 'ice', weakness: 'fire,thunder', elementalResistance: { ice: 0.75 }, skills: ['avalanche_aoe', 'glacier_slam', 'harden'], description: 'グレイシアタイタン', prescaled: true, aoe: true },
             oblivion_shade: { id: 'oblivion_shade', name: 'オブリビオンシェイド', emoji: '🌒', hp: 460, maxHp: 460, attack: 48, defense: 38, magicDefense: 52, mp: 0, exp: 280, gold: 200, element: 'dark', weakness: 'light', elementalResistance: { dark: 0.75, ice: 0.4, fire: 0.4 }, skills: ['abyss_lance', 'dark_tide_aoe', 'drain', 'curse'], description: 'オブリビオンシェイド', prescaled: true, aoe: true },
             aegis_colossus: { id: 'aegis_colossus', name: 'イージスコロッサス', emoji: '🛡️', hp: 500, maxHp: 500, attack: 54, defense: 60, magicDefense: 48, mp: 0, exp: 290, gold: 210, element: 'none', weakness: null, elementalResistance: { fire: 0.4, ice: 0.4, thunder: 0.4, dark: 0.5, light: 0.5 }, skills: ['siege_slam', 'crushing_aoe', 'barrier', 'guard'], description: 'イージスコロッサス', prescaled: true, aoe: true },
-            archon_deus: { id: 'archon_deus', name: 'アルコン・デウス', emoji: '👑', hp: 2800, maxHp: 2800, attack: 88, defense: 72, magicDefense: 60, mp: 100, exp: 700, gold: 1200, element: 'light', weakness: 'dark,thunder', elementalResistance: { light: 0.6, fire: 0.4, ice: 0.4 }, skills: ['judgment_ray_aoe', 'triple_lance', 'aegis_protocol', 'radiant_nova_burst'], description: 'アルコン・デウス', boss: true, type: 'boss', bossId: 'archon_deus' },
-            leviathan_core: { id: 'leviathan_core', name: 'リヴァイアサン・コア', emoji: '🐉', hp: 3200, maxHp: 3200, attack: 95, defense: 90, magicDefense: 70, mp: 100, exp: 900, gold: 1500, element: 'none', weakness: null, elementalResistance: { fire: 0.5, ice: 0.5, thunder: 0.5, dark: 0.5, light: 0.5 }, skills: ['data_storm_aoe', 'recursive_strike', 'firewall', 'core_overload_burst'], description: 'リヴァイアサン・コア', boss: true, type: 'boss', bossId: 'leviathan_core' },
-            true_deus: { id: 'true_deus', name: '真・デウス', emoji: '🌟', hp: 6000, maxHp: 6000, attack: 120, defense: 100, magicDefense: 100, mp: 200, exp: 2000, gold: 3000, element: 'none', weakness: null, elementalResistance: { fire: 0.5, ice: 0.5, thunder: 0.5, dark: 0.5, light: 0.5 }, skills: ['judgment_ray_aoe', 'radiant_nova_burst', 'core_overload_burst', 'divine_retribution_aoe', 'aegis_protocol'], description: '八百万の神々の総意が具現化した最終審判者', boss: true, type: 'boss', bossId: 'true_deus' }
+            archon_deus: { id: 'archon_deus', name: 'アルコン・デウス', emoji: '👑', hp: 2800, maxHp: 2800, attack: 88, defense: 72, magicDefense: 60, mp: 100, exp: 700, gold: 1200, element: 'light', weakness: 'dark,thunder', elementalResistance: { light: 0.6, fire: 0.4, ice: 0.4 }, skills: ['judgment_ray_aoe', 'triple_lance', 'aegis_protocol', 'radiant_nova_burst'], description: 'アルコン・デウス', boss: true, type: 'boss', bossId: 'archon_deus', dropTable: [ { id: 'elixir', rate: 1.0 }, { id: 'deus_executioner', rate: 0.05 }, { id: 'divine_rod', rate: 0.04 }, { id: 'kamui_rod', rate: 0.03 }, { id: 'kamui_orb', rate: 0.03 }, { id: 'deus_crown', rate: 0.05 }, { id: 'deus_gauntlets', rate: 0.05 }, { id: 'empyrean_robe', rate: 0.05 } ] },
+            leviathan_core: { id: 'leviathan_core', name: 'リヴァイアサン・コア', emoji: '🐉', hp: 3200, maxHp: 3200, attack: 95, defense: 90, magicDefense: 70, mp: 100, exp: 900, gold: 1500, element: 'none', weakness: null, elementalResistance: { fire: 0.5, ice: 0.5, thunder: 0.5, dark: 0.5, light: 0.5 }, skills: ['data_storm_aoe', 'recursive_strike', 'firewall', 'core_overload_burst'], description: 'リヴァイアサン・コア', boss: true, type: 'boss', bossId: 'leviathan_core', dropTable: [ { id: 'elixir', rate: 1.0 }, { id: 'deus_executioner', rate: 0.05 }, { id: 'deus_staff', rate: 0.04 }, { id: 'deus_bulwark', rate: 0.04 }, { id: 'kamui_staff', rate: 0.03 }, { id: 'kamui_robe', rate: 0.03 }, { id: 'empyrean_robe', rate: 0.05 }, { id: 'cosmos_orb', rate: 0.05 } ] },
+            true_deus: { id: 'true_deus', name: '真・デウス', emoji: '🌟', hp: 6000, maxHp: 6000, attack: 120, defense: 100, magicDefense: 100, mp: 200, exp: 2000, gold: 3000, element: 'none', weakness: null, elementalResistance: { fire: 0.5, ice: 0.5, thunder: 0.5, dark: 0.5, light: 0.5 }, skills: ['judgment_ray_aoe', 'radiant_nova_burst', 'core_overload_burst', 'divine_retribution_aoe', 'aegis_protocol'], description: '八百万の神々の総意が具現化した最終審判者', boss: true, type: 'boss', bossId: 'true_deus', dropTable: [ { id: 'elixir', rate: 1.0 }, { id: 'deus_sigil', rate: 0.03 }, { id: 'deus_executioner', rate: 0.05 }, { id: 'deus_staff', rate: 0.04 }, { id: 'divine_rod', rate: 0.04 }, { id: 'deus_bulwark', rate: 0.04 }, { id: 'kamui_katana', rate: 0.04 }, { id: 'kamui_staff', rate: 0.03 }, { id: 'kamui_rod', rate: 0.03 }, { id: 'kamui_robe', rate: 0.03 }, { id: 'kamui_orb', rate: 0.03 } ] }
         });
         const _v2Retrofit = {
             watcher: { weakness: 'thunder', element: 'none', elementalResistance: null },

@@ -4361,31 +4361,48 @@ class ShopSystem {
         this.shopData = {
             weapons: [
                 { id: 'wooden_sword', equipmentId: 'wooden_sword' },
-                { id: 'iron_sword', equipmentId: 'iron_sword' },
-                { id: 'plasma_blade', equipmentId: 'plasma_blade' },
-                { id: 'cyber_gun', equipmentId: 'cyber_gun' },
-                { id: 'kamui_katana', equipmentId: 'kamui_katana' },
-                { id: 'mage_staff', equipmentId: 'mage_staff' },
-                { id: 'healer_rod', equipmentId: 'healer_rod' },
-                { id: 'arch_staff', equipmentId: 'arch_staff' }
+                { id: 'steel_saber', equipmentId: 'steel_saber' },
+                { id: 'officer_blade', equipmentId: 'officer_blade' },
+                { id: 'riot_breaker', equipmentId: 'riot_breaker' },
+                { id: 'pulse_greatsword', equipmentId: 'pulse_greatsword' },
+                { id: 'apprentice_staff', equipmentId: 'apprentice_staff' },
+                { id: 'oak_staff', equipmentId: 'oak_staff' },
+                { id: 'rune_staff', equipmentId: 'rune_staff' },
+                { id: 'sorcerer_staff', equipmentId: 'sorcerer_staff' },
+                { id: 'archmage_staff', equipmentId: 'archmage_staff' },
+                { id: 'acolyte_rod', equipmentId: 'acolyte_rod' },
+                { id: 'prayer_rod', equipmentId: 'prayer_rod' },
+                { id: 'saint_rod', equipmentId: 'saint_rod' },
+                { id: 'cleric_rod', equipmentId: 'cleric_rod' },
+                { id: 'bishop_rod', equipmentId: 'bishop_rod' }
             ],
             armor: [
-                { id: 'cloth_armor', equipmentId: 'cloth_armor' },
-                { id: 'leather_armor', equipmentId: 'leather_armor' },
-                { id: 'chain_mail', equipmentId: 'chain_mail' },
-                { id: 'mystic_robe', equipmentId: 'mystic_robe' },
                 { id: 'cloth_hat', equipmentId: 'cloth_hat' },
-                { id: 'iron_helmet', equipmentId: 'iron_helmet' },
-                { id: 'cyber_helmet', equipmentId: 'cyber_helmet' },
+                { id: 'scale_coif', equipmentId: 'scale_coif' },
+                { id: 'riot_visor', equipmentId: 'riot_visor' },
+                { id: 'guardian_helm', equipmentId: 'guardian_helm' },
                 { id: 'sage_circlet', equipmentId: 'sage_circlet' },
-                { id: 'cloth_gloves', equipmentId: 'cloth_gloves' },
-                { id: 'iron_gauntlets', equipmentId: 'iron_gauntlets' },
-                { id: 'power_gloves', equipmentId: 'power_gloves' },
+                { id: 'cloth_armor', equipmentId: 'cloth_armor' },
+                { id: 'woven_robe', equipmentId: 'woven_robe' },
+                { id: 'scale_vest', equipmentId: 'scale_vest' },
+                { id: 'silk_robe', equipmentId: 'silk_robe' },
+                { id: 'riot_plate', equipmentId: 'riot_plate' },
+                { id: 'arcane_robe', equipmentId: 'arcane_robe' },
+                { id: 'guardian_carapace', equipmentId: 'guardian_carapace' },
+                { id: 'mystic_veil_robe', equipmentId: 'mystic_veil_robe' },
+                { id: 'scale_gauntlets', equipmentId: 'scale_gauntlets' },
+                { id: 'riot_grips', equipmentId: 'riot_grips' },
+                { id: 'guardian_gauntlets', equipmentId: 'guardian_gauntlets' },
                 { id: 'health_ring', equipmentId: 'health_ring' },
                 { id: 'power_ring', equipmentId: 'power_ring' },
                 { id: 'defense_ring', equipmentId: 'defense_ring' },
                 { id: 'mana_amulet', equipmentId: 'mana_amulet' },
-                { id: 'kamui_talisman', equipmentId: 'kamui_talisman' }
+                { id: 'glass_charm', equipmentId: 'glass_charm' },
+                { id: 'crystal_charm', equipmentId: 'crystal_charm' },
+                { id: 'sage_charm', equipmentId: 'sage_charm' },
+                { id: 'astral_orb', equipmentId: 'astral_orb' },
+                { id: 'berserker_band', equipmentId: 'berserker_band' },
+                { id: 'iron_will_pendant', equipmentId: 'iron_will_pendant' }
             ],
             items: [
                 { id: 'heal_potion', itemId: 'heal_potion' },
@@ -4414,20 +4431,37 @@ class ShopSystem {
                 { id: 'kamui_blessing', magicId: 'kamui_blessing' }
             ],
             black_market: [
-                { id: 'cyber_gun', equipmentId: 'cyber_gun' },
-                { id: 'cyber_suit', equipmentId: 'cyber_suit' },
-                { id: 'kamui_katana', equipmentId: 'kamui_katana' },
+                { id: 'railgun_lance', equipmentId: 'railgun_lance' },
+                { id: 'titan_cleaver', equipmentId: 'titan_cleaver' },
+                { id: 'warlock_staff', equipmentId: 'warlock_staff' },
+                { id: 'sage_lord_staff', equipmentId: 'sage_lord_staff' },
+                { id: 'cardinal_rod', equipmentId: 'cardinal_rod' },
+                { id: 'seraph_rod', equipmentId: 'seraph_rod' },
+                { id: 'titan_helm', equipmentId: 'titan_helm' },
+                { id: 'aegis_helm', equipmentId: 'aegis_helm' },
+                { id: 'fortress_helm', equipmentId: 'fortress_helm' },
+                { id: 'titan_armor', equipmentId: 'titan_armor' },
+                { id: 'phantom_robe', equipmentId: 'phantom_robe' },
+                { id: 'void_robe', equipmentId: 'void_robe' },
+                { id: 'celestial_robe', equipmentId: 'celestial_robe' },
+                { id: 'aegis_frame', equipmentId: 'aegis_frame' },
+                { id: 'fortress_mail', equipmentId: 'fortress_mail' },
+                { id: 'titan_fists', equipmentId: 'titan_fists' },
+                { id: 'aegis_gauntlets', equipmentId: 'aegis_gauntlets' },
+                { id: 'fortress_gauntlets', equipmentId: 'fortress_gauntlets' },
+                { id: 'nebula_orb', equipmentId: 'nebula_orb' },
+                { id: 'eclipse_orb', equipmentId: 'eclipse_orb' },
+                { id: 'galaxy_orb', equipmentId: 'galaxy_orb' },
+                { id: 'warlord_emblem', equipmentId: 'warlord_emblem' },
+                { id: 'bastion_core', equipmentId: 'bastion_core' },
                 { id: 'kamui_talisman', equipmentId: 'kamui_talisman' },
+                { id: 'ragnarok_edge', equipmentId: 'ragnarok_edge' },
+                { id: 'colossus_plate', equipmentId: 'colossus_plate' },
                 { id: 'elixir', itemId: 'elixir' },
                 { id: 'kamui_storm', magicId: 'kamui_storm' },
                 { id: 'kamui_blessing', magicId: 'kamui_blessing' }
             ]
         };
-
-        // ★v2 装備を店に追加（低tier=武器店/防具店、高tier(t6+)=闇市で希少感）
-        this.shopData.weapons.push({ id: 'steel_saber', equipmentId: 'steel_saber' }, { id: 'officer_blade', equipmentId: 'officer_blade' }, { id: 'riot_breaker', equipmentId: 'riot_breaker' }, { id: 'pulse_greatsword', equipmentId: 'pulse_greatsword' }, { id: 'apprentice_staff', equipmentId: 'apprentice_staff' }, { id: 'acolyte_rod', equipmentId: 'acolyte_rod' }, { id: 'oak_staff', equipmentId: 'oak_staff' }, { id: 'prayer_rod', equipmentId: 'prayer_rod' }, { id: 'rune_staff', equipmentId: 'rune_staff' }, { id: 'saint_rod', equipmentId: 'saint_rod' }, { id: 'sorcerer_staff', equipmentId: 'sorcerer_staff' }, { id: 'cleric_rod', equipmentId: 'cleric_rod' }, { id: 'archmage_staff', equipmentId: 'archmage_staff' }, { id: 'bishop_rod', equipmentId: 'bishop_rod' });
-        this.shopData.armor.push({ id: 'scale_vest', equipmentId: 'scale_vest' }, { id: 'riot_plate', equipmentId: 'riot_plate' }, { id: 'guardian_carapace', equipmentId: 'guardian_carapace' }, { id: 'titan_armor', equipmentId: 'titan_armor' }, { id: 'scale_coif', equipmentId: 'scale_coif' }, { id: 'riot_visor', equipmentId: 'riot_visor' }, { id: 'guardian_helm', equipmentId: 'guardian_helm' }, { id: 'titan_helm', equipmentId: 'titan_helm' }, { id: 'scale_gauntlets', equipmentId: 'scale_gauntlets' }, { id: 'riot_grips', equipmentId: 'riot_grips' }, { id: 'guardian_gauntlets', equipmentId: 'guardian_gauntlets' }, { id: 'titan_fists', equipmentId: 'titan_fists' }, { id: 'berserker_band', equipmentId: 'berserker_band' }, { id: 'iron_will_pendant', equipmentId: 'iron_will_pendant' }, { id: 'woven_robe', equipmentId: 'woven_robe' }, { id: 'glass_charm', equipmentId: 'glass_charm' }, { id: 'silk_robe', equipmentId: 'silk_robe' }, { id: 'crystal_charm', equipmentId: 'crystal_charm' }, { id: 'arcane_robe', equipmentId: 'arcane_robe' }, { id: 'sage_charm', equipmentId: 'sage_charm' }, { id: 'mystic_veil_robe', equipmentId: 'mystic_veil_robe' }, { id: 'astral_orb', equipmentId: 'astral_orb' }, { id: 'phantom_robe', equipmentId: 'phantom_robe' }, { id: 'nebula_orb', equipmentId: 'nebula_orb' });
-        this.shopData.black_market.push({ id: 'railgun_lance', equipmentId: 'railgun_lance' }, { id: 'titan_cleaver', equipmentId: 'titan_cleaver' }, { id: 'ragnarok_edge', equipmentId: 'ragnarok_edge' }, { id: 'deus_executioner', equipmentId: 'deus_executioner' }, { id: 'aegis_frame', equipmentId: 'aegis_frame' }, { id: 'fortress_mail', equipmentId: 'fortress_mail' }, { id: 'colossus_plate', equipmentId: 'colossus_plate' }, { id: 'deus_bulwark', equipmentId: 'deus_bulwark' }, { id: 'aegis_helm', equipmentId: 'aegis_helm' }, { id: 'fortress_helm', equipmentId: 'fortress_helm' }, { id: 'deus_crown', equipmentId: 'deus_crown' }, { id: 'aegis_gauntlets', equipmentId: 'aegis_gauntlets' }, { id: 'fortress_gauntlets', equipmentId: 'fortress_gauntlets' }, { id: 'deus_gauntlets', equipmentId: 'deus_gauntlets' }, { id: 'warlord_emblem', equipmentId: 'warlord_emblem' }, { id: 'bastion_core', equipmentId: 'bastion_core' }, { id: 'deus_sigil', equipmentId: 'deus_sigil' }, { id: 'warlock_staff', equipmentId: 'warlock_staff' }, { id: 'cardinal_rod', equipmentId: 'cardinal_rod' }, { id: 'void_robe', equipmentId: 'void_robe' }, { id: 'eclipse_orb', equipmentId: 'eclipse_orb' }, { id: 'sage_lord_staff', equipmentId: 'sage_lord_staff' }, { id: 'seraph_rod', equipmentId: 'seraph_rod' }, { id: 'celestial_robe', equipmentId: 'celestial_robe' }, { id: 'galaxy_orb', equipmentId: 'galaxy_orb' }, { id: 'deus_staff', equipmentId: 'deus_staff' }, { id: 'divine_rod', equipmentId: 'divine_rod' }, { id: 'empyrean_robe', equipmentId: 'empyrean_robe' }, { id: 'cosmos_orb', equipmentId: 'cosmos_orb' }, { id: 'kamui_staff', equipmentId: 'kamui_staff' }, { id: 'kamui_rod', equipmentId: 'kamui_rod' }, { id: 'kamui_robe', equipmentId: 'kamui_robe' }, { id: 'kamui_orb', equipmentId: 'kamui_orb' });
 
         this.currentShop = null;
         this.isShopOpen = false;
@@ -4492,6 +4526,20 @@ class ShopSystem {
                 console.log(`[Shop] ${name}: ${dialogue} (shopType '${shopType}' は未実装)`);
             }
             return;
+        }
+        // ★闇市ゲート: ヤミ合流(yamiJoined)まで闇商人は売らない。会話は可・在庫は出さない。
+        if (shopType === 'black_market') {
+            const flags = (typeof window !== 'undefined' && window.storyFlags) || {};
+            if (!flags.yamiJoined) {
+                const name = shopkeeper && shopkeeper.name ? shopkeeper.name : '闇商人';
+                const line = '…まだ お前さんには 売れねえな。 信用ってやつが 要るんだよ。';
+                if (typeof window.showMessage === 'function') {
+                    window.showMessage(`${name}: 「${line}」`);
+                } else {
+                    console.log(`[Shop] ${name}: ${line} (black_market locked: yamiJoined未達)`);
+                }
+                return;
+            }
         }
         this.currentShop = shopType;
         this.currentShopkeeper = shopkeeper;
