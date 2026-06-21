@@ -2249,7 +2249,7 @@ class MapSystem {
                     y: sy,
                     originX: sx,
                     originY: sy,
-                    wanderPhase: Math.random() * Math.PI * 2, // 停止時の呼吸bob(drawSingleNPC)用の位相
+                    wanderPhase: Math.random() * Math.PI * 2, // 位相(将来の表情・タイミング差異用に保持)
                     facing: npc.facing || 'down',
                     animTime: 0,
                     isMoving: false,
@@ -3461,33 +3461,25 @@ class MapSystem {
         ctx.ellipse(position.x, position.y + 4, shadowRadiusX, shadowRadiusY, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // 停止中の微小アイドルモーション（呼吸の上下）。移動中は歩行コマに任せる。
-        // 会話/イベント中(this._npcPaused)は完全静止させ、詰まり時のジッターを防ぐ。
-        let idleBob = 0;
-        if (!npc.isMoving && !this._npcPaused) {
-            const phase = (npc.wanderPhase || 0);
-            idleBob = Math.sin((this._npcClock || 0) * 0.0028 + phase) * 1.6;
-        }
-
         if (sprite && sprite.complete && sprite.naturalWidth > 0) {
             if (this.isWalkSpriteSheet(spritePath, sprite)) {
-                // フルフレーム再生(本物の歩行コマをそのまま送る・整数スナップ)
+                // スプライトシート: 歩行中はフレームアニメ、停止中はアイドルフレーム(col=0)で完全静止
                 const f = this.computeWalkFrame(npc.facing, npc.isMoving, npc.animTime || 0);
                 const dw = npc.hostile ? 56 : 50, dh = npc.hostile ? 72 : 64;
                 const dx = Math.round(position.x - dw / 2);
-                const dy = Math.round(position.y - dh + 6 + idleBob);
+                const dy = Math.round(position.y - dh + 6);
                 const ps = ctx.imageSmoothingEnabled;
                 ctx.imageSmoothingEnabled = false;
                 ctx.drawImage(sprite, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
                 ctx.imageSmoothingEnabled = ps;
             } else {
                 const size = npc.hostile ? 50 : 44;
-                ctx.drawImage(sprite, position.x - size / 2, position.y - size + idleBob, size, size * 1.25);
+                ctx.drawImage(sprite, position.x - size / 2, position.y - size, size, size * 1.25);
             }
         } else {
             ctx.font = '32px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText(npc.emoji, position.x, position.y + idleBob);
+            ctx.fillText(npc.emoji, position.x, position.y);
         }
 
         // クエストマーカー表示（ストーリーNPC用）
@@ -3575,7 +3567,7 @@ class MapSystem {
         const now = performance.now();
         const dt = this._lastNpcUpdate ? (now - this._lastNpcUpdate) : 16;
         this._lastNpcUpdate = now;
-        this._npcClock = now; // 描画側のアイドルbobが参照する共通時計
+        this._npcClock = now;
         const map = this.maps[this.currentMap];
         if (!map || !map.npcs) return;
 
@@ -3587,7 +3579,7 @@ class MapSystem {
             (typeof window !== 'undefined' && window.isMessageShown === true) ||
             (typeof isMessageShown !== 'undefined' && isMessageShown === true)
         );
-        this._npcPaused = paused; // 描画側のアイドルbobを止めるフラグ
+        this._npcPaused = paused;
         if (paused) {
             map.npcs.forEach(npc => { npc.isMoving = false; });
             return;
@@ -3605,7 +3597,7 @@ class MapSystem {
             }
 
             const pat = npc._patrol;
-            if (!pat || npc.static) { npc.isMoving = false; return; } // move 無し=静止（呼吸bobのみ）
+            if (!pat || npc.static) { npc.isMoving = false; return; } // move 無し=静止
 
             const speed = npc.hostile ? HOSTILE_SPEED : CITIZEN_SPEED;
             this.tickPatrol(npc, pat, map, speed, dt);
