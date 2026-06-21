@@ -1905,7 +1905,9 @@ class MapSystem {
                     // ※ 北 (414, 54) と 東 (754, 207) と 南 (415, 384) は隣接マップ未定義のため保留
                 ],
                 npcs: [
-                    // ★リクは subway_concourse_a へ前倒し移設（第1章ボス手前で加入）。バイオドームは無人に
+                    // ★リク加入は植物園(第2章・堕神戦)。WORLD座標で配置、constrainMapNPCsToWalkableが歩行可へ補正。
+                    //   名前'リク'を checkInteractions が engageRiku へ流す。isNPCHiddenが rikuJoined で非表示化。
+                    { x: 620, y: 340, emoji: '🛡️', name: 'リク', dialogue: '…誰だ。俺に、構うな。' }
                 ]
             }
         };
@@ -2109,6 +2111,17 @@ class MapSystem {
             map.objectLayer = true;
             map.objectSource = data.objects.map(object => ({ ...object }));
             map.objects = objects;
+            // ★MAP_OBJECTS側のnpcs(ボス/加入NPC)を注入。従来は未注入でアルコン/リヴァイ/真デウスが
+            //   どのアクティブマップにも現れず第3章以降がsoftlockしていた。座標はBASE→×scaleでWORLD化し、
+            //   既存npcs(雑魚/ドローン等)へマージ(重複idは除外)。isNPCHidden/名前ハンドラがそのまま発火する。
+            if (Array.isArray(data.npcs) && data.npcs.length) {
+                const existing = map.npcs || [];
+                const seen = new Set(existing.map(n => n && (n.id || n.name)));
+                const injected = data.npcs
+                    .filter(n => n && !seen.has(n.id || n.name))
+                    .map(n => ({ ...n, x: Math.round((Number(n.x) || 0) * scale), y: Math.round((Number(n.y) || 0) * scale) }));
+                map.npcs = [...existing, ...injected];
+            }
             map.walkableRects = [];
             map.drawProceduralObjects = false;
             this.rebuildObjectLayerCollisions(map);
