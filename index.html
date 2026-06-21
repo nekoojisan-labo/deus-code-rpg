@@ -3704,7 +3704,7 @@
     <script src="se-system.js?v=1"></script>
     <script src="ui-panel.js?v=7"></script>
     <script src="save-system.js?v=2"></script>
-    <script src="battle-system.js?v=88"></script>
+    <script src="battle-system.js?v=89"></script>
     <script src="map-walkability-data.js?v=22"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=31"></script>
@@ -5460,6 +5460,8 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         }
 
         function checkInteractions() {
+            // ★戦闘直後(〜0.9s)は再発火を抑止。ボス撃破フラグ確定前のZ押下によるボス再戦を防ぐ。
+            if (window.battleSystem && battleSystem.justEndedBattle) return;
             const npc = mapSystem.checkNPCInteraction(player.x, player.y);
             const treasure = mapSystem.checkTreasureInteraction(player.x, player.y);
             const entrance = mapSystem.checkMapEntranceInteraction(player.x, player.y);

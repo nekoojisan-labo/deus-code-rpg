@@ -2499,6 +2499,10 @@ class BattleSystem {
         // 戦闘後は少し安全期間を設ける
         this.encounterSteps = 0;
         this.encounterThreshold = Math.floor(this.getRandomEncounterSteps('medium') * 1.5);
+        // ★戦闘終了直後のインタラクション再発火を封じる。ボス撃破フラグは onBossDefeat コールバック
+        //   (〜500ms後)で立つため、その窓でZ押下すると bossDefeated 未確定のままボス再戦が起きていた。
+        this.justEndedBattle = true;
+        if (typeof setTimeout === 'function') setTimeout(() => { this.justEndedBattle = false; }, 900);
 
         const battleScreen = document.getElementById('battleScreen');
         if (battleScreen) {
