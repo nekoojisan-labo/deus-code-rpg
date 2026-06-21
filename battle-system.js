@@ -167,6 +167,7 @@ class BattleSystem {
             corrupted_drone_boss: 'assets/enemies/enemy_corrupted_drone.png',
             rogue_ai_core: 'assets/enemies/enemy_abyss_ruler.png',
             fallen_life_god: 'assets/enemies/enemy_fallen_life_god.png',
+            arc_executioner: 'assets/enemies/enemy_arc_executioner.png',
             // bossId（ボス戦の画像解決用）
             corrupted_drone: 'assets/enemies/enemy_corrupted_drone.png',
             arc_prime: 'assets/enemies/enemy_ark_prime.png',
