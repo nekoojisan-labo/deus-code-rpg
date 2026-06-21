@@ -436,6 +436,33 @@ class BattleSystem {
                     skillChance: 0.5
                 }
             },
+            arc_executioner: {
+                name: '神狩のイクサ',
+                emoji: '⚙️',
+                hp: 300,
+                maxHp: 300,
+                mp: 30,
+                attack: 26,
+                defense: 20,
+                magicDefense: 18,
+                exp: 200,
+                gold: 0,
+                element: 'none',
+                weakness: 'light',
+                elementalResistance: { dark: 0.5 },
+                type: 'boss',
+                boss: true,
+                skills: ['reclaim_claw', 'purge_beam_aoe', 'barrier'],
+                description: 'アークが神性の残滓を回収するために投入する白鉄の処刑機。神を狩る鉤爪を持つ。',
+                bossId: 'arc_executioner',
+                dropTable: [],
+                aiPattern: {
+                    lowHpThreshold: 0.3,
+                    lowHpAction: 'skill',
+                    normalAction: 'attack',
+                    skillChance: 0.5
+                }
+            },
             rogue_ai_core: {
                 name: '暴走AIコア',
                 emoji: '⚡',

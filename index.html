@@ -3691,17 +3691,17 @@
     <script src="se-system.js?v=1"></script>
     <script src="ui-panel.js?v=7"></script>
     <script src="save-system.js?v=2"></script>
-    <script src="battle-system.js?v=83"></script>
+    <script src="battle-system.js?v=84"></script>
     <script src="map-walkability-data.js?v=21"></script>
     <script src="object-catalog.js?v=2"></script>
-    <script src="map-objects-data.js?v=30"></script>
+    <script src="map-objects-data.js?v=31"></script>
     <script src="map-system.js?v=97"></script>
     <script src="map-system-grid.js"></script>
     <script src="player-grid-movement.js"></script>
     <script src="bgm-system.js?v=36"></script>
     <script src="party-system.js?v=50"></script>
     <script src="quest-system.js?v=7"></script>
-    <script src="story-events.js?v=60"></script>
+    <script src="story-events.js?v=61"></script>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -5125,11 +5125,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             };
             const flag = LOCATION_FLAGS[mapId];
             if (flag) storyFlags[flag] = true;
-            // ★ヤミ本加入: 闇市で仮契約(yamiPactMade)済みなら、都庁突入直前で4人目として加入
-            if (mapId === 'tokyo_gov_approach' && storyFlags.yamiPactMade && !storyFlags.yamiJoined) {
-                joinMember('yami');
-                showMessage('ヤミ：「契約どおり、来てあげたわ。…さあ、最後の決着をつけましょう。」');
-            }
+            // ★ヤミは闇市で正式加入(yamiJoined)する設計に変更（都庁前での先送り加入は廃止）。
             if (storyEventSystem && storyEventSystem.checkLocationEvents) {
                 storyEventSystem.checkLocationEvents(mapId, { storyFlags, player, mapSystem, magicSystem, partySystem });
             }
@@ -5357,14 +5353,32 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         // ※旧 startAkariTrial/onAkariTrialWin(駅での試練戦闘) は廃止。アカリは第2章Ω戦で乱入加入に統合。
         window.engageAkari = engageAkari;
 
-        // ヤミ＝説得。神託(metPriest)＋リク加入後に解禁。話しかけ→選択肢で動機を示す→仮契約(本加入は都庁直前)。
+        // ヤミ＝多段加入。神託(metPriest)＋リク加入後に解禁。出会い/取引(選択肢)→アークの追手(神狩のイクサ)戦→闇市でその場で正式加入。
         function engageYami(npc) {
             if (storyFlags.yamiJoined) { showMessage('ヤミ：「契約は守るわ。アークを終わらせるまでね。」'); return; }
-            if (storyFlags.yamiPactMade) { showMessage('ヤミ：「気が変わってない。都庁の前で合流するわ。先に行きなさい。」'); return; }
             if (!(storyFlags.metPriest && storyFlags.rikuJoined)) { showMessage('ヤミ：「神託に呼ばれた? …まだ、あんたと取引する理由がないわね。仲間も揃っていないのに。」'); return; }
+            if (storyFlags.yamiTrialSeen) { startYamiTrial(); return; }  // 敗北後の再挑戦は前口上を省略
             if (storyEventSystem) storyEventSystem.triggerEvent('recruit_yami', { storyFlags, player, partySystem, magicSystem });
-            else { storyFlags.yamiPactMade = true; showMessage('ヤミと仮契約を交わした。（都庁の前で合流する）'); }
+            else startYamiTrial();
         }
+        function startYamiTrial() {
+            if (!battleSystem || battleSystem.inBattle) return;
+            const base = battleSystem.enemyDatabase.arc_executioner;
+            if (!base) return;
+            const enemy = {
+                ...base,
+                hp: base.hp, maxHp: base.maxHp || base.hp, currentHp: base.hp, currentMp: base.mp || 0,
+                boss: true, bossId: base.bossId || 'arc_executioner'
+            };
+            storyFlags.yamiTrialStarted = true;
+            battleSystem.startBattle(enemy, true, () => onYamiTrialWin());  // 勝利時のみ→加入（敗北=通常GO）
+        }
+        function onYamiTrialWin() {
+            if (storyEventSystem) storyEventSystem.triggerEvent('recruit_yami_join', { storyFlags, player, partySystem, magicSystem });
+            else { joinMember('yami'); showMessage('ヤミが仲間に加わった！'); }
+        }
+        window.startYamiTrial = startYamiTrial;
+        window.onYamiTrialWin = onYamiTrialWin;
 
         // 神宮の老神主と会話（神託イベント発火）
         function advancePriest(npc) {

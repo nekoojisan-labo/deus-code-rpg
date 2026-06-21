@@ -48,8 +48,8 @@ window.MAP_OBJECTS = {
     "direction": "east",
     "spawnX": 68,
     "spawnY": 194,
-    "requiredFlag": "yamiPactMade",
-    "lockedMsg": "都庁の封鎖は固い。まず闇市のヤミと話をつけてからでなければ近づけない。",
+    "requiredFlag": "yamiJoined",
+    "lockedMsg": "都庁の封鎖は固い。まず闇市でヤミを仲間にしてからでなければ近づけない。",
     "spawnFace": "right"
    },
    {
