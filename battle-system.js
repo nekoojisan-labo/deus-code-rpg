@@ -502,7 +502,7 @@ class BattleSystem {
         // エリア別エンカウントテーブル（出現する敵"種"。強さは下記 tier 倍率でスケール）
         // フィールドごとに固有の顔ぶれ（先頭ほど高頻度）。強さは下記 tier 倍率でスケール。
         this.encounterTables = {
-            city:    ['watcher', 'patrol_drone', 'watcher', 'cerberus'],          // 街路: 弱い監視系
+            city:    ['watcher', 'patrol_drone', 'watcher', 'patrol_drone'],       // 街路: 弱い監視系
             subway:  ['data_spider', 'dustGolem', 'data_spider', 'cerberus'],     // 地下鉄: 蜘蛛＋重量
             shrine:  ['phantom', 'alraune', 'phantom', 'watcher'],                // 神社: 霊・植物
             garden:  ['alraune', 'security_drone', 'data_spider', 'alraune'],     // 植物園: 植物＋警備
@@ -557,10 +557,10 @@ class BattleSystem {
             const e = this.enemyDatabase[id];
             if (!e) return;
             Object.assign(e, _v2Retrofit[id]);
-            if (!e.boss) { e.hp = Math.round((e.hp || 1) * 1.7); e.maxHp = e.hp; }  // 既存zakoのHP底上げ(一撃回避)
+            // HP retrofit removed (was ×1.7 → balanced to ×1.0)
         });
         this.encounterTables = {
-            city:    ['watcher', 'patrol_drone', 'rust_rat', 'spark_moth', 'watcher', 'cerberus'],
+            city:    ['watcher', 'patrol_drone', 'rust_rat', 'spark_moth', 'watcher', 'patrol_drone'],
             subway:  ['data_spider', 'frost_widow', 'dustGolem', 'static_wisp', 'cerberus'],
             shrine:  ['phantom', 'venom_bloom', 'alraune', 'watcher'],
             garden:  ['alraune', 'venom_bloom', 'cinder_hound', 'security_drone', 'data_spider'],
