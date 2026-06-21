@@ -3349,6 +3349,19 @@
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
+
+        /* PC（マウス操作）: コントローラー非表示 → ゲーム画面を広く使う
+           (hover:hover) and (pointer:fine) = タッチ非対応の精密ポインタ端末 */
+        @media (hover: hover) and (pointer: fine) {
+            .on-screen-controller { display: none !important; }
+
+            /* コントローラー(194px)分を viewport に還元
+               234 = border(6) + panel(228) ← コントローラーを除いた固定部分 */
+            .game-container.gameplay-mode .game-viewport {
+                width: min(100%, max(280px, calc((min(100vh,  875px) - 234px) * 800 / 450)));
+                width: min(100%, max(280px, calc((min(100dvh, 875px) - 234px) * 800 / 450)));
+            }
+        }
     </style>
 </head>
 <body>
