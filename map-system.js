@@ -3348,6 +3348,12 @@ class MapSystem {
             case '暴走ドローン': return !!(storyFlags.bossDefeated || storyFlags.chapter1_complete) || !storyFlags.akariReunited;  // ★再会(単騎で地下鉄入り)後にΩ出現→そこでアカリ乱入加入
             // アーク・プライムは都庁入場(enteredGov=ヤミ加入後に解放)まで出現しない＋撃破後も消す
             case 'アーク・プライム': return !storyFlags.enteredGov || !!storyFlags.arcDefeated;
+            // Phase3: アルコン・デウスは都庁入場後に出現・撃破後消える
+            case 'アルコン・デウス': return !storyFlags.enteredGov || !!storyFlags.archonDefeated;
+            // Phase4: リヴァイアサンはゲームクリア後に出現・撃破後消える
+            case 'リヴァイアサン・コア': return !storyFlags.gameCleared || !!storyFlags.leviathanDefeated;
+            // Phase4: 真・デウスはリヴァイアサン撃破後に出現・撃破後消える
+            case '真・デウス': return !storyFlags.leviathanDefeated || !!storyFlags.trueDeus_defeated;
             default: return false;
         }
     }

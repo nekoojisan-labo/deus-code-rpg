@@ -3409,7 +3409,9 @@ window.MAP_OBJECTS = {
     "direction": "north",
     "spawnX": 401,
     "spawnY": 403,
-    "spawnFace": "up"
+    "spawnFace": "up",
+    "requiredFlag": "archonDefeated",
+    "lockedMsg": "アルコン・デウスを倒さなければ、この先へは進めない..."
    }
   ],
   "objects": [
@@ -3674,6 +3676,82 @@ window.MAP_OBJECTS = {
      "h": 12
     },
     "flip": true
+   }
+  ],
+  "npcs": [
+   {
+    "id": "archon_deus_boss",
+    "name": "アルコン・デウス",
+    "x": 418,
+    "y": 155,
+    "emoji": "👑",
+    "hostile": false,
+    "boss": true,
+    "bossKey": "archon_deus",
+    "dialogue": "この先はお前たちのような人間には渡さない。秩序の名のもとに、消えろ。",
+    "defeatedDialogue": "…信じられない…人間ごときが…偽神たる私を…",
+    "hidden": false,
+    "hideWhenFlag": "archonDefeated"
+   }
+  ]
+ },
+ "deep_tunnel": {
+  "image": "assets/maps/subway_concourse_a_clean_v1.png",
+  "exits": [
+   {
+    "x": 600,
+    "y": 380,
+    "width": 100,
+    "height": 50,
+    "to": "subway_concourse_a",
+    "direction": "south",
+    "spawnX": 172,
+    "spawnY": 110,
+    "spawnFace": "down"
+   }
+  ],
+  "objects": [
+   {
+    "kind": "solid_wall",
+    "x": 0,
+    "y": 0,
+    "footprint": { "w": 120, "h": 460 }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 740,
+    "y": 0,
+    "footprint": { "w": 120, "h": 460 }
+   }
+  ],
+  "npcs": [
+   {
+    "id": "leviathan_core_boss",
+    "name": "リヴァイアサン・コア",
+    "x": 418,
+    "y": 250,
+    "emoji": "🐉",
+    "hostile": false,
+    "boss": true,
+    "bossKey": "leviathan",
+    "dialogue": "…貴様らに、神力の重さが分かるか。吸い上げられた八百万の命が、今ここに凝縮されている。",
+    "defeatedDialogue": "…解放される…神々の力よ、カイトに…",
+    "hidden": false,
+    "hideWhenFlag": "leviathanDefeated"
+   },
+   {
+    "id": "true_deus_boss",
+    "name": "真・デウス",
+    "x": 418,
+    "y": 130,
+    "emoji": "🌟",
+    "hostile": false,
+    "boss": true,
+    "bossKey": "true_deus",
+    "dialogue": "カイトよ。貴様が本当に八百万の神威を担えるか…試させてもらおう。",
+    "defeatedDialogue": "…そうか。人の意志とは、かくも強いものか。紋様よ、完全に解き放たれよ。",
+    "hidden": true,
+    "showWhenFlag": "leviathanDefeated"
    }
   ]
  }

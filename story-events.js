@@ -479,6 +479,42 @@ class StoryEventSystem {
             }
         });
 
+        // アルコン・デウス接近（都庁前庭 - 戦闘前の啖呵）
+        this.registerEvent('archon_deus_intro', {
+            trigger: 'manual',
+            oneTime: true,
+            scenes: [
+                { character: 'カイト', text: '（…都庁の前に、巨大な光の柱が立っている。あれは…神格か）' },
+                { character: 'アルコン・デウス', text: '止まれ、人間よ。この先はアーク様の聖域だ。秩序なき者に、通行の資格はない。' },
+                { character: 'アカリ', text: 'あの光…神様じゃない。アークが作り上げた、偽物だ。' },
+                { character: 'リク', text: '…本物の神の力とは違う。歪んだエネルギーを感じる。俺たちで、止める。' },
+                { character: 'ヤミ', text: '偽神ね。香りが分かるわ…恐怖と支配の匂いしかしない。倒しましょう。' },
+                { character: 'カイト', text: '4人一緒に来た。今こそ、それを証明する時だ。' }
+            ],
+            onComplete: (storyFlags) => {
+                storyFlags.archonIntroPlayed = true;
+            }
+        });
+
+        // アルコン・デウス撃破後（都庁前庭）
+        this.registerEvent('archon_defeated', {
+            trigger: 'manual',
+            oneTime: true,
+            scenes: [
+                { character: 'アルコン・デウス', text: '…信じられない…偽神たる私が…人間ごときに…' },
+                { character: 'カイト', text: '（…手の紋様が熱を持つ。神々が応えているのか）' },
+                { character: 'アカリ', text: 'カイト、紋様が光ってる…みんなの力が、そこに集まってる！' },
+                { character: 'リク', text: '…これが、本物の神威というやつか。カイト、お前は最初から正しかった。' },
+                { character: 'ヤミ', text: '感傷は後にして。アークはまだ都庁の最上階にいる。終わらせに行くわよ。' },
+                { character: 'カイト', text: 'ああ。ここまで来た。最後まで、一緒に行こう。' },
+                { character: 'システム', text: '都庁への道が開かれた。最上階のアーク・プライムを討て。' }
+            ],
+            onComplete: (storyFlags) => {
+                storyFlags.archonDefeated = true;
+                console.log('✅ Archon Deus defeated - floor2 unlocked');
+            }
+        });
+
         // アーク・プライム撃破エンディング（都庁最上階のボス撃破時に発火）
         this.registerEvent('arc_defeated_ending', {
             trigger: 'manual',
@@ -488,14 +524,52 @@ class StoryEventSystem {
                 { character: 'カイト', text: '秩序だけじゃ、人は生きられない。喜びも、痛みも、全部ひっくるめて人間なんだ。' },
                 { character: 'アカリ', text: '見て、カイト...街に色が戻ってくる。みんなの表情が...' },
                 { character: 'リク', text: '人々の心が、戻り始めている。俺たちは、やったんだ。' },
-                { character: 'ヤミ', text: '...悪くない結末ね。八百万の神々も、満足でしょう。' },
-                { character: 'システム', text: '【八百万の神託 — 完】\nアークは倒れ、東京に心が戻った。ご褒美に、裏ダンジョン「深層トンネル」が解放された。' }
+                { character: 'ヤミ', text: '...悪くない結末ね。でも…カイトの紋様が、まだ揺れている。何かを訴えているみたいに。' },
+                { character: 'カイト', text: '（…八百万の神々が、まだ何かを言おうとしている。地下の深いところで、声が聞こえる気がする）' },
+                { character: 'システム', text: '【第3章 完了】アークは倒れ、東京に心が戻り始めた。地下の深層トンネルへの扉が開かれた。八百万の最後の声を聞きに行くか？' }
             ],
             onComplete: (storyFlags) => {
                 storyFlags.arcDefeated = true;
                 storyFlags.chapter3_complete = true;
                 storyFlags.gameCleared = true;
-                console.log('✅ Arc Prime defeated - Game cleared!');
+                console.log('✅ Arc Prime defeated - Game cleared! Deep tunnel unlocked.');
+            }
+        });
+
+        // リヴァイアサン・コア撃破（深層トンネル中層）
+        this.registerEvent('leviathan_defeated', {
+            trigger: 'manual',
+            oneTime: true,
+            scenes: [
+                { character: 'リヴァイアサン・コア', text: '…解放される…カイトよ…お前が…担うのだ…神威を…' },
+                { character: 'カイト', text: '（…吸い取られていた神力が、紋様に流れ込んでくる。熱い。痛い。でも、これは…希望だ）' },
+                { character: 'アカリ', text: 'カイト！紋様が…体が大丈夫？' },
+                { character: 'カイト', text: 'ああ…大丈夫だ。むしろ…声が聞こえる。八百万の声が。もう一度、前へ進もう。' },
+                { character: 'システム', text: '神力の塊を解放した。最奥への道が開く。' }
+            ],
+            onComplete: (storyFlags) => {
+                storyFlags.leviathanDefeated = true;
+                console.log('✅ Leviathan Core defeated - true deus revealed');
+            }
+        });
+
+        // 真・デウス撃破（真のエンディング）
+        this.registerEvent('true_deus_ending', {
+            trigger: 'manual',
+            oneTime: true,
+            scenes: [
+                { character: '真・デウス', text: '…そうか。人の意志とは、かくも強いものか。カイトよ、お前が八百万の神威を担うにふさわしい。紋様よ、完全に解き放たれよ。' },
+                { character: 'カイト', text: '（…紋様が光る。手から全身へ。これが…八百万の神々が俺に託したものか）' },
+                { character: 'アカリ', text: 'カイト…あなた、輝いてる。神様みたいに。' },
+                { character: 'リク', text: '…これが、紋様の真の力か。カイトにしか背負えないものだ。' },
+                { character: 'ヤミ', text: '八百万の香りがする。本物の神威の香り。…悪くないわ。' },
+                { character: 'カイト', text: 'みんな…ありがとう。俺一人じゃ、ここには来られなかった。この力で、東京を、人々を守る。それが、俺の答えだ。' },
+                { character: 'システム', text: '【八百万の神託 — 真のエンディング】\n紋様の神威が完全に解放された。カイトと仲間たちの旅が、真の幕を閉じる。' }
+            ],
+            onComplete: (storyFlags) => {
+                storyFlags.trueDeus_defeated = true;
+                storyFlags.chapter4_complete = true;
+                console.log('✅ True Deus defeated - True Ending!');
             }
         });
     }

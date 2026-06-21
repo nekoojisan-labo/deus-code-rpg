@@ -168,6 +168,9 @@ class BattleSystem {
             rogue_ai_core: 'assets/enemies/enemy_abyss_ruler.png',
             fallen_life_god: 'assets/enemies/enemy_fallen_life_god.png',
             arc_executioner: 'assets/enemies/enemy_arc_executioner.png',
+            archon_deus: 'assets/enemies/enemy_demon_lord.png',
+            leviathan_core: 'assets/enemies/enemy_abyss_ruler.png',
+            true_deus: 'assets/enemies/enemy_ark_prime.png',
             // bossId（ボス戦の画像解決用）
             corrupted_drone: 'assets/enemies/enemy_corrupted_drone.png',
             arc_prime: 'assets/enemies/enemy_ark_prime.png',
@@ -177,6 +180,9 @@ class BattleSystem {
             'セキュリティドローン': 'assets/enemies/enemy_security_drone.png',
             'ガードロボ': 'assets/enemies/enemy_guard_robo.png',
             'アーク・プライム': 'assets/enemies/enemy_ark_prime.png',
+            'アルコン・デウス': 'assets/enemies/enemy_demon_lord.png',
+            'リヴァイアサン・コア': 'assets/enemies/enemy_abyss_ruler.png',
+            '真・デウス': 'assets/enemies/enemy_ark_prime.png',
             'シャドウエンティティ': 'assets/enemies/enemy_shadow_entity.png',
             'データスパイダー': 'assets/enemies/enemy_data_spider.png',
             'クイーンスパイダー': 'assets/enemies/enemy_queen_spider.png',
@@ -527,7 +533,8 @@ class BattleSystem {
             oblivion_shade: { id: 'oblivion_shade', name: 'オブリビオンシェイド', emoji: '🌒', hp: 460, maxHp: 460, attack: 48, defense: 38, magicDefense: 52, mp: 0, exp: 280, gold: 200, element: 'dark', weakness: 'light', elementalResistance: { dark: 0.75, ice: 0.4, fire: 0.4 }, skills: ['abyss_lance', 'dark_tide_aoe', 'drain', 'curse'], description: 'オブリビオンシェイド', prescaled: true, aoe: true },
             aegis_colossus: { id: 'aegis_colossus', name: 'イージスコロッサス', emoji: '🛡️', hp: 500, maxHp: 500, attack: 54, defense: 60, magicDefense: 48, mp: 0, exp: 290, gold: 210, element: 'none', weakness: null, elementalResistance: { fire: 0.4, ice: 0.4, thunder: 0.4, dark: 0.5, light: 0.5 }, skills: ['siege_slam', 'crushing_aoe', 'barrier', 'guard'], description: 'イージスコロッサス', prescaled: true, aoe: true },
             archon_deus: { id: 'archon_deus', name: 'アルコン・デウス', emoji: '👑', hp: 2800, maxHp: 2800, attack: 88, defense: 72, magicDefense: 60, mp: 100, exp: 700, gold: 1200, element: 'light', weakness: 'dark,thunder', elementalResistance: { light: 0.6, fire: 0.4, ice: 0.4 }, skills: ['judgment_ray_aoe', 'triple_lance', 'aegis_protocol', 'radiant_nova_burst'], description: 'アルコン・デウス', boss: true, type: 'boss', bossId: 'archon_deus' },
-            leviathan_core: { id: 'leviathan_core', name: 'リヴァイアサン・コア', emoji: '🐉', hp: 3200, maxHp: 3200, attack: 95, defense: 90, magicDefense: 70, mp: 100, exp: 900, gold: 1500, element: 'none', weakness: null, elementalResistance: { fire: 0.5, ice: 0.5, thunder: 0.5, dark: 0.5, light: 0.5 }, skills: ['data_storm_aoe', 'recursive_strike', 'firewall', 'core_overload_burst'], description: 'リヴァイアサン・コア', boss: true, type: 'boss', bossId: 'leviathan_core' }
+            leviathan_core: { id: 'leviathan_core', name: 'リヴァイアサン・コア', emoji: '🐉', hp: 3200, maxHp: 3200, attack: 95, defense: 90, magicDefense: 70, mp: 100, exp: 900, gold: 1500, element: 'none', weakness: null, elementalResistance: { fire: 0.5, ice: 0.5, thunder: 0.5, dark: 0.5, light: 0.5 }, skills: ['data_storm_aoe', 'recursive_strike', 'firewall', 'core_overload_burst'], description: 'リヴァイアサン・コア', boss: true, type: 'boss', bossId: 'leviathan_core' },
+            true_deus: { id: 'true_deus', name: '真・デウス', emoji: '🌟', hp: 6000, maxHp: 6000, attack: 120, defense: 100, magicDefense: 100, mp: 200, exp: 2000, gold: 3000, element: 'none', weakness: null, elementalResistance: { fire: 0.5, ice: 0.5, thunder: 0.5, dark: 0.5, light: 0.5 }, skills: ['judgment_ray_aoe', 'radiant_nova_burst', 'core_overload_burst', 'divine_retribution_aoe', 'aegis_protocol'], description: '八百万の神々の総意が具現化した最終審判者', boss: true, type: 'boss', bossId: 'true_deus' }
         });
         const _v2Retrofit = {
             watcher: { weakness: 'thunder', element: 'none', elementalResistance: null },

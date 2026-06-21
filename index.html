@@ -5121,7 +5121,8 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 subway_concourse_a: 'exploredSubway',
                 biodome_gate: 'exploredBiodome',
                 black_market_entrance: 'visitedBlackMarket',
-                tokyo_gov_approach: 'enteredGov'
+                tokyo_gov_approach: 'enteredGov',
+                deep_tunnel: 'enteredDeepTunnel'
             };
             const flag = LOCATION_FLAGS[mapId];
             if (flag) storyFlags[flag] = true;
@@ -5409,9 +5410,18 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 storyFlags.bossDefeated = true;
                 if (storyEventSystem) storyEventSystem.triggerEvent('shrine_path_opens', { storyFlags, player, mapSystem, magicSystem, partySystem });
                 else { storyFlags.chapter1_complete = true; storyFlags.shrine_unlocked = true; }
+            } else if (bossKey === 'archon_deus') {
+                if (storyEventSystem) storyEventSystem.triggerEvent('archon_defeated', { storyFlags, player, mapSystem, magicSystem, partySystem });
+                else { storyFlags.archonDefeated = true; }
             } else if (bossKey === 'arc_prime') {
                 if (storyEventSystem) storyEventSystem.triggerEvent('arc_defeated_ending', { storyFlags, player, mapSystem, magicSystem, partySystem });
                 else { storyFlags.arcDefeated = true; storyFlags.gameCleared = true; }
+            } else if (bossKey === 'leviathan') {
+                if (storyEventSystem) storyEventSystem.triggerEvent('leviathan_defeated', { storyFlags, player, mapSystem, magicSystem, partySystem });
+                else { storyFlags.leviathanDefeated = true; }
+            } else if (bossKey === 'true_deus') {
+                if (storyEventSystem) storyEventSystem.triggerEvent('true_deus_ending', { storyFlags, player, mapSystem, magicSystem, partySystem });
+                else { storyFlags.trueDeus_defeated = true; storyFlags.chapter4_complete = true; }
             }
             refreshObjective();
         }
@@ -5420,7 +5430,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         // ボスNPCとの戦闘を開始（撃破コールバック付き）
         function startBossNpcBattle(npc, bossKey) {
             // bossKey(進行キー) → 専用ボスDBキーへ写像。雑魚(deusMachina hp50)流用をやめる。
-            const BOSS_DB = { corrupted_drone: 'corrupted_drone_boss', arc_prime: 'rogue_ai_core' };
+            const BOSS_DB = { corrupted_drone: 'corrupted_drone_boss', arc_prime: 'rogue_ai_core', archon_deus: 'archon_deus', leviathan: 'leviathan_core', true_deus: 'true_deus' };
             const dbKey = BOSS_DB[bossKey] || bossKey;
             const enemyData = battleSystem.enemyDatabase[dbKey] || battleSystem.enemyDatabase.deusMachina;
             const enemy = {
@@ -5455,14 +5465,43 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                     } else {
                         startBossNpcBattle(npc, 'corrupted_drone');
                     }
+                } else if (npc.name === 'アルコン・デウス') {
+                    if (storyFlags.archonDefeated) {
+                        showMessage('砕け散った偽神の残滓が微かな光を放っている。');
+                    } else if (!storyFlags.enteredGov) {
+                        showMessage('強大な光の気配を感じる…まだ近づくべきではない。');
+                    } else {
+                        if (!storyFlags.archonIntroPlayed && storyEventSystem) {
+                            storyEventSystem.triggerEvent('archon_deus_intro', { storyFlags, player, mapSystem, magicSystem, partySystem });
+                            // イベント完了後に戦闘開始するためonComplete後の処理が必要
+                            // archonIntroPlayedフラグで次回接触時に直接戦闘へ
+                        } else {
+                            startBossNpcBattle(npc, 'archon_deus');
+                        }
+                    }
                 } else if (npc.name === 'アーク・プライム') {
                     if (storyFlags.arcDefeated) {
                         showMessage('機能を停止したアーク・プライムが静かに佇んでいる。');
-                    } else if (!storyFlags.enteredGov) {
-                        // 通常は都庁ゲート(yamiJoined)で到達不能。二重防御。
-                        showMessage('まだこの存在に近づくべき時ではない。');
+                    } else if (!storyFlags.archonDefeated) {
+                        showMessage('まだこの存在に近づくべき時ではない。先に都庁前庭を突破せよ。');
                     } else {
                         startBossNpcBattle(npc, 'arc_prime');
+                    }
+                } else if (npc.name === 'リヴァイアサン・コア') {
+                    if (storyFlags.leviathanDefeated) {
+                        showMessage('解放された神力の残滓が静かに揺れている。');
+                    } else if (!storyFlags.gameCleared) {
+                        showMessage('…まだ、この深みに踏み込むべきではない。');
+                    } else {
+                        startBossNpcBattle(npc, 'leviathan');
+                    }
+                } else if (npc.name === '真・デウス') {
+                    if (storyFlags.trueDeus_defeated) {
+                        showMessage('八百万の神々の声が、穏やかに響いている。');
+                    } else if (!storyFlags.leviathanDefeated) {
+                        showMessage('…まだその先へは行けない。リヴァイアサンを倒してから来い。');
+                    } else {
+                        startBossNpcBattle(npc, 'true_deus');
                     }
                 } else if (npc.hostile) {
                     // 通常の強制戦闘

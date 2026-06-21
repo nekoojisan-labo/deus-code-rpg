@@ -27,17 +27,9 @@ const QUEST_STEPS = [
     id: 'defeat_drone', chapter: 1,
     title: '暴走ドローン・Ωを倒す',
     where: '地下コンコースA',
-    detail: '最奥の暴走監視ドローン・Ωを止めよう。',
+    detail: '最奥の暴走監視ドローン・Ωを止めよう。アカリが加わる。',
     target: 'subway_concourse_a',
     done: f => !!f.chapter1_complete || !!f.bossDefeated
-  },
-  {
-    id: 'recruit_riku', chapter: 1,
-    title: '地下に残る元警備隊リクを仲間にする',
-    where: '地下コンコースA',
-    detail: 'Ωを倒した先に、元警備隊員リクがいる。話しかけ、力を示して仲間に加えよう。',
-    target: 'subway_concourse_a',
-    done: f => !!f.rikuJoined
   },
   {
     id: 'go_shrine', chapter: 1,
@@ -48,9 +40,17 @@ const QUEST_STEPS = [
     done: f => !!f.metPriest
   },
 
-  // --- 第2章 神託と仲間 ---
+  // --- 第2章 仲間と試練 ---
   {
-    id: 'recruit_yami', chapter: 2, chapterTitle: '第2章 神託と仲間',
+    id: 'recruit_riku', chapter: 2, chapterTitle: '第2章 仲間と試練',
+    title: '植物園に囚われた神を解放し、リクを仲間にする',
+    where: '広場の北東 → 生命のバイオドーム',
+    detail: '元警備隊員のリクが植物園で囚われた神を守っている。共に戦い、仲間に加えよう。',
+    target: 'biodome_gate',
+    done: f => !!f.rikuJoined
+  },
+  {
+    id: 'recruit_yami', chapter: 2,
     title: '闇市のヤミを仲間にする',
     where: '広場の南 → 商業街 → さらに南西の闇市',
     detail: '監視外の闇市へ。闇魔法使いヤミに話しかけ、仲間に引き入れよう。',
@@ -58,28 +58,62 @@ const QUEST_STEPS = [
     done: f => !!f.yamiPactMade || !!f.yamiJoined
   },
 
-  // --- 第3章 対決 ---
+  // --- 第3章 決戦 ---
   {
-    id: 'go_gov', chapter: 3, chapterTitle: '第3章 対決',
+    id: 'go_gov', chapter: 3, chapterTitle: '第3章 決戦',
     title: '都庁へ乗り込む',
     where: '広場の東 → 東京都庁 前庭',
-    detail: 'アークの中枢、東京都庁へ向かおう。前庭の警備を突破せよ。',
+    detail: 'アークの中枢、東京都庁へ向かおう。前庭の守護者を突破せよ。',
     target: 'tokyo_gov_approach',
     done: f => !!f.enteredGov
+  },
+  {
+    id: 'defeat_archon', chapter: 3,
+    title: 'アルコン・デウスを倒す',
+    where: '都庁 前庭',
+    detail: 'アークが召喚した偽神アルコン・デウスが行く手を阻む。4人の力で打ち倒せ。',
+    target: 'tokyo_gov_approach',
+    done: f => !!f.archonDefeated
   },
   {
     id: 'defeat_arc', chapter: 3,
     title: 'アーク・プライムを倒す',
     where: '都庁を上り、最上階へ',
-    detail: '都庁を上って最上階のアーク・プライムを討て。',
-    target: 'tokyo_gov_floor3',
+    detail: '偽神を越えた先、最上階のアーク・プライムを討て。',
+    target: 'tokyo_gov_floor2',
     done: f => !!f.arcDefeated
+  },
+
+  // --- 裏章 深淵の審判（クリア後・任意） ---
+  {
+    id: 'enter_deep', chapter: 4, chapterTitle: '裏章 深淵の審判',
+    title: '深層トンネルへ踏み込む',
+    where: '新宿駅 地下コンコースA → 最奥の扉',
+    detail: '物語をクリアした者だけが開く深淵の扉。八百万が最後の試練を用意している。',
+    target: 'deep_tunnel',
+    done: f => !!f.enteredDeepTunnel
+  },
+  {
+    id: 'defeat_leviathan', chapter: 4,
+    title: 'リヴァイアサン・コアを倒す',
+    where: '深層トンネル 中層',
+    detail: '吸い取られた神力が凝縮した怪物。倒すことで最奥への道が開く。',
+    target: 'deep_tunnel',
+    done: f => !!f.leviathanDefeated
+  },
+  {
+    id: 'true_ending', chapter: 4,
+    title: '真・デウス（八百万の審判）を乗り越える',
+    where: '深層トンネル 最奥',
+    detail: '八百万の神々の総意がカイトを試す。紋様の神威を示し、真の結末を掴め。',
+    target: 'deep_tunnel',
+    done: f => !!f.trueDeus_defeated
   }
 ];
 
 const QUEST_ENDING = {
-  title: '八百万の神託 — 物語をクリアした！',
-  detail: 'アークを打ち倒し、人々に心が戻り始めた。（裏ダンジョン「深層トンネル」にも挑戦できる）'
+  title: '八百万の神託 — 真の結末',
+  detail: '八百万の神々の試練を越え、紋様の神威が完全に解放された。東京に本当の夜明けが訪れる。'
 };
 
 class QuestSystem {
