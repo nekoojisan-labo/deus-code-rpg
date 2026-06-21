@@ -183,22 +183,22 @@ class MagicSystem {
 
         // ★v2 スキル(再較正済み・属性/単体全体/二系統)。既存IDは上書き・新規は追加。
         Object.assign(this.magicDatabase, {
-            heal: { id: 'heal', name: 'ヒール', emoji: '💚', type: 'healing', target: 'single', element: 'light', basePower: 0.7, scalingStat: 'magic', mpCost: 6, requiredLevel: 1, allowedRoles: ['all-rounder', 'healer'], description: '味方ひとりのHPを回復する基本の癒し術。' },
+            heal: { id: 'heal', name: 'ヒール', emoji: '💚', type: 'healing', target: 'single', element: 'light', basePower: 0.7, scalingStat: 'magic', mpCost: 6, requiredLevel: 1, minHeal: 30, allowedRoles: ['all-rounder', 'healer'], description: '味方ひとりのHPを回復する基本の癒し術。' },
             light_arrow: { id: 'light_arrow', name: 'ライトアロー', emoji: '🏹', type: 'offensive', target: 'single', element: 'light', basePower: 0.8, scalingStat: 'magic', mpCost: 7, requiredLevel: 1, allowedRoles: ['all-rounder', 'healer'], description: '光の矢を放つ。アカリ加入時からの攻撃手段。闇属性の敵に刺さる。' },
             cure_status: { id: 'cure_status', name: 'キュアラ', emoji: '🌿', type: 'support', target: 'single', element: 'light', basePower: 0, scalingStat: 'magic', mpCost: 8, requiredLevel: 3, allowedRoles: ['all-rounder', 'healer'], description: '味方ひとりの状態異常をすべて取り除く。毒・麻痺・睡眠を浄化。', effect: 'cure_status', duration: 3 },
             protect_shell: { id: 'protect_shell', name: 'プロテス', emoji: '🛡️', type: 'support', target: 'single', element: 'light', basePower: 1.5, scalingStat: 'magic', mpCost: 9, requiredLevel: 5, allowedRoles: ['all-rounder', 'healer'], description: '味方ひとりの物理防御を1.5倍に高める(3ターン)。前衛の被弾を軽減。', effect: 'phys_def_up', duration: 3, buffMul: 1.5 },
-            regen_field: { id: 'regen_field', name: 'リジェネ', emoji: '🍃', type: 'healing', target: 'single', element: 'light', basePower: 0.45, scalingStat: 'magic', mpCost: 8, requiredLevel: 7, allowedRoles: ['all-rounder', 'healer'], description: '味方ひとりに再生の力を宿し、数ターンかけてHPを回復し続ける。' },
+            regen_field: { id: 'regen_field', name: 'リジェネ', emoji: '🍃', type: 'healing', target: 'single', element: 'light', basePower: 0.45, scalingStat: 'magic', mpCost: 8, requiredLevel: 7, minHeal: 30, allowedRoles: ['all-rounder', 'healer'], description: '味方ひとりに再生の力を宿し、数ターンかけてHPを回復し続ける。' },
             revive: { id: 'revive', name: 'リザレクト', emoji: '✨', type: 'revive', target: 'ally', element: 'light', basePower: 0, scalingStat: 'magic', mpCost: 18, requiredLevel: 9, allowedRoles: ['healer'], description: '戦闘不能の味方をHP50%で復活させる。通常の回復術では復帰できない。', reviveRatio: 0.5 },
             holy_ray: { id: 'holy_ray', name: 'ホーリーレイ', emoji: '🌟', type: 'offensive', target: 'single', element: 'light', basePower: 1.3, scalingStat: 'magic', mpCost: 12, requiredLevel: 11, allowedRoles: ['healer'], description: '聖なる光線で敵を撃つ。闇や不浄な敵に大きなダメージ。' },
             shell_barrier: { id: 'shell_barrier', name: 'シェル', emoji: '🔮', type: 'support', target: 'single', element: 'light', basePower: 1.5, scalingStat: 'magic', mpCost: 11, requiredLevel: 13, allowedRoles: ['all-rounder', 'healer'], description: '味方ひとりの魔法防御を1.5倍に高める(3ターン)。敵の大魔法に備える。', effect: 'mag_def_up', duration: 3, buffMul: 1.5 },
-            group_heal: { id: 'group_heal', name: 'エリアヒール', emoji: '💞', type: 'healing', target: 'allyAll', element: 'light', basePower: 1, scalingStat: 'magic', mpCost: 16, requiredLevel: 15, allowedRoles: ['all-rounder', 'healer'], description: 'パーティ全員のHPをまとめて回復する。全体攻撃への立て直しに。' },
+            group_heal: { id: 'group_heal', name: 'エリアヒール', emoji: '💞', type: 'healing', target: 'allyAll', element: 'light', basePower: 1, scalingStat: 'magic', mpCost: 16, requiredLevel: 15, minHeal: 40, allowedRoles: ['all-rounder', 'healer'], description: 'パーティ全員のHPをまとめて回復する。全体攻撃への立て直しに。' },
             purify_wave: { id: 'purify_wave', name: 'エスナ・ウェーブ', emoji: '🌀', type: 'support', target: 'allyAll', element: 'light', basePower: 0, scalingStat: 'magic', mpCost: 14, requiredLevel: 18, allowedRoles: ['healer'], description: '浄化の波動でパーティ全員の状態異常を一掃する。', effect: 'cure_status', duration: 3 },
             holy_nova: { id: 'holy_nova', name: 'ホーリーノヴァ', emoji: '💫', type: 'offensive', target: 'all', element: 'light', basePower: 0.6, scalingStat: 'magic', mpCost: 20, requiredLevel: 22, allowedRoles: ['healer'], description: '聖光を爆ぜさせ敵全体を焼く。闇属性の群れに有効。' },
             haste_boon: { id: 'haste_boon', name: 'ヘイスト', emoji: '💨', type: 'support', target: 'single', element: 'light', basePower: 0, scalingStat: 'magic', mpCost: 12, requiredLevel: 25, allowedRoles: ['all-rounder', 'healer'], description: '味方ひとりの素早さを高め、行動を早める(3ターン)。', effect: 'speed_up', duration: 3 },
-            mega_heal: { id: 'mega_heal', name: 'メガヒール', emoji: '💚', type: 'healing', target: 'single', element: 'light', basePower: 1.4, scalingStat: 'magic', mpCost: 14, requiredLevel: 28, allowedRoles: ['all-rounder', 'healer'], description: '味方ひとりのHPを大きく回復する。前衛の被弾を素早く立て直す。' },
+            mega_heal: { id: 'mega_heal', name: 'メガヒール', emoji: '💚', type: 'healing', target: 'single', element: 'light', basePower: 1.4, scalingStat: 'magic', mpCost: 14, requiredLevel: 28, minHeal: 80, allowedRoles: ['all-rounder', 'healer'], description: '味方ひとりのHPを大きく回復する。前衛の被弾を素早く立て直す。' },
             sanctuary: { id: 'sanctuary', name: 'サンクチュアリ', emoji: '🕊️', type: 'support', target: 'allyAll', element: 'light', basePower: 1.4, scalingStat: 'magic', mpCost: 22, requiredLevel: 34, allowedRoles: ['healer'], description: '聖域を展開し、パーティ全員の物理・魔法防御を1.4倍に(3ターン)。', effect: 'both_def_up', duration: 3, buffMul: 1.4 },
             holy_lance: { id: 'holy_lance', name: 'ホーリーランス', emoji: '⚜️', type: 'offensive', target: 'single', element: 'light', basePower: 1.8, scalingStat: 'magic', mpCost: 18, requiredLevel: 38, allowedRoles: ['healer'], description: '極大の光槍で敵ひとりを貫く。アカリの単体最大火力。' },
-            omega_heal: { id: 'omega_heal', name: 'オメガヒール', emoji: '🌈', type: 'healing', target: 'single', element: 'light', basePower: 3.4, scalingStat: 'magic', mpCost: 26, requiredLevel: 44, allowedRoles: ['healer'], description: '虹の癒光で味方ひとりをほぼ全快させる。アカリの究極回復術。' },
+            omega_heal: { id: 'omega_heal', name: 'オメガヒール', emoji: '🌈', type: 'healing', target: 'single', element: 'light', basePower: 3.4, scalingStat: 'magic', mpCost: 26, requiredLevel: 44, minHeal: 200, allowedRoles: ['healer'], description: '虹の癒光で味方ひとりをほぼ全快させる。アカリの究極回復術。' },
             dark_pulse: { id: 'dark_pulse', name: 'ダークパルス', emoji: '🌑', type: 'offensive', target: 'single', element: 'dark', basePower: 0.85, scalingStat: 'magic', mpCost: 6, requiredLevel: 1, allowedRoles: ['mage'], description: '闇の波動で敵を撃つ低燃費の連射術。ヤミの代名詞で加入時から使える。' },
             curse: { id: 'curse', name: 'カース', emoji: '💀', type: 'offensive', target: 'single', element: 'dark', basePower: 1.15, scalingStat: 'magic', mpCost: 11, requiredLevel: 1, allowedRoles: ['mage'], description: '呪詛の刃で深く抉る闇の単体術。耐性持ちにも無属性として安定して通る。' },
             fire_bolt: { id: 'fire_bolt', name: 'ファイアボルト', emoji: '🔥', type: 'offensive', target: 'single', element: 'fire', basePower: 1, scalingStat: 'magic', mpCost: 8, requiredLevel: 2, allowedRoles: ['mage', 'all-rounder'], description: '火炎の矢を放つ基本攻撃術。氷耐性の敵を炙る火属性の入り口。' },
@@ -316,10 +316,12 @@ class MagicSystem {
         return { damage, weak, resisted: resist > 0 };
     }
 
-    // ★回復量 = floor(魔力 × basePower)
+    // ★回復量 = max(minHeal, floor(魔力 × basePower))
+    //   minHeal: スキルごとに設定した下限値（低レベルでも意味ある回復量を保証）
     computeHealAmount(caster, magic) {
         const bp = MagicSystem.skillBasePower(magic);
-        return Math.max(1, Math.floor((caster.magic || 0) * bp));
+        const min = magic.minHeal || 1;
+        return Math.max(min, Math.floor((caster.magic || 0) * bp));
     }
 
     // ★補助スキルの効果適用（バフ/状態治療）。magic.effect で分岐。
