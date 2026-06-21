@@ -184,7 +184,7 @@ class BattleSystem {
             'グレイシアタイタン': 'assets/enemies/enemy_glacier_titan.png',
             'オブリビオンシェイド': 'assets/enemies/enemy_oblivion_shade.png',
             'イージスコロッサス': 'assets/enemies/enemy_aegis_colossus.png',
-            archon_deus: 'assets/enemies/enemy_demon_lord.png',
+            archon_deus: 'assets/enemies/enemy_archon_deus.png',
             leviathan_core: 'assets/enemies/enemy_abyss_ruler.png',
             true_deus: 'assets/enemies/enemy_ark_prime.png',
             // bossId（ボス戦の画像解決用）
@@ -196,7 +196,7 @@ class BattleSystem {
             'セキュリティドローン': 'assets/enemies/enemy_security_drone.png',
             'ガードロボ': 'assets/enemies/enemy_guard_robo.png',
             'アーク・プライム': 'assets/enemies/enemy_ark_prime.png',
-            'アルコン・デウス': 'assets/enemies/enemy_demon_lord.png',
+            'アルコン・デウス': 'assets/enemies/enemy_archon_deus.png',
             'リヴァイアサン・コア': 'assets/enemies/enemy_abyss_ruler.png',
             '真・デウス': 'assets/enemies/enemy_ark_prime.png',
             'シャドウエンティティ': 'assets/enemies/enemy_shadow_entity.png',
