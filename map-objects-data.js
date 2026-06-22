@@ -895,7 +895,9 @@ window.MAP_OBJECTS = {
     "autoEnter": true,
     "visible": false,
     "requireFacing": "up",
-    "spawnFace": "down"
+    "spawnFace": "down",
+    "requiredFlag": "chapter1_started",
+    "lockedMsg": "地下鉄の入口は固く閉ざされている。…まずは構内でアカリと言葉を交わそう"
    }
   ],
   "objects": [
