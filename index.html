@@ -3704,7 +3704,7 @@
     <script src="se-system.js?v=1"></script>
     <script src="ui-panel.js?v=7"></script>
     <script src="save-system.js?v=2"></script>
-    <script src="battle-system.js?v=90"></script>
+    <script src="battle-system.js?v=91"></script>
     <script src="map-walkability-data.js?v=22"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=31"></script>
@@ -3714,7 +3714,7 @@
     <script src="bgm-system.js?v=36"></script>
     <script src="party-system.js?v=50"></script>
     <script src="quest-system.js?v=7"></script>
-    <script src="story-events.js?v=61"></script>
+    <script src="story-events.js?v=62"></script>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -5458,6 +5458,12 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             if (npc.level) enemy.level = npc.level;
             battleSystem.startBattle(enemy, true, () => onBossDefeated(bossKey));
         }
+        window.startBossNpcBattle = startBossNpcBattle;
+
+        // ★案B: アカリ加入用の単騎Ω戦を開始(前口上 akari_omega_prelude の onComplete / フォールバックから呼ばれる)。
+        //   アカリ未加入のまま戦闘開始＝カイト単騎。乱入加入は battle-system._doOmegaRescue が担う。
+        function startOmegaSoloBattle() { startBossNpcBattle({ name: '暴走ドローン' }, 'corrupted_drone'); }
+        window.startOmegaSoloBattle = startOmegaSoloBattle;
 
         function checkInteractions() {
             // ★戦闘直後(〜0.9s)は再発火を抑止。ボス撃破フラグ確定前のZ押下によるボス再戦を防ぐ。
@@ -5474,10 +5480,16 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                     if (storyFlags.bossDefeated || storyFlags.chapter1_complete) {
                         showMessage('砕け散ったドローンの残骸が転がっている。');
                     } else if (storyFlags.akariReunited && !storyFlags.akariJoined) {
-                        // ★第2章: 単騎で挑むカイトの所へアカリが乱入→加入。以後もう一度挑むと2人でΩ戦
-                        if (storyEventSystem) storyEventSystem.triggerEvent('recruit_akari', { storyFlags, player, partySystem, magicSystem });
-                        else { joinMember('akari'); showMessage('アカリが加わった。もう一度、ドローンに挑もう。'); }
+                        // ★案B: 前口上→単騎Ω戦。戦闘中(2ターン目 or 撃沈寸前)にアカリが乱入加入(battle-system._doOmegaRescue)
+                        if (storyFlags.akariOmegaSeen) {
+                            startOmegaSoloBattle();  // 前口上は見た→再挑戦は直接単騎戦(softlock防止)
+                        } else if (storyEventSystem) {
+                            storyEventSystem.triggerEvent('akari_omega_prelude', { storyFlags, player, partySystem, magicSystem });
+                        } else {
+                            startOmegaSoloBattle();
+                        }
                     } else {
+                        // アカリ加入済(akariJoined)で再挑戦＝2人でΩ戦
                         startBossNpcBattle(npc, 'corrupted_drone');
                     }
                 } else if (npc.name === 'アルコン・デウス') {

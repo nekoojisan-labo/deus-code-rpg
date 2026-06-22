@@ -16,8 +16,9 @@ const sys = W.storyEventSystem || new W.StoryEventSystem();
 
 // テスト用スタブ
 W.joinMember = (id) => { calls.join.push(id); return true; };
-W.startRikuTrial = () => { calls.trial++; };
-W.startAkariTrial = () => { calls.trial++; };
+W.startFallenGodTrial = () => { calls.trial++; };  // リク=堕神(囚われし生命の神)の試練
+W.startYamiTrial = () => { calls.trial++; };        // ヤミ=アークの追手(神狩のイクサ)戦
+W.startOmegaSoloBattle = () => { calls.trial++; };  // アカリ=単騎Ω戦(案B・乱入加入は戦闘中)
 
 console.log('\n=== リク/ヤミ加入イベント オラクル ===\n');
 let pass = true;
@@ -43,12 +44,13 @@ pass = pass && sf.yamiAnswer === 'hearts';
 
 // onComplete の加入処理
 const sf2 = {};
-// ヤミは「仮契約」: recruit_yami.onComplete は yamiPactMade を立てるだけ（即joinMemberしない＝本加入は都庁入場時）
+// ヤミ=試練型: recruit_yami.onComplete は yamiTrialSeen を立て神狩のイクサ戦を予約（即joinMemberしない＝本加入は試練勝利後）
+const tBeforeY = calls.timeouts;
 const sfY = {};
 sys.events.get('recruit_yami').onComplete(sfY);
-const yamiPact = sfY.yamiPactMade === true && !calls.join.includes('yami');
-console.log(`\nヤミ onComplete → 仮契約 yamiPactMade（即加入しない）: ${yamiPact ? '✅' : '❌'}`);
-pass = pass && yamiPact;
+const yamiTrialOk = sfY.yamiTrialSeen === true && !calls.join.includes('yami') && calls.timeouts > tBeforeY;
+console.log(`\nヤミ onComplete → yamiTrialSeen＋試練戦予約（即加入しない）: ${yamiTrialOk ? '✅' : '❌'}`);
+pass = pass && yamiTrialOk;
 
 sys.events.get('recruit_riku_join').onComplete(sf2);
 console.log(`リク勝利 onComplete → joinMember('riku'): ${calls.join.includes('riku') ? '✅' : '❌'}`);
@@ -62,7 +64,7 @@ pass = pass && introOk;
 
 // ---- アカリ: 第1章は再会のみ(単騎続行)→第2章Ω戦で乱入加入 ----
 console.log('\n--- アカリ 再会保留→Ω加入 ---');
-for (const id of ['recruit_akari_reunion', 'recruit_akari']) {
+for (const id of ['recruit_akari_reunion', 'akari_omega_prelude']) {
   const ok = sys.events.has(id);
   console.log(`イベント登録 ${id}: ${ok ? '✅' : '❌'}`);
   pass = pass && ok;
@@ -82,11 +84,18 @@ sys.events.get('recruit_akari_reunion').onComplete(sfRe);
 const reunionOk = sfRe.akariReunited === true && sfRe.chapter1_started === true && calls.join.length === beforeR.length;
 console.log(`recruit_akari_reunion → akariReunited＋chapter1_started・加入しない(単騎続行): ${reunionOk ? '✅' : '❌'}`);
 pass = pass && reunionOk;
-// recruit_akari(Ω乱入): joinMember('akari')で正式加入
+// 旧 recruit_akari は廃止(前バトルで一括加入する旧方式)。案B=戦闘中乱入(battle-system._doOmegaRescue)へ移行。
+const akariOldGone = !sys.events.has('recruit_akari');
+console.log(`旧 recruit_akari 廃止(未登録): ${akariOldGone ? '✅' : '❌'}`);
+pass = pass && akariOldGone;
+// akari_omega_prelude(案B前口上): ここでは加入しない(=単騎でΩ戦開始)。akariOmegaSeenを立て、単騎戦をsetTimeout予約。
+// 実際の乱入加入(joinMember('akari'))は戦闘中 battle-system._doOmegaRescue が担う(このオラクルの範囲外)。
+const beforeA = calls.join.slice();
+const tBeforeA = calls.timeouts;
 const sfA = {};
-sys.events.get('recruit_akari').onComplete(sfA);
-const akariJoinOk = calls.join.includes('akari');
-console.log(`recruit_akari(Ω乱入) → joinMember('akari')で加入: ${akariJoinOk ? '✅' : '❌'}`);
-pass = pass && akariJoinOk;
+sys.events.get('akari_omega_prelude').onComplete(sfA);
+const preludeOk = calls.join.length === beforeA.length && sfA.akariOmegaSeen === true && calls.timeouts > tBeforeA;
+console.log(`akari_omega_prelude → 加入せず(単騎開始)＋akariOmegaSeen＋単騎戦予約: ${preludeOk ? '✅' : '❌'}`);
+pass = pass && preludeOk;
 
 console.log(`\n${pass ? '✅ 全PASS: 第1章=アカリ再会のみで単騎続行／第2章Ω戦でアカリ乱入加入／リク・ヤミ配線OK' : '❌ 不合格あり'}`);

@@ -144,6 +144,7 @@ class BattleSystem {
         this.kamuiPlanningMember = null;
         this.kamuiSkillExecuting = false; // 二重実行防止
         this.executingTurn = false;       // ターン実行中フラグ（重複起動防止）
+        this._akariRescueDone = false;    // ★案B: アカリ乱入加入が当該戦闘で実行済みか(startBattleで毎回リセット)
 
         // コマンドメニューの表示モード: 'command' | 'skill' | 'target'
         this.commandPhase = 'command';
@@ -793,6 +794,7 @@ class BattleSystem {
         this.battleLog = [];
         this._resetBattleMessages();  // メッセージ部品をリセット（前回戦闘の残りを消す）
         this.turnCount = 1;
+        this._akariRescueDone = false;  // ★案B: 戦闘毎にリセット。乱入が中断/半完了しても再挑戦で再び発火できる(softlock防止)
         this.waitingForCommand = false; // 初期状態では待機しない
 
         // 戦闘画像のプリロード（背景・敵画像をブラウザキャッシュへウォームアップ。await不要・失敗は無視）
@@ -866,6 +868,11 @@ class BattleSystem {
 
     // プレイヤーターン開始
     startPlayerTurn() {
+        // ★案B: 単騎Ω戦の2ターン目開始時にアカリが乱入加入。加入後この関数を再実行し、2人でターンを始める。
+        if (this.turnCount >= 2 && this._omegaRescuePending()) {
+            this._doOmegaRescue(() => this.startPlayerTurn());
+            return;
+        }
         // 多重起動の検出
         if (this.executingTurn) {
             console.warn('[Battle] startPlayerTurn called while executingTurn=true; resetting flag');
@@ -900,6 +907,42 @@ class BattleSystem {
             members.push(...window.partySystem.getMembers());
         }
         return members;
+    }
+
+    // ★案B: アカリ乱入加入の発火判定。単騎Ω戦(corrupted_drone_boss)・再会済(akariReunited)・未加入(!akariJoined)・未実行のとき true。
+    _omegaRescuePending() {
+        if (this._akariRescueDone) return false;
+        const sf = (typeof window !== 'undefined' && window.storyFlags) || {};
+        if (!sf.akariReunited || sf.akariJoined) return false;
+        return (this.enemies || []).some(e => e && e.bossId === 'corrupted_drone_boss');
+    }
+
+    // ★案B: 戦闘の最中にアカリが乱入。ビート演出→カイトを回復→正式加入(joinMember)→UI再構築→cbで戦闘継続。
+    //   加入を partyCommands 初期化より前(startPlayerTurn 冒頭 or gameOver安全網)で行うため配列長ズレが起きない。
+    _doOmegaRescue(cb) {
+        this._akariRescueDone = true;
+        this.presentBeat([
+            'カイト——！！',
+            'アカリが 地下へ 駆け降りてくる！',
+            '「もう、独りで 死なせない」',
+            'アカリの 回復魔法が カイトを 包む！'
+        ]);
+        this.afterBattleMessages(() => {
+            // ★joinMember はフィールドUI関数(updateUI/refreshObjective)を呼ぶ。万一そこで例外が出ても
+            //   afterBattleMessagesのドレインに握り潰され、続行cb(startPlayerTurn)が登録されず戦闘が固まる。
+            //   try/catchで隔離し、必ず cb まで到達させる(戦闘継続を最優先)。
+            try {
+                const p = window.player;
+                if (p) p.hp = Math.max(p.hp || 0, Math.round((p.maxHp || 1) * 0.7));  // 死に際救出でも7割まで回復
+                if (typeof window.joinMember === 'function') window.joinMember('akari');  // akariJoined=true・装備/スキル付与
+                if (this.updatePartyStatus) this.updatePartyStatus();
+                if (this.updateBattleUI) this.updateBattleUI();
+            } catch (e) {
+                console.error('[Battle] アカリ乱入加入の処理で例外(戦闘は継続):', e);
+            }
+            this.presentBeat(['アカリが 戦列に 加わった！']);
+            this.afterBattleMessages(() => { if (typeof cb === 'function') cb(); });
+        });
     }
 
     // 次のメンバーのコマンド選択を表示
@@ -2554,6 +2597,12 @@ class BattleSystem {
     
     // ゲームオーバー
     gameOver() {
+        // ★案B 安全網: 単騎Ω戦でカイトが倒れかけたら、ゲームオーバーにせずアカリ乱入で救出し戦闘継続。
+        //   (2ターン目を待たずに撃沈した場合の保険。akariJoined後は発火しないので通常の敗北は素通り)
+        if (this._omegaRescuePending()) {
+            this._doOmegaRescue(() => this.startPlayerTurn());
+            return;
+        }
         // ★フィールドを凍結（gameLoopは!inBattleで回り続けるため、index側の updatePlayer/keydown
         //   ガードが効くよう、ここで真っ先にフラグを立てる）。解除はロード/New Game時。
         window.isGameOver = true;

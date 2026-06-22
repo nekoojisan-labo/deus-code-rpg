@@ -248,34 +248,28 @@ class StoryEventSystem {
             }
         });
 
-        // アカリ加入(第2章・Ω戦): 単騎のカイトが押し負ける所へアカリが乱入→ヒールで救い共闘加入
-        this.registerEvent('recruit_akari', {
+        // アカリ加入(第2章・Ω戦/案B): 単騎で挑む前口上→単騎戦闘。乱入加入は戦闘中(battle-system._doOmegaRescue)で実行。
+        // ここでは joinMember を呼ばない＝戦闘開始時アカリは未加入(akariJoined=false)＝カイト単騎でΩ戦が始まる。
+        this.registerEvent('akari_omega_prelude', {
             trigger: 'manual',
             oneTime: true,
             scenes: [
                 { character: 'システム', text: '暴走監視ドローン・Ωが、奪った無数の心を地下へ吸い上げている。吸引口の奥から、子どもの声に似たノイズが、途切れ途切れに漏れていた。' },
                 { character: 'カイト', text: '（あの音…。地下に吸い込まれていく、奪われた人の心の残響か）' },
+                { character: 'カイト', text: '（アカリは駅に残した。…ここから先は、何が起きるか分からない。俺独りでいい）' },
                 { character: 'システム', text: 'カイトは独り、その巨体の前に立つ。' },
-                { character: 'カイト', text: 'くっ…これが、心を奪う機械兵…！押し…負ける…！' },
-                { character: 'システム', text: 'Ωが新たな心の糸を手繰り寄せる。カイトの膝が砕け、手の紋様の光が陰っていく。神威が、吸い上げられかける。' },
-                { character: 'カイト', text: '（…まただ。俺はまた、誰かの手の届かない所で…）' },
-                { character: 'アカリ', text: '（駅の灯の下。地下から響く衝撃に、足が竦む）…ここで待つって、つまり——あなたが倒れる音を、独りで聞くってこと…？' },
-                { character: 'アカリ', text: '……ちがう。私が怖いのは、隣で失うことじゃない。手の届かない所で、失うことだったのに。' },
-                { character: 'アカリ', text: 'カイト——！！' },
-                { character: 'アカリ', text: 'やっぱり、置いていけない。あなたが無茶する時、隣にいるって決めたでしょ！' },
-                { character: 'システム', text: 'アカリの回復魔法がカイトを包む。陰りかけた紋様に、光が戻る。——今度は、間に合った。あの日、腕の中で止まりかけた鼓動に、光がちゃんと届く。' },
-                { character: 'アカリ', text: 'もう、独りで死なせない。…次は偶然になんて、させないから。あなたの心だけは、絶対に渡さない。' },
-                { character: 'カイト', text: 'アカリ…。…ああ。秩序だけじゃ、人は生きられない。…お前が来てくれて、それが分かった気がする。' },
-                { character: 'アカリ', text: 'うん。今度は、私も一緒に戦う。…あなたの隣で、ちゃんと届く所で。行こう、カイト。' },
-                { character: 'システム', text: 'アカリが仲間に加わった！\n回復魔法で、あなたを支えてくれる。\nもう一度、ドローンに挑もう。' }
+                { character: 'カイト', text: '止める…！心を奪う機械兵、ここで——！' }
             ],
             onComplete: (storyFlags) => {
-                if (window.joinMember) window.joinMember('akari');
-                storyFlags.metAkari = true;
+                // 前口上を見た印（再挑戦時は前口上を飛ばして直接単騎戦＝softlock防止。recruit_riku の rikuTrialSeen と同型）
+                if (storyFlags) storyFlags.akariOmegaSeen = true;
+                // 前口上の直後に単騎Ω戦へ。戦闘中、押し負ける/2ターン目開始でアカリが乱入加入する。
+                if (typeof window.startOmegaSoloBattle === 'function') setTimeout(() => window.startOmegaSoloBattle(), 400);
             }
         });
 
-        // ※旧 recruit_akari_join(駅でheal一幕→加入)・startAkariTrial は廃止。アカリは第2章Ω戦で乱入加入(recruit_akari)に統合。
+        // ※旧 recruit_akari(前バトルで加入)・recruit_akari_join・startAkariTrial は廃止。
+        //   案B＝単騎Ω戦の最中にアカリが乱入して加入(battle-system.js の _doOmegaRescue が演出＋joinMember)。
 
         // イベント2: 地下鉄入口での警告
         this.registerEvent('subway_entrance_warning', {
@@ -321,11 +315,19 @@ class StoryEventSystem {
             scenes: [
                 {
                     character: 'アカリ',
-                    text: 'やった！カイト、すごい力ね...'
+                    text: 'はぁっ…はぁっ…。砕けた…。…今度こそ、間に合った。'
                 },
                 {
                     character: 'カイト',
-                    text: 'この力...まだ完全にはコントロールできない。'
+                    text: 'アカリ…。来てくれたのか。…お前を、こんな危ない場所まで立たせちまった。'
+                },
+                {
+                    character: 'アカリ',
+                    text: 'いいの。手の届かない所であなたを失うより、ずっといい。…決めたの。あなたが無茶する時は、必ず隣にいるって。'
+                },
+                {
+                    character: 'カイト',
+                    text: 'ああ。…秩序だけじゃ、人は生きられない。お前が隣にいてくれて、それがやっと分かった気がする。'
                 },
                 {
                     character: '？？？',
