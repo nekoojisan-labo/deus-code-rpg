@@ -1905,7 +1905,9 @@ class MapSystem {
                     // ※ 北 (414, 54) と 東 (754, 207) と 南 (415, 384) は隣接マップ未定義のため保留
                 ],
                 npcs: [
-                    // ★リク加入は植物園(第2章・堕神戦)。WORLD座標で配置、constrainMapNPCsToWalkableが歩行可へ補正。
+                    // ★リク加入は植物園(第2章・堕神戦)。x/yは【BASE座標】=prepareScrollableMapが×worldScale(1.55)してWORLD化する。
+                    //   ⚠️現値(620,340)→WORLD(961,527)は object-layer 衝突内に落ち、constrainMapNPCsToWalkableが右下コーナー
+                    //   (約1051,527/開放4方向)へスナップする(到達は可能だが脆い)。座標の通路帯への正式移設は検証ハーネスで要再算出。
                     //   名前'リク'を checkInteractions が engageRiku へ流す。isNPCHiddenが rikuJoined で非表示化。
                     { x: 620, y: 340, emoji: '🛡️', name: 'リク', dialogue: '…誰だ。俺に、構うな。' }
                 ]
@@ -3363,8 +3365,8 @@ class MapSystem {
             case 'アーク・プライム': return !storyFlags.enteredGov || !!storyFlags.arcDefeated;
             // Phase3: アルコン・デウスは都庁入場後に出現・撃破後消える
             case 'アルコン・デウス': return !storyFlags.enteredGov || !!storyFlags.archonDefeated;
-            // Phase4: リヴァイアサンはゲームクリア後に出現・撃破後消える
-            case 'リヴァイアサン・コア': return !storyFlags.gameCleared || !!storyFlags.leviathanDefeated;
+            // 終章: リヴァイアサンはアーク撃破後(本編の続き)に出現・撃破後消える
+            case 'リヴァイアサン・コア': return !storyFlags.arcDefeated || !!storyFlags.leviathanDefeated;
             // Phase4: 真・デウスはリヴァイアサン撃破後に出現・撃破後消える
             case '真・デウス': return !storyFlags.leviathanDefeated || !!storyFlags.trueDeus_defeated;
             default: return false;

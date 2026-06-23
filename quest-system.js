@@ -84,12 +84,12 @@ const QUEST_STEPS = [
     done: f => !!f.arcDefeated
   },
 
-  // --- 裏章 深淵の審判（クリア後・任意） ---
+  // --- 終章 深淵の審判（本編の続き＝アーク撃破後そのまま潜行） ---
   {
-    id: 'enter_deep', chapter: 4, chapterTitle: '裏章 深淵の審判',
+    id: 'enter_deep', chapter: 4, chapterTitle: '終章 深淵の審判',
     title: '深層トンネルへ踏み込む',
     where: '新宿駅 地下コンコースA → 最奥の扉',
-    detail: '物語をクリアした者だけが開く深淵の扉。八百万が最後の試練を用意している。',
+    detail: 'アークを倒してなお、紋様は熱を放ち続ける。八百万の真の声に導かれ、地下の最奥へ。旅はまだ終わっていない。',
     target: 'deep_tunnel',
     done: f => !!f.enteredDeepTunnel
   },

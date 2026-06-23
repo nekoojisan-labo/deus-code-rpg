@@ -528,13 +528,14 @@ class StoryEventSystem {
                 { character: 'リク', text: '人々の心が、戻り始めている。俺たちは、やったんだ。' },
                 { character: 'ヤミ', text: '...悪くない結末ね。でも…カイトの紋様が、まだ揺れている。何かを訴えているみたいに。' },
                 { character: 'カイト', text: '（…八百万の神々が、まだ何かを言おうとしている。地下の深いところで、声が聞こえる気がする）' },
-                { character: 'システム', text: '【第3章 完了】アークは倒れ、東京に心が戻り始めた。地下の深層トンネルへの扉が開かれた。八百万の最後の声を聞きに行くか？' }
+                { character: 'システム', text: '【第3章 完了】アークは倒れ、東京に心が戻り始めた。——だが、紋様の熱は鎮まらない。八百万の真の声が、地下の最奥から、まだカイトを呼んでいる。旅は、まだ終わらない。' }
             ],
             onComplete: (storyFlags) => {
                 storyFlags.arcDefeated = true;
                 storyFlags.chapter3_complete = true;
-                storyFlags.gameCleared = true;
-                console.log('✅ Arc Prime defeated - Game cleared! Deep tunnel unlocked.');
+                // ★gameCleared はここでは立てない。真の最終決戦=真・デウス撃破を本編のクリア点へ移譲(裏ダンジョンを本編の通しに組み込む)。
+                //   arcDefeated で深層トンネル(終章)が、おまけでなく物語の続きとして開く。
+                console.log('✅ Arc Prime defeated - story continues to the deep tunnel.');
             }
         });
 
@@ -571,7 +572,8 @@ class StoryEventSystem {
             onComplete: (storyFlags) => {
                 storyFlags.trueDeus_defeated = true;
                 storyFlags.chapter4_complete = true;
-                console.log('✅ True Deus defeated - True Ending!');
+                storyFlags.gameCleared = true;  // ★真・デウス撃破=本編の真のクリア点(アーク撃破はクリアでなく通過点に降格)。
+                console.log('✅ True Deus defeated - True Ending! (game cleared here)');
             }
         });
     }

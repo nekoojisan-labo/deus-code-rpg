@@ -3707,14 +3707,14 @@
     <script src="battle-system.js?v=91"></script>
     <script src="map-walkability-data.js?v=22"></script>
     <script src="object-catalog.js?v=2"></script>
-    <script src="map-objects-data.js?v=32"></script>
-    <script src="map-system.js?v=99"></script>
+    <script src="map-objects-data.js?v=33"></script>
+    <script src="map-system.js?v=100"></script>
     <script src="map-system-grid.js"></script>
     <script src="player-grid-movement.js"></script>
     <script src="bgm-system.js?v=36"></script>
     <script src="party-system.js?v=50"></script>
-    <script src="quest-system.js?v=7"></script>
-    <script src="story-events.js?v=62"></script>
+    <script src="quest-system.js?v=8"></script>
+    <script src="story-events.js?v=63"></script>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -5428,13 +5428,13 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 else { storyFlags.archonDefeated = true; }
             } else if (bossKey === 'arc_prime') {
                 if (storyEventSystem) storyEventSystem.triggerEvent('arc_defeated_ending', { storyFlags, player, mapSystem, magicSystem, partySystem });
-                else { storyFlags.arcDefeated = true; storyFlags.gameCleared = true; }
+                else { storyFlags.arcDefeated = true; storyFlags.chapter3_complete = true; }  // ★クリアは真・デウス撃破へ移譲(gameClearedはここで立てない)
             } else if (bossKey === 'leviathan') {
                 if (storyEventSystem) storyEventSystem.triggerEvent('leviathan_defeated', { storyFlags, player, mapSystem, magicSystem, partySystem });
                 else { storyFlags.leviathanDefeated = true; }
             } else if (bossKey === 'true_deus') {
                 if (storyEventSystem) storyEventSystem.triggerEvent('true_deus_ending', { storyFlags, player, mapSystem, magicSystem, partySystem });
-                else { storyFlags.trueDeus_defeated = true; storyFlags.chapter4_complete = true; }
+                else { storyFlags.trueDeus_defeated = true; storyFlags.chapter4_complete = true; storyFlags.gameCleared = true; }  // ★真の最終決戦=本編クリア点
             }
             refreshObjective();
         }
@@ -5517,7 +5517,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 } else if (npc.name === 'リヴァイアサン・コア') {
                     if (storyFlags.leviathanDefeated) {
                         showMessage('解放された神力の残滓が静かに揺れている。');
-                    } else if (!storyFlags.gameCleared) {
+                    } else if (!storyFlags.arcDefeated) {
                         showMessage('…まだ、この深みに踏み込むべきではない。');
                     } else {
                         startBossNpcBattle(npc, 'leviathan');

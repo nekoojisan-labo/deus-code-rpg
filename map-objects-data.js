@@ -1126,7 +1126,7 @@ window.MAP_OBJECTS = {
     "visible": false,
     "requireFacing": "up",
     "requiredFlag": "arcDefeated",
-    "lockedMsg": "深部への扉は固く閉ざされている… （物語をクリアすると、この先の深層トンネルに挑める）",
+    "lockedMsg": "深部への扉は固く閉ざされている… （アーク・プライムを討てば、この奥の深層トンネルへ続く道が開く）",
     "spawnFace": "left"
    }
   ],
