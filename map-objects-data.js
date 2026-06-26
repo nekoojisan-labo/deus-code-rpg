@@ -3710,6 +3710,19 @@ window.MAP_OBJECTS = {
     "spawnX": 172,
     "spawnY": 110,
     "spawnFace": "down"
+   },
+   {
+    "x": 305,
+    "y": 405,
+    "width": 140,
+    "height": 25,
+    "to": "deep_tunnel_2",
+    "direction": "south",
+    "spawnX": 400,
+    "spawnY": 75,
+    "spawnFace": "down",
+    "requiredFlag": "leviathanDefeated",
+    "lockedMsg": "最奥へ続く縦坑は、まだ固く閉ざされている。…まずはリヴァイアサン・コアを討て"
    }
   ],
   "objects": [
@@ -3740,20 +3753,6 @@ window.MAP_OBJECTS = {
     "defeatedDialogue": "…解放される…神々の力よ、カイトに…",
     "hidden": false,
     "hideWhenFlag": "leviathanDefeated"
-   },
-   {
-    "id": "true_deus_boss",
-    "name": "真・デウス",
-    "x": 418,
-    "y": 130,
-    "emoji": "🌟",
-    "hostile": false,
-    "boss": true,
-    "bossKey": "true_deus",
-    "dialogue": "カイトよ。貴様が本当に八百万の神威を担えるか…試させてもらおう。",
-    "defeatedDialogue": "…そうか。人の意志とは、かくも強いものか。紋様よ、完全に解き放たれよ。",
-    "hidden": true,
-    "showWhenFlag": "leviathanDefeated"
    }
   ]
  }

@@ -870,7 +870,9 @@ class MapSystem {
                 { x: 350, y: 410, width: 100, height: 20, to: 'deep_tunnel_4', direction: 'south' }
             ],
             npcs: [
-                { x: 400, y: 150, emoji: '👁️', name: '深淵の支配者', dialogue: 'ようこそ...永遠の闇へ...', hostile: true, level: 15, boss: true }
+                // ★真・デウス(八百万の審判)=本編の真の最終決戦。リヴァイアサン撃破後に出現(isNPCHidden:!leviathanDefeated||trueDeus_defeated)。
+                //   会話起動ボス(hostile:false)。撃破で true_deus_ending → gameCleared(真エンディング)。BASE座標(prepareが×1.55)。
+                { x: 400, y: 150, emoji: '🌟', name: '真・デウス', hostile: false, boss: true, bossKey: 'true_deus', dialogue: 'カイトよ。貴様が本当に八百万の神威を担えるか…試させてもらおう。', defeatedDialogue: '…そうか。人の意志とは、かくも強いものか。紋様よ、完全に解き放たれよ。' }
             ],
             treasures: [
                 { x: 400, y: 350, item: '神威の欠片', opened: false }
