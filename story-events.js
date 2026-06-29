@@ -576,6 +576,68 @@ class StoryEventSystem {
                 console.log('✅ True Deus defeated - True Ending! (game cleared here)');
             }
         });
+
+        // ═══ 終章 深層トンネル: 入場 / 道中ボス前口上(リク式=前口上→自動で戦闘へ連鎖) ═══
+
+        // 深層トンネル入場(アーク撃破後に初めて潜ったとき・atmospheric)
+        this.registerEvent('deep_tunnel_entry', {
+            trigger: 'location',
+            location: 'deep_tunnel',
+            requiredFlags: { arcDefeated: true },
+            oneTime: true,
+            scenes: [
+                { character: 'システム', text: '地下の、さらに奥。アークが吸い上げた無数の神力が、澱のように底へ底へと沈んでいく。足元から這い上がる冷気が、骨の芯まで届く。' },
+                { character: 'カイト', text: '（…手の紋様が、脈打っている。八百万の声が、この下から響いてくる）' },
+                { character: 'アカリ', text: 'ここまで来たのね。…アークは倒したのに、まだ終わってない気がする。' },
+                { character: 'リク', text: '…地の底に、何かが囚われている。神の、もっと根源的なものが。' },
+                { character: 'ヤミ', text: '（鼻を鳴らして）香りで分かるわ。ここは——神々の墓場よ。吸い上げられた一柱一柱の、最期の匂いがする。' },
+                { character: 'カイト', text: '行こう。八百万が、俺たちに最後の問いを投げている。その答えを、この手で掴みに行く。' },
+                { character: 'システム', text: '深層トンネルへ踏み込んだ。最奥には、八百万の審判が待つ。' }
+            ],
+            onComplete: (storyFlags) => {
+                storyFlags.enteredDeepTunnel = true;
+                console.log('✅ Deep tunnel entered (final descent begins)');
+            }
+        });
+
+        // リヴァイアサン・コア 前口上(関門・撃破で最奥への縦坑が開く)
+        this.registerEvent('leviathan_intro', {
+            trigger: 'manual',
+            oneTime: true,
+            scenes: [
+                { character: 'システム', text: '縦坑の底、巨大な何かがとぐろを巻いている。無数の神の残光が青白い鱗のように脈打ち、苦悶のうねりを上げていた。' },
+                { character: 'リヴァイアサン・コア', text: '…貴様らに、神力の重さが分かるか。吸い上げられた八百万の命が、今ここに凝縮されている。' },
+                { character: 'カイト', text: '（…これは、神そのものじゃない。奪われた神々の、痛みの塊だ）' },
+                { character: 'アカリ', text: '…苦しんでる。解放してあげなきゃ。' },
+                { character: 'リク', text: '受け止める。この痛みごと、俺たちが越える。盾の前は、誰も通さない。' },
+                { character: 'ヤミ', text: '御託はいいわ。…さっさと、楽にしてあげましょう。' },
+                { character: 'システム', text: '——リヴァイアサン・コアが、哭きながら立ちはだかる！' }
+            ],
+            onComplete: (storyFlags) => {
+                storyFlags.leviathanIntroSeen = true;
+                if (window.startLeviathanBattle) setTimeout(() => window.startLeviathanBattle(), 400);
+            }
+        });
+
+        // 真・デウス 前口上(深淵の玉座・本編の真の最終決戦)
+        this.registerEvent('true_deus_intro', {
+            trigger: 'manual',
+            oneTime: true,
+            scenes: [
+                { character: 'システム', text: '深淵の玉座。吸い上げられた全ての神力が、一点に凝る。そこに、光でも闇でもない"何か"が、静かに座していた。' },
+                { character: '真・デウス', text: 'カイトよ。貴様が本当に八百万の神威を担えるか…試させてもらおう。' },
+                { character: 'カイト', text: '（…これが、八百万の総意。俺の紋様の、源）' },
+                { character: 'アカリ', text: 'カイト…一人で背負わないで。私たちが、ここにいる。' },
+                { character: 'リク', text: 'お前の隣で、扉を開け続ける。それが、俺の役目だ。' },
+                { character: 'ヤミ', text: '…最後まで付き合うわ。貸し一つ、まだ返してもらってないものね。' },
+                { character: 'カイト', text: '八百万よ。俺の答えを見せる。——人の意志は、秩序にも、神にも、屈しない。' },
+                { character: 'システム', text: '——真・デウス（八百万の審判）との、最後の戦い！' }
+            ],
+            onComplete: (storyFlags) => {
+                storyFlags.trueDeusIntroSeen = true;
+                if (window.startTrueDeusBattle) setTimeout(() => window.startTrueDeusBattle(), 400);
+            }
+        });
     }
 
     // イベントをトリガー

@@ -3714,7 +3714,7 @@
     <script src="bgm-system.js?v=36"></script>
     <script src="party-system.js?v=50"></script>
     <script src="quest-system.js?v=8"></script>
-    <script src="story-events.js?v=63"></script>
+    <script src="story-events.js?v=64"></script>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -5465,6 +5465,10 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         function startOmegaSoloBattle() { startBossNpcBattle({ name: '暴走ドローン' }, 'corrupted_drone'); }
         window.startOmegaSoloBattle = startOmegaSoloBattle;
 
+        // ★終章ボス: 前口上イベント(leviathan_intro / true_deus_intro)の onComplete から自動連鎖で戦闘開始(リク式)。
+        window.startLeviathanBattle = () => startBossNpcBattle({ name: 'リヴァイアサン・コア' }, 'leviathan');
+        window.startTrueDeusBattle = () => startBossNpcBattle({ name: '真・デウス' }, 'true_deus');
+
         function checkInteractions() {
             // ★戦闘直後(〜0.9s)は再発火を抑止。ボス撃破フラグ確定前のZ押下によるボス再戦を防ぐ。
             if (window.battleSystem && battleSystem.justEndedBattle) return;
@@ -5519,6 +5523,10 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                         showMessage('解放された神力の残滓が静かに揺れている。');
                     } else if (!storyFlags.arcDefeated) {
                         showMessage('…まだ、この深みに踏み込むべきではない。');
+                    } else if (storyFlags.leviathanIntroSeen) {
+                        startBossNpcBattle(npc, 'leviathan');  // 敗北後の再挑戦は前口上を省略
+                    } else if (storyEventSystem) {
+                        storyEventSystem.triggerEvent('leviathan_intro', { storyFlags, player, partySystem, magicSystem, mapSystem });
                     } else {
                         startBossNpcBattle(npc, 'leviathan');
                     }
@@ -5527,6 +5535,10 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                         showMessage('八百万の神々の声が、穏やかに響いている。');
                     } else if (!storyFlags.leviathanDefeated) {
                         showMessage('…まだその先へは行けない。リヴァイアサンを倒してから来い。');
+                    } else if (storyFlags.trueDeusIntroSeen) {
+                        startBossNpcBattle(npc, 'true_deus');  // 敗北後の再挑戦は前口上を省略
+                    } else if (storyEventSystem) {
+                        storyEventSystem.triggerEvent('true_deus_intro', { storyFlags, player, partySystem, magicSystem, mapSystem });
                     } else {
                         startBossNpcBattle(npc, 'true_deus');
                     }
