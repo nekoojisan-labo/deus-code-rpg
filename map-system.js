@@ -2298,7 +2298,9 @@ class MapSystem {
             deep_tunnel_2: 'assets/maps/subway_concourse_a.png',
             deep_tunnel_3: 'assets/maps/subway_concourse_a.png',
             deep_tunnel_4: 'assets/maps/subway_concourse_a.png',
-            deep_tunnel_boss: 'assets/maps/tokyo_gov_approach.png',
+            // deep_tunnel_boss(深淵の玉座): 流用の都庁街路は完全不整合、画像なしのvoidは空きすぎ→
+            //   clean subway(地下の大広間)を背景に、発光する玉座(dark_throne)と真・デウスを据える。
+            deep_tunnel_boss: 'assets/maps/subway_concourse_a_clean_v1.png',
             shopping_district: 'assets/maps/shopping_street_north.png',
             residential_area: 'assets/maps/residential_street.png',
             house_1: 'assets/maps/residential_street.png',
@@ -3167,6 +3169,21 @@ class MapSystem {
                 building.x > canvas.width ||
                 building.y > canvas.height
             ) {
+                return;
+            }
+
+            // ★深層ダンジョン(area='dungeon'): 黒い塗り潰しの"穴"でなく、床が透ける暗い障壁＋発光縁で
+            //   ダンジョン壁らしく見せる（玉座=紫の発光／通常壁=シアンの発光）。装飾(🏢/窓)はスキップ。
+            if (map.area === 'dungeon') {
+                const isThrone = building.type === 'dark_throne';
+                ctx.save();
+                ctx.globalAlpha = isThrone ? 0.6 : 0.4;
+                ctx.fillStyle = building.color;
+                ctx.fillRect(building.x, building.y, building.width, building.height);
+                ctx.restore();
+                ctx.strokeStyle = isThrone ? 'rgba(196,120,224,0.75)' : 'rgba(96,188,214,0.5)';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(building.x + 0.75, building.y + 0.75, building.width - 1.5, building.height - 1.5);
                 return;
             }
 
