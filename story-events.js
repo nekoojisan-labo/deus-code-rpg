@@ -495,6 +495,8 @@ class StoryEventSystem {
             ],
             onComplete: (storyFlags) => {
                 storyFlags.archonIntroPlayed = true;
+                // ★前口上→自動で戦闘へ連鎖(リク/leviathan/true_deusと同型)。二度接触の不親切を解消。
+                if (window.startArchonBattle) setTimeout(() => window.startArchonBattle(), 400);
             }
         });
 
