@@ -33,9 +33,17 @@ const QUEST_STEPS = [
   },
   {
     id: 'go_shrine', chapter: 1,
-    title: '明治神宮で神託を聞く',
+    title: '明治神宮で社の守護機を越える',
     where: '広場の北 → 明治神宮 南参道',
-    detail: '謎の声に導かれ、神宮の老神主を訪ねよう。',
+    detail: '謎の声に導かれ、神宮の老神主を訪ねよう。社の守護機が、心を失っていない者かを試す。',
+    target: 'shrine_south_gate',
+    done: f => !!f.shrineGuardianDefeated
+  },
+  {
+    id: 'hear_oracle', chapter: 1,
+    title: '明治神宮で神託を聞く',
+    where: '明治神宮 南参道',
+    detail: '守護機を越え、老神主から八百万の神託を聞こう。',
     target: 'shrine_south_gate',
     done: f => !!f.metPriest
   },
@@ -55,7 +63,7 @@ const QUEST_STEPS = [
     where: '広場の南 → 商業街 → さらに南西の闇市',
     detail: '監視外の闇市へ。闇魔法使いヤミに話しかけ、仲間に引き入れよう。',
     target: 'black_market_entrance',
-    done: f => !!f.yamiPactMade || !!f.yamiJoined
+    done: f => !!f.yamiJoined
   },
 
   // --- 第3章 決戦 ---

@@ -4477,6 +4477,7 @@ class ShopSystem {
                 { id: 'bastion_core', equipmentId: 'bastion_core' },
                 { id: 'kamui_talisman', equipmentId: 'kamui_talisman' },
                 { id: 'ragnarok_edge', equipmentId: 'ragnarok_edge' },
+                { id: 'deus_executioner', equipmentId: 'deus_executioner' },
                 { id: 'colossus_plate', equipmentId: 'colossus_plate' },
                 { id: 'elixir', itemId: 'elixir' },
                 { id: 'kamui_storm', magicId: 'kamui_storm' },

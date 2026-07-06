@@ -361,6 +361,43 @@ class StoryEventSystem {
 
     // チャプター2/3のイベント（神託・エンディング）
     registerChapter2Events() {
+        // 神社小ボス: 社の守護機（神託の前に、心を失っていないかを試す）
+        this.registerEvent('shrine_guardian_intro', {
+            trigger: 'manual',
+            oneTime: true,
+            scenes: [
+                { character: 'システム', text: '明治神宮の石畳に、青白い紋様が浮かび上がる。鳥居の奥で、鏡面の装甲を持つ守護機がゆっくりと起動した。' },
+                { character: '老神主', text: '社は誰をも拒まぬ。じゃが、心を奪われた者を奥へ通すこともできぬ。これは八百万が残した、最後の門番じゃ。' },
+                { character: '社の守護機', text: '感情波形を検出。恐怖、怒り、悲嘆、保護衝動。アーク規格外ノイズ。浄化対象。' },
+                { character: 'アカリ', text: 'ノイズなんかじゃない。怖くても、悲しくても、それでも誰かを守りたいって思うのが、人の心だよ。' },
+                { character: 'カイト', text: '（この社は、力じゃなく心を見ている。なら、逃げるわけにはいかない）' },
+                { character: 'カイト', text: '通してもらう。俺たちは、心を取り戻すためにここへ来た。' },
+                { character: 'システム', text: '——社の守護機が、鏡の刃を構えた！' }
+            ],
+            onComplete: (storyFlags) => {
+                storyFlags.shrineGuardianSeen = true;
+                if (window.startShrineGuardianBattle) setTimeout(() => window.startShrineGuardianBattle(), 400);
+            }
+        });
+
+        this.registerEvent('shrine_guardian_defeated', {
+            trigger: 'manual',
+            oneTime: true,
+            scenes: [
+                { character: 'システム', text: '守護機の鏡面が割れ、そこに映っていた無数の市民の顔が、光となってほどけていく。社の空気が、静かに温度を取り戻した。' },
+                { character: '社の守護機', text: '感情波形、異常ではなく生命反応と再定義。八百万の門、開放。' },
+                { character: '老神主', text: 'よい。恐れも迷いも抱えたまま、それでも進む者こそ、この社に招かれる。汝らは、心を失っておらぬ。' },
+                { character: 'アカリ', text: 'よかった…。カイト、ちゃんと届いたんだね。' },
+                { character: 'カイト', text: 'ああ。…ここからが、本当の神託だ。' }
+            ],
+            onComplete: (storyFlags, player, partySystem, magicSystem, mapSystem) => {
+                storyFlags.shrineGuardianDefeated = true;
+                if (!storyFlags.metPriest && this.events.has('priest_oracle')) {
+                    setTimeout(() => this.triggerEvent('priest_oracle', { storyFlags, player, partySystem, mapSystem, magicSystem }), 400);
+                }
+            }
+        });
+
         // 老神主の神託（神宮で老神主に話しかけた時に index.html から発火）
         this.registerEvent('priest_oracle', {
             trigger: 'manual',
@@ -413,9 +450,9 @@ class StoryEventSystem {
                 { character: 'システム', text: '解き放たれた神の力が、ドーム中の枯れた蔦を一斉に芽吹かせる。光が戻り、根の残像は二度と現れない。リクは膝をつき、芽吹いた若葉に、そっと手を触れる。' },
                 { character: 'リク', text: '…ヒナ。この神は、救えた。…これで返したことになるのか。…わからない。だが、お前に伸ばせなかった手を、もう、引っ込めはしない。' },
                 { character: 'リク', text: 'カイト。…いい目だ。力に振り回されず、仲間を守ろうとする目をしている。アークに従って、俺は扉を閉じた。なら…アークと戦って、開け続ける。それが俺の役目だ。' },
-                { character: 'リク', text: '…俺を、連れて行ってくれ。お前の隣でなら、もう、扉を閉じずに済む気がする。' },
+                { character: 'リク', text: '…戦いの中で、わかった。お前の隣でなら、俺はもう、扉を閉じずに済む。これからも、前に立たせてくれ。' },
                 { character: 'アカリ', text: '…うん。もう、一人で扉を抱えなくていいよ。' },
-                { character: 'システム', text: 'リクが仲間に加わった！\n鉄壁の守りで、前線を支えてくれる。' }
+                { character: 'システム', text: 'リクが正式に仲間として加わった！\n鉄壁の守りで、前線を支えてくれる。' }
             ],
             onComplete: (storyFlags) => {
                 if (window.joinMember) window.joinMember('riku');

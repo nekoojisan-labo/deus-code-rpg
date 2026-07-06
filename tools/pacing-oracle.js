@@ -1,4 +1,4 @@
-// pacing-oracle.js — steady-drip 再配置の検証（NPC配置・ボス隠蔽ゲート・闇市ゲート）
+// pacing-oracle.js — steady-drip 再配置の検証（NPC配置・ボス隠蔽ゲート・闇市/都庁ゲート）
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.resolve(__dirname, '..');
 const read = (f) => fs.readFileSync(path.join(root, f), 'utf8');
@@ -22,9 +22,9 @@ const chk = (label, cond) => { console.log(`${cond ? '✅' : '❌'} ${label}`); 
 chk('アカリが開始マップ shinjuku_center_plaza に居ない（スポーン至近を解消）', !npcNames('shinjuku_center_plaza').includes('アカリ'));
 chk('アカリが shinjuku_station_gate に居る（駅で出会う）', npcNames('shinjuku_station_gate').includes('アカリ'));
 
-// 2) リク: biodome から消え、subway に居る
-chk('リクが biodome_gate に居ない', !npcNames('biodome_gate').includes('リク'));
-chk('リクが subway_concourse_a に居る（第1章ボス手前）', npcNames('subway_concourse_a').includes('リク'));
+// 2) リク: 現行設計ではバイオドームで堕神戦に参加する
+chk('リクが subway_concourse_a に居ない', !npcNames('subway_concourse_a').includes('リク'));
+chk('リクが biodome_gate に居る（第2章・堕神戦前）', npcNames('biodome_gate').includes('リク'));
 
 // 3) 駅のパトロールドローンが非hostile（アカリ加入前の強制戦を回避）
 const stationDrone = (msys.maps['shinjuku_station_gate'].npcs || []).find(n => n.name === 'パトロールドローン');
@@ -41,9 +41,9 @@ const sss = msys.maps['shopping_street_south'];
 const bmExit = (sss.exits || []).find(e => msys.normalizeMapId(e.to) === 'black_market_entrance');
 chk('闇市ゲートが requiredFlag=rikuJoined', bmExit && bmExit.requiredFlag === 'rikuJoined');
 
-// 5b) 都庁ゲートが yamiPactMade（仮契約で開く＝二段加入の鶏卵soft-lockを回避。yamiJoinedだと入場前に立たず詰む）
+// 5b) 都庁ゲートはヤミ正式加入後に開く（現行仕様では闇市内の処刑機戦後に yamiJoined）
 const govExit = (msys.maps['shinjuku_center_plaza'].exits || []).find(e => msys.normalizeMapId(e.to) === 'tokyo_gov_approach');
-chk('都庁ゲートが requiredFlag=yamiPactMade（soft-lock回避）', govExit && govExit.requiredFlag === 'yamiPactMade');
+chk('都庁ゲートが requiredFlag=yamiJoined', govExit && govExit.requiredFlag === 'yamiJoined');
 
 // 6) APPROACH にアカリ（駆け寄り型）— evalExitGate 経由で間接確認の代わりに updateApproachNPCs を実行
 msys.currentMap = 'shinjuku_station_gate';
@@ -53,4 +53,4 @@ msys.updateApproachNPCs(ak.x + 100, ak.y, {});          // _approaching を立�
 const reached = msys.updateApproachNPCs(ak.x, ak.y, {}); // 到達でnpc返却
 chk('アカリが駆け寄り型（到達でengageトリガー）', reached && reached.name === 'アカリ');
 
-console.log(`\n${pass ? '✅ 全PASS: アカリ=駅/リク=地下鉄ボス手前/ボス=リク加入まで封鎖/闇市=rikuJoinedゲート/駅ドローン非hostile' : '❌ 不合格あり'}`);
+console.log(`\n${pass ? '✅ 全PASS: アカリ=駅/リク=バイオドーム/ボス=アカリ再会まで封鎖/闇市=rikuJoined/都庁=yamiJoined/駅ドローン非hostile' : '❌ 不合格あり'}`);

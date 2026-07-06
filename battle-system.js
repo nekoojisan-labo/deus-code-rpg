@@ -169,6 +169,7 @@ class BattleSystem {
             rogue_ai_core: 'assets/enemies/enemy_abyss_ruler.png',
             fallen_life_god: 'assets/enemies/enemy_fallen_life_god.png',
             arc_executioner: 'assets/enemies/enemy_arc_executioner.png',
+            shrine_guardian: 'assets/enemies/enemy_mirror_sentinel.png',
             // v2雑魚敵の専用スプライト(Codex生成)。getEnemyImagePathはnameで引くため日本語名キー。
             'ラストラット': 'assets/enemies/enemy_rust_rat.png',
             'スパークモス': 'assets/enemies/enemy_spark_moth.png',
@@ -200,6 +201,7 @@ class BattleSystem {
             'アルコン・デウス': 'assets/enemies/enemy_archon_deus.png',
             'リヴァイアサン・コア': 'assets/enemies/enemy_leviathan_core.png',
             '真・デウス': 'assets/enemies/enemy_true_deus.png',
+            '社の守護機': 'assets/enemies/enemy_mirror_sentinel.png',
             'シャドウエンティティ': 'assets/enemies/enemy_shadow_entity.png',
             'データスパイダー': 'assets/enemies/enemy_data_spider.png',
             'クイーンスパイダー': 'assets/enemies/enemy_queen_spider.png',
@@ -545,6 +547,7 @@ class BattleSystem {
             salt_pillar: { id: 'salt_pillar', name: 'ソルトピラー', emoji: '🗿', hp: 264, maxHp: 264, attack: 20, defense: 40, magicDefense: 8, mp: 0, exp: 95, gold: 70, element: 'none', weakness: 'thunder,ice', elementalResistance: null, skills: ['rock_throw', 'harden', 'quake_stomp'], description: 'ソルトピラー', prescaled: true },
             venom_bloom: { id: 'venom_bloom', name: 'ヴェノムブルーム', emoji: '🥀', hp: 154, maxHp: 154, attack: 22, defense: 16, magicDefense: 20, mp: 0, exp: 100, gold: 66, element: 'dark', weakness: 'fire,light', elementalResistance: { dark: 0.5 }, skills: ['toxic_spore', 'drain', 'entangle'], description: 'ヴェノムブルーム', prescaled: true, aoe: true },
             mirror_sentinel: { id: 'mirror_sentinel', name: 'ミラーセンチネル', emoji: '🪞', hp: 220, maxHp: 220, attack: 24, defense: 18, magicDefense: 30, mp: 0, exp: 120, gold: 80, element: 'light', weakness: 'dark', elementalResistance: { fire: 0.5, ice: 0.5, thunder: 0.5, light: 0.75 }, skills: ['prism_beam', 'mirror_guard', 'barrier'], description: 'ミラーセンチネル', prescaled: true },
+            shrine_guardian: { id: 'shrine_guardian', name: '社の守護機', emoji: '⛩️', hp: 190, maxHp: 190, attack: 20, defense: 18, magicDefense: 22, mp: 30, exp: 120, gold: 0, element: 'light', weakness: 'thunder,dark', elementalResistance: { light: 0.5, fire: 0.5, ice: 0.5 }, skills: ['prism_beam', 'mirror_guard', 'barrier'], description: '社に残された八百万の守護機。心を失った者を社の奥へ通さない。', boss: true, type: 'boss', bossId: 'shrine_guardian', dropTable: [ { id: 'elixir', rate: 0.5 } ] },
             plasma_lancer: { id: 'plasma_lancer', name: 'プラズマランサー', emoji: '🦾', hp: 360, maxHp: 360, attack: 38, defense: 26, magicDefense: 22, mp: 0, exp: 175, gold: 120, element: 'thunder', weakness: 'dark', elementalResistance: { thunder: 0.5, fire: 0.25 }, skills: ['plasma_thrust', 'charge_break', 'overload'], description: 'プラズマランサー', prescaled: true },
             cryo_warden: { id: 'cryo_warden', name: 'クライオウォーデン', emoji: '❄️', hp: 520, maxHp: 520, attack: 34, defense: 44, magicDefense: 38, mp: 0, exp: 190, gold: 130, element: 'ice', weakness: 'fire', elementalResistance: { ice: 0.75, thunder: 0.5 }, skills: ['glacier_slam', 'frost_nova_aoe', 'barrier', 'guard'], description: 'クライオウォーデン', prescaled: true, aoe: true },
             null_revenant: { id: 'null_revenant', name: 'ヌル・レヴナント', emoji: '🕳️', hp: 400, maxHp: 400, attack: 40, defense: 28, magicDefense: 30, mp: 0, exp: 210, gold: 140, element: 'none', weakness: null, elementalResistance: { fire: 0.3, ice: 0.3, thunder: 0.3, dark: 0.3, light: 0.3 }, skills: ['void_grasp', 'null_pulse_aoe', 'curse'], description: 'ヌル・レヴナント', prescaled: true, aoe: true },

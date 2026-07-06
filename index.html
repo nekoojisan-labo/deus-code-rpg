@@ -11,7 +11,7 @@
     <title>デウス・コード 八百万の神託 - RPG Demo</title>
     <link rel="preload" as="image" href="assets/title/title-screen.webp" type="image/webp">
     <!-- build: 2026-06-09T19:40 (fixed-message-panel-layout) -->
-    <script>window.__BUILD__='2026-06-09T19:40-fixed-message-panel-layout';</script>
+    <script>window.__BUILD__='2026-07-06T-story-continuation-shrine-riku-routing';</script>
     <style>
         * {
             margin: 0;
@@ -3699,22 +3699,22 @@
 
     <!-- 外部スクリプト読み込み -->
     <script src="item-system.js?v=50"></script>
-    <script src="equipment-system.js?v=53"></script>
+    <script src="equipment-system.js?v=54"></script>
     <script src="magic-system.js?v=51"></script>
     <script src="se-system.js?v=1"></script>
     <script src="ui-panel.js?v=7"></script>
     <script src="save-system.js?v=2"></script>
-    <script src="battle-system.js?v=91"></script>
+    <script src="battle-system.js?v=92"></script>
     <script src="map-walkability-data.js?v=22"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=34"></script>
-    <script src="map-system.js?v=102"></script>
+    <script src="map-system.js?v=103"></script>
     <script src="map-system-grid.js"></script>
     <script src="player-grid-movement.js"></script>
     <script src="bgm-system.js?v=36"></script>
     <script src="party-system.js?v=50"></script>
-    <script src="quest-system.js?v=8"></script>
-    <script src="story-events.js?v=65"></script>
+    <script src="quest-system.js?v=9"></script>
+    <script src="story-events.js?v=66"></script>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -3878,10 +3878,13 @@
             metYami: false,
             visitedShrine: false,
             metPriest: false,
+            shrineGuardianSeen: false,
+            shrineGuardianDefeated: false,
             exploredBiodome: false,
             stationVisited: false,   // 新宿駅 初入場（アカリ再会の解禁ゲート）
             akariReunited: false,    // 駅でアカリと再会（同行はまだ＝第1章単騎続行。加入はΩ戦）
-            yamiPactMade: false,     // 闇市でヤミと仮契約（都庁入場時に本加入）
+            rikuTrialJoined: false,  // リクが堕神戦で前線に立った
+            yamiPactMade: false,     // 旧二段加入セーブ互換用。現行は闇市の処刑機戦後に yamiJoined。
             chapter: 1  // 現在のチャプター
         };
 
@@ -5324,7 +5327,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             showMessage(`${npc.name}が仲間に加わった！\n「${npc.dialogue || 'よろしく頼む。'}」`);
         }
 
-        // リク＝戦闘の試練。話しかける→（神託後）前口上→試練の戦闘→勝利で加入。
+        // リク＝戦闘の試練。前口上で一時的に前線へ入り、堕神戦後に正式同行の決意を確定する。
         function engageRiku(npc) {
             if (storyFlags.rikuJoined) { showMessage('リク：「共に行こう。アークを止めるまでな。」'); return; }
             // ★植物園(神託=metPriest後に到達)で出会う多段加入: 出会い(拒否)→もう一度話す→堕神と対面→堕神戦→加入。
@@ -5348,7 +5351,9 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 boss: true, bossId: base.bossId || 'fallen_life_god'
             };
             storyFlags.rikuTrialStarted = true;
-            battleSystem.startBattle(enemy, true, () => onRikuTrialWin());  // 勝利時のみ→加入（敗北=通常GO）
+            storyFlags.rikuTrialJoined = true;
+            if (!storyFlags.rikuJoined) joinMember('riku');  // 前口上の「攻撃は俺が全部受ける」と戦闘参加を一致させる
+            battleSystem.startBattle(enemy, true, () => onRikuTrialWin());  // 勝利時のみ→正式同行イベント（敗北=通常GO）
         }
         function onRikuTrialWin() {
             if (storyEventSystem) storyEventSystem.triggerEvent('recruit_riku_join', { storyFlags, player, partySystem, magicSystem });
@@ -5356,6 +5361,26 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         }
         window.startFallenGodTrial = startFallenGodTrial;
         window.onRikuTrialWin = onRikuTrialWin;
+
+        // 神社＝神託前の小ボス。心を失っていない者だけが社の奥へ進める。
+        function startShrineGuardianBattle() {
+            if (!battleSystem || battleSystem.inBattle || storyFlags.shrineGuardianDefeated) return;
+            const base = battleSystem.enemyDatabase.shrine_guardian;
+            if (!base) return;
+            const enemy = {
+                ...base,
+                hp: base.hp, maxHp: base.maxHp || base.hp, currentHp: base.hp, currentMp: base.mp || 0,
+                boss: true, bossId: base.bossId || 'shrine_guardian'
+            };
+            storyFlags.shrineGuardianSeen = true;
+            battleSystem.startBattle(enemy, true, () => onShrineGuardianWin());
+        }
+        function onShrineGuardianWin() {
+            if (storyEventSystem) storyEventSystem.triggerEvent('shrine_guardian_defeated', { storyFlags, player, partySystem, magicSystem, mapSystem });
+            else { storyFlags.shrineGuardianDefeated = true; advancePriest(); }
+        }
+        window.startShrineGuardianBattle = startShrineGuardianBattle;
+        window.onShrineGuardianWin = onShrineGuardianWin;
 
         // アカリ＝第1章は駅で「再会のみ」(同行保留＝単騎続行)。正式加入は第2章のΩ戦(checkInteractions側)。
         function engageAkari(npc) {
@@ -5396,6 +5421,18 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
 
         // 神宮の老神主と会話（神託イベント発火）
         function advancePriest(npc) {
+            if (!storyFlags.shrineGuardianDefeated) {
+                if (battleSystem && battleSystem.inBattle) return;
+                if (storyFlags.shrineGuardianSeen) {
+                    startShrineGuardianBattle();
+                } else if (storyEventSystem) {
+                    storyEventSystem.triggerEvent('shrine_guardian_intro', { storyFlags, player, mapSystem, magicSystem, partySystem });
+                } else {
+                    startShrineGuardianBattle();
+                }
+                refreshObjective();
+                return;
+            }
             if (!storyFlags.metPriest) {
                 if (storyEventSystem) {
                     storyEventSystem.triggerEvent('priest_oracle', { storyFlags, player, mapSystem, magicSystem, partySystem });
