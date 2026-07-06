@@ -2926,17 +2926,15 @@ class MapSystem {
     }
 
     computeWalkJuice(isMoving, animTimeMs) {
-        // 歩行の躍動を上乗せ(元アートに脚スイングが無いため演出で補う)。
-        // bob: 体が上下に弾む / 接地時に横へ潰れ縦に縮むスクワッシュ / 左右スウェイ。
-        const cyc = (animTimeMs / 1000) * Math.PI * 2 * 2.2;
+        // フレーム差が弱いNPC素材でも「接地して歩く」よう、足元を固定して体の揺れだけ足す。
+        const cyc = (animTimeMs / 1000) * Math.PI * 2 * 2.4;
         const s = isMoving ? Math.sin(cyc) : 0;
-        const up = Math.abs(s);        // 0(接地)〜1(最高到達)
-        const ground = 1 - up;         // 1(接地)〜0
-        const dy = isMoving ? -up * 5.0 : 0;
-        const sx = isMoving ? (1 + ground * 0.12) : 1;
-        const sy = isMoving ? (1 - ground * 0.10 + up * 0.04) : 1;
-        const sway = isMoving ? s * 1.8 : 0;
-        return { dy, sx, sy, sway };
+        const contact = isMoving ? (1 - Math.abs(s)) : 0;
+        const sx = isMoving ? (1 + contact * 0.075) : 1;
+        const sy = isMoving ? (1 - contact * 0.045) : 1;
+        const sway = isMoving ? s * 1.6 : 0;
+        const lean = isMoving ? s * 0.018 : 0;
+        return { sx, sy, sway, lean };
     }
 
     updateFacingFromDelta(npc, dx, dy) {
@@ -3499,12 +3497,18 @@ class MapSystem {
             if (this.isWalkSpriteSheet(spritePath, sprite)) {
                 // スプライトシート: 歩行中はフレームアニメ、停止中はアイドルフレーム(col=0)で完全静止
                 const f = this.computeWalkFrame(npc.facing, npc.isMoving, npc.animTime || 0);
-                const dw = npc.hostile ? 56 : 50, dh = npc.hostile ? 72 : 64;
-                const dx = Math.round(position.x - dw / 2);
-                const dy = Math.round(position.y - dh + 6);
+                const juice = this.computeWalkJuice(npc.isMoving, npc.animTime || 0);
+                const baseDw = npc.hostile ? 56 : 50, baseDh = npc.hostile ? 72 : 64;
+                const dw = Math.round(baseDw * juice.sx), dh = Math.round(baseDh * juice.sy);
+                const footX = Math.round(position.x + juice.sway);
+                const footY = Math.round(position.y + 6);
                 const ps = ctx.imageSmoothingEnabled;
+                ctx.save();
                 ctx.imageSmoothingEnabled = false;
-                ctx.drawImage(sprite, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
+                ctx.translate(footX, footY);
+                if (juice.lean) ctx.rotate(juice.lean);
+                ctx.drawImage(sprite, f.sx, f.sy, f.sw, f.sh, -Math.round(dw / 2), -dh, dw, dh);
+                ctx.restore();
                 ctx.imageSmoothingEnabled = ps;
             } else {
                 const size = npc.hostile ? 50 : 44;
@@ -4534,6 +4538,76 @@ class ShopSystem {
         }
         
         return null;
+    }
+
+    getShopRoleNames(details) {
+        const labels = { 'all-rounder': 'カイト', tank: 'リク', healer: 'アカリ', mage: 'ヤミ' };
+        const order = ['all-rounder', 'tank', 'healer', 'mage'];
+        const roles = Array.isArray(details && details.allowedRoles) && details.allowedRoles.length
+            ? details.allowedRoles
+            : order;
+        return order.filter((role) => roles.includes(role)).map((role) => labels[role] || role);
+    }
+
+    getShopItemCategory(details) {
+        if (!details) return { label: '不明', shortLabel: '不明', order: 999, slotOrder: 99 };
+        if (details.isMagic) return { label: '神威 / 魔法', shortLabel: '魔法', order: 900, slotOrder: 0 };
+        if (details.isItem) return { label: 'アイテム', shortLabel: '道具', order: 800, slotOrder: 0 };
+        if (!details.isEquipment) return { label: 'その他', shortLabel: 'その他', order: 950, slotOrder: 0 };
+
+        const slot = details.slot || details.type || 'equipment';
+        const slotLabels = { weapon: '武器', head: '頭防具', body: '体防具', hands: '腕防具', accessory: '装飾品' };
+        const slotShort = { weapon: '武器', head: '頭', body: '体', hands: '腕', accessory: '装飾' };
+        const slotOrder = { weapon: 10, head: 20, body: 30, hands: 40, accessory: 50 }[slot] || 90;
+        const roles = Array.isArray(details.allowedRoles) ? details.allowedRoles : [];
+        const has = (role) => roles.includes(role);
+        let roleLabel = '全員向け';
+        let roleOrder = 10;
+
+        if (has('tank') && has('all-rounder') && !has('healer') && !has('mage')) {
+            roleLabel = 'カイト/リク向け';
+            roleOrder = 20;
+        } else if (has('healer') && !has('mage') && !has('tank')) {
+            roleLabel = 'アカリ向け';
+            roleOrder = 30;
+        } else if (has('mage') && !has('healer') && !has('tank')) {
+            roleLabel = 'ヤミ向け';
+            roleOrder = 40;
+        } else if (has('healer') && has('mage') && !has('tank')) {
+            roleLabel = 'アカリ/ヤミ向け';
+            roleOrder = 35;
+        } else if (roles.length && !roles.every((role) => ['all-rounder', 'tank', 'healer', 'mage'].includes(role))) {
+            roleLabel = `装備可能: ${this.getShopRoleNames(details).join('/')}`;
+            roleOrder = 60;
+        }
+
+        const slotLabel = slotLabels[slot] || '装備';
+        const shortSlot = slotShort[slot] || '装備';
+        return {
+            label: `${roleLabel} ・ ${slotLabel}`,
+            shortLabel: `${roleLabel} / ${shortSlot}`,
+            roleLabel,
+            slotLabel,
+            order: roleOrder * 100 + slotOrder,
+            slotOrder
+        };
+    }
+
+    getDisplayShopItems(shopType) {
+        const list = this.shopData[shopType];
+        if (!Array.isArray(list)) return [];
+        return list.map((raw, shopIndex) => {
+            const details = this.getItemDetails(shopType, shopIndex);
+            const category = this.getShopItemCategory(details);
+            return { raw, shopIndex, details, category };
+        }).sort((a, b) => {
+            const ca = a.category || {}, cb = b.category || {};
+            const da = a.details || {}, db = b.details || {};
+            return (ca.order || 999) - (cb.order || 999)
+                || (da.requiredLevel || 0) - (db.requiredLevel || 0)
+                || (da.price || 0) - (db.price || 0)
+                || String(da.name || '').localeCompare(String(db.name || ''), 'ja');
+        });
     }
     
     // ショップを開く

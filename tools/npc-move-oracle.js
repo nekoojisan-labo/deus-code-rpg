@@ -67,6 +67,8 @@ let movingAnyFrame = {};
 testMap.npcs.forEach(n => { sxSeen[n.name] = new Set(); movingAnyFrame[n.name] = false; });
 let outOfDomain = 0;
 let maxRoamDist = 0;
+let movingJuiceSeen = false;
+let staticJuiceChanged = false;
 const roam = byName['徘徊敵'];
 const roamRadiusScaled = roam._patrol.radius;
 let staticEverMoved = false;
@@ -79,10 +81,13 @@ for (let f = 0; f < FRAMES; f++) {
     // 不変条件: 毎フレーム可動域内
     if (!ms.isMapPositionWalkable(testMap, n.x, n.y, 22)) outOfDomain++;
     const fr = ms.computeWalkFrame(n.facing, n.isMoving, n.animTime || 0);
+    const juice = ms.computeWalkJuice(n.isMoving, n.animTime || 0);
     if (n.isMoving) { sxSeen[n.name].add(fr.sx); movingAnyFrame[n.name] = true; }
+    if (n.isMoving && (Math.abs((juice.sx || 1) - 1) > 0.01 || Math.abs(juice.sway || 0) > 0.5 || Math.abs(juice.lean || 0) > 0.005)) movingJuiceSeen = true;
     if (n.name === '静止市民') {
       if (n.isMoving) staticEverMoved = true;
       if (fr.sx !== 0) staticSxNonzero = true;
+      if (Math.abs((juice.sx || 1) - 1) > 0.001 || Math.abs((juice.sy || 1) - 1) > 0.001 || Math.abs(juice.sway || 0) > 0.001 || Math.abs(juice.lean || 0) > 0.001) staticJuiceChanged = true;
     }
     if (n.name === '徘徊敵') {
       const d = Math.hypot(n.x - n.originX, n.y - n.originY);
@@ -94,6 +99,7 @@ for (let f = 0; f < FRAMES; f++) {
 // --- 検証 ---
 chk('静止市民は一度も isMoving=true にならない', !staticEverMoved);
 chk('静止市民の描画フレームは常に sx=0（idle列固定）', !staticSxNonzero);
+chk('静止市民は歩行補助juiceも完全静止（揺れ/傾きなし）', !staticJuiceChanged);
 
 const pingSx = [...sxSeen['往復市民']].filter(v => v !== 0);
 chk('往復市民: 歩行中にsx列が「複数の非ゼロ列」を取る（脚が循環・0固定でない）',
@@ -105,6 +111,7 @@ chk('巡回衛兵: 歩行中にsx列が循環する', guardSx.length >= 2, `非�
 
 const roamSx = [...sxSeen['徘徊敵']].filter(v => v !== 0);
 chk('徘徊敵: 歩行中にsx列が循環する', roamSx.length >= 2, `非ゼロ列=${[...sxSeen['徘徊敵']].sort((a, b) => a - b).join(',')}`);
+chk('歩行中NPCは接地したまま揺れ/スクワッシュ/傾きの補助juiceを持つ', movingJuiceSeen);
 
 chk('不変条件: 全NPCが全フレームで可動域内（域外0件）', outOfDomain === 0, `域外=${outOfDomain}件`);
 chk('徘徊敵: 原点からの最大距離が半径+1歩以内（遠方ドリフトなし）',

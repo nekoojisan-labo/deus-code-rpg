@@ -11,7 +11,7 @@
     <title>デウス・コード 八百万の神託 - RPG Demo</title>
     <link rel="preload" as="image" href="assets/title/title-screen.webp" type="image/webp">
     <!-- build: 2026-06-09T19:40 (fixed-message-panel-layout) -->
-    <script>window.__BUILD__='2026-07-06T-story-continuation-shrine-riku-routing';</script>
+    <script>window.__BUILD__='2026-07-06T-npc-shop-status-visual-fixes';</script>
     <style>
         * {
             margin: 0;
@@ -196,9 +196,16 @@
         .ui-panel__dmuted { color: var(--text-sub); font-size: 12px; }
         .ui-panel__dlead { display: flex; gap: 11px; align-items: center; margin-bottom: 9px; }
         .ui-panel__dlead img { width: 60px; height: 60px; border-radius: 9px; object-fit: cover; object-position: top center; border: 1px solid var(--accent-soft); background: #0b1626; }
-        /* ★顔アイコン: 立ち絵(240x320)から顔へズームした共通クロップ(検証済 50% 22% / 150%)。
+        /* ★顔アイコン: 立ち絵(240x320)から顔へズームした共通クロップ。
            object-fit:cover は拡大できず顔が下端に切れる(=すみっこ)為、背景画像でズーム指定する。 */
-        .menu-face { display: inline-block; flex: 0 0 auto; vertical-align: middle; border-radius: 9px; border: 1px solid var(--accent-soft); background-color: #0b1626; background-repeat: no-repeat; background-position: 50% 22%; background-size: 150% auto; }
+        .menu-face {
+            display: inline-block; flex: 0 0 auto; vertical-align: middle;
+            border-radius: 9px; border: 1px solid var(--accent-soft);
+            background-color: #0b1626; background-repeat: no-repeat;
+            background-position: var(--face-x, 50%) var(--face-y, 48%);
+            background-size: var(--face-zoom, 130%) auto;
+        }
+        .menu-face[data-char="yami"] { --face-x: 54%; --face-y: 50%; --face-zoom: 132%; }
         /* ★数量ステッパ(売却の個数など): 左ペインに ▲ 数値 ▼。 */
         .ui-panel__stepper { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 180px; }
         .ui-panel__step-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
@@ -1335,8 +1342,8 @@
             height: 78%;
             max-height: 360px;
             opacity: 0;
-            /* 非発話側: 旧 brightness(0.42) は暗すぎて「透けている」ように見えた */
-            filter: brightness(0.7) saturate(0.85) drop-shadow(0 8px 24px rgba(0, 0, 0, 0.6));
+            /* 非発話側も実体感を残す。暗くしすぎると背景に溶けて透けて見える。 */
+            filter: brightness(0.92) saturate(1.02) contrast(1.03) drop-shadow(0 10px 26px rgba(0, 0, 0, 0.72));
             transition: opacity .3s ease, filter .25s ease, transform .25s ease;
             transform: translateY(10px) scale(0.95);
             will-change: filter, transform;
@@ -1344,14 +1351,14 @@
         }
         .vn-portrait.shown { opacity: 1; }
         .vn-portrait.speaking {
-            filter: brightness(1.06) saturate(1) drop-shadow(0 8px 24px rgba(0, 0, 0, 0.6));
-            transform: translateY(0) scale(1);
+            filter: brightness(1.08) saturate(1.08) contrast(1.05) drop-shadow(0 12px 28px rgba(0, 0, 0, 0.78));
+            transform: translateY(0) scale(1.01);
             z-index: 2;
         }
         /* ナレーション・立ち絵を持たない話者の行では、両者を中間明度に保つ
            （旧実装は両方 0.42 に暗転し「全員透けている」状態が頻発していた） */
         .vn-portraits.vn-narration .vn-portrait.shown {
-            filter: brightness(0.88) saturate(0.95) drop-shadow(0 8px 24px rgba(0, 0, 0, 0.6));
+            filter: brightness(0.98) saturate(1.02) contrast(1.02) drop-shadow(0 10px 26px rgba(0, 0, 0, 0.72));
             transform: translateY(4px) scale(0.97);
         }
         .vn-left  { left: -2%; }
@@ -3708,7 +3715,7 @@
     <script src="map-walkability-data.js?v=22"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=34"></script>
-    <script src="map-system.js?v=103"></script>
+    <script src="map-system.js?v=104"></script>
     <script src="map-system-grid.js"></script>
     <script src="player-grid-movement.js"></script>
     <script src="bgm-system.js?v=36"></script>
@@ -5897,7 +5904,11 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
 
         function menuFace(m) { const id = m.characterId || m.id || 'kaito'; return `assets/characters/${id}_portrait.webp`; }
         // ★顔アイコン共通マークアップ: 立ち絵から顔へズームクロップ(.menu-face)。サイズだけ可変。
-        function menuFaceHtml(m, size) { const s = size || 50; return `<span class="menu-face" style="width:${s}px;height:${s}px;background-image:url('${encodeURI(menuFace(m))}')"></span>`; }
+        function menuFaceHtml(m, size) {
+            const s = size || 50;
+            const id = (m && (m.characterId || m.id)) || 'kaito';
+            return `<span class="menu-face" data-char="${UIPanel.esc(id)}" style="width:${s}px;height:${s}px;background-image:url('${encodeURI(menuFace(m || { id }))}')"></span>`;
+        }
         function roleLabel(m) { return ({ healer: 'ヒーラー', tank: 'タンク', mage: 'メイジ', 'all-rounder': '万能' })[m.role || ''] || ''; }
         function menuBar(k, c, mx, cls) {
             const r = mx ? Math.max(0, Math.min(100, Math.round(c / mx * 100))) : 0;
@@ -5993,6 +6004,12 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         function shopGold() { return (window.player && player.gold) || 0; }
         function shopGoldFoot() { return `<span class="lbl">所持金</span><span class="val">${shopGold().toLocaleString()} G</span>`; }
         function shopItemIcon(d) { return d ? (d.emoji || (d.isEquipment ? '🛡️' : d.isMagic ? '✨' : '🧪')) : '📦'; }
+        function shopCategoryMeta(shop, d) {
+            return (shop && typeof shop.getShopItemCategory === 'function') ? shop.getShopItemCategory(d) : { label: '', shortLabel: '' };
+        }
+        function shopRoleNames(shop, d) {
+            return (shop && typeof shop.getShopRoleNames === 'function') ? shop.getShopRoleNames(d).join(' / ') : '';
+        }
         function closeShopMenu() {
             if (window.UIPanel && UIPanel.isOpen()) UIPanel.close();
             const ov = document.getElementById('menuOverlay'); if (ov) ov.classList.remove('active');
@@ -6021,8 +6038,12 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             const d = (idx != null && shop) ? shop.getItemDetails(shopType, idx) : null;
             if (!d) return '<div class="ui-panel__dmuted" style="padding:8px;">買う物を選んでください。</div>';
             const afford = shopGold() >= (d.price || 0);
+            const cat = shopCategoryMeta(shop, d);
             let body = '';
-            if (d.isEquipment) body = equipStatSummary(d) || '';
+            if (d.isEquipment) {
+                const roles = shopRoleNames(shop, d);
+                body = `${UIPanel.esc(cat.label || '装備')}<br>${UIPanel.esc(equipStatSummary(d) || '能力変化なし')}${roles ? `<br><span class="ui-panel__dmuted">装備可能: ${UIPanel.esc(roles)}</span>` : ''}`;
+            }
             else if (d.isItem) body = itemEffectSummary(d) || '';
             else if (d.isMagic) body = `${skillTypeLabel(d)}　消費MP ${d.mpCost || 0}${d.alreadyLearned ? '　<span style="color:#7CFC9A;">習得済み</span>' : ''}`;
             return `<div class="ui-panel__dlead" style="align-items:center;">
@@ -6035,18 +6056,30 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         function openShopBuy(notice, keepIndex) {
             const ctx = window._shopCtx || {}; const shopType = ctx.shopType;
             const shop = window.gameShop;
-            const list = (shop && shop.shopData[shopType]) || [];
-            const items = list.map((si, i) => {
-                const d = shop.getItemDetails(shopType, i);
+            const entries = (shop && typeof shop.getDisplayShopItems === 'function')
+                ? shop.getDisplayShopItems(shopType)
+                : (((shop && shop.shopData[shopType]) || []).map((raw, shopIndex) => ({ raw, shopIndex, details: shop.getItemDetails(shopType, shopIndex), category: shopCategoryMeta(shop, shop.getItemDetails(shopType, shopIndex)) })));
+            const items = entries.map((entry) => {
+                const i = entry.shopIndex;
+                const d = entry.details || shop.getItemDetails(shopType, i);
                 const afford = shopGold() >= (d ? (d.price || 0) : 0);
+                const cat = entry.category || shopCategoryMeta(shop, d);
                 // ★所持金不足でもカーソルは合わせられる（中身を確認できる）。購入しようとした時だけ弾く。
                 //   買えない物は右端に ⚠ を出して一目で分かるようにする。習得済み魔法のみ選択不可のまま。
-                return { icon: shopItemIcon(d), label: d ? d.name : '?', right: d ? `${(d.price || 0).toLocaleString()} G${afford ? '' : ' ⚠'}` : '', value: i, disabled: !d || d.alreadyLearned };
+                return {
+                    icon: shopItemIcon(d),
+                    label: d ? d.name : '?',
+                    sub: d ? (cat.shortLabel || cat.label || '') : '',
+                    right: d ? `${(d.price || 0).toLocaleString()} G${afford ? '' : ' ⚠'}` : '',
+                    value: i,
+                    disabled: !d || d.alreadyLearned
+                };
             });
             if (!items.length) items.push({ label: '商品がありません', disabled: true });
+            const selectedIndex = keepIndex == null ? 0 : Math.max(0, entries.findIndex((entry) => entry.shopIndex === keepIndex));
             UIPanel.open({
                 host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
-                title: '🛒 買う', items, selectedIndex: keepIndex || 0, columns: 1,
+                title: '🛒 買う', items, selectedIndex, columns: 1,
                 footHtml: notice ? `<span style="color:#ff6b6b;font-weight:700;">${UIPanel.esc(notice)}</span>` : shopGoldFoot(),
                 detailFor: (it) => shopBuyDetail(shopType, it && it.value != null ? it.value : null),
                 onSelect: (i) => { let msg = ''; if (shop) { const r = shop.buyItem(shopType, i); if (r && !r.success) msg = r.message || 'ゴールドが足りません'; } openShopBuy(msg, i); },
