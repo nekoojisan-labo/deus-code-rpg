@@ -11,7 +11,7 @@
     <title>デウス・コード 八百万の神託 - RPG Demo</title>
     <link rel="preload" as="image" href="assets/title/title-screen.webp" type="image/webp">
     <!-- build: 2026-06-09T19:40 (fixed-message-panel-layout) -->
-    <script>window.__BUILD__='2026-07-06T-vn-portrait-opaque-display';</script>
+    <script>window.__BUILD__='2026-07-06T-vn-portrait-cutout-no-backing';</script>
     <style>
         * {
             margin: 0;
@@ -1333,7 +1333,7 @@
             pointer-events: none;
             z-index: 46;
             opacity: 0;
-            transition: opacity .3s ease;
+            transition: none;
         }
         .vn-portraits.active { opacity: 1; }
         .vn-portrait {
@@ -1342,10 +1342,6 @@
             height: 78%;
             max-height: 360px;
             opacity: 0;
-            /* 画像の透明背景からマップが見えて「キャラまで透ける」印象になるため、
-               会話表示時だけ立ち絵ボックス側に不透明の暗い下地を敷く。 */
-            background:
-                radial-gradient(ellipse at 50% 57%, #07101c 0%, #07101c 63%, rgba(7, 16, 28, 0.98) 78%, rgba(7, 16, 28, 0.92) 100%);
             /* 非発話側も実体感を残す。暗くしすぎると背景に溶けて透けて見える。 */
             filter: brightness(0.92) saturate(1.02) contrast(1.03) drop-shadow(0 10px 26px rgba(0, 0, 0, 0.72));
             transition: filter .25s ease, transform .25s ease;
