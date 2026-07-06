@@ -43,7 +43,7 @@ class StoryEventSystem {
         this.vnRight = document.getElementById('vnPortraitRight');
         // 話者名 → ポートレートのキャラキー
         this.PORTRAIT_KEYS = { 'カイト': 'kaito', 'アカリ': 'akari', 'リク': 'riku', 'ヤミ': 'yami' };
-        this.vnPortraitVersion = '20260706-solid-vn';
+        this.vnPortraitVersion = '20260706-solid-vn-map-assets';
         this.vnLeftKey = null;   // 左に立っているキャラキー
         this.vnRightKey = null;  // 右
 

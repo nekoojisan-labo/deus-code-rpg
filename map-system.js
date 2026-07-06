@@ -9,7 +9,7 @@ class MapSystem {
         this.mapImages = {};
         this.spriteImages = {};
         this.objectImages = {};
-        this.assetVersion = '66';
+        this.assetVersion = '20260706-map-assets';
         this.baseWidth = 800;
         this.baseHeight = 450;
         this.camera = { x: 0, y: 0 };
@@ -42,6 +42,9 @@ class MapSystem {
             'ダークバット群': 'assets/enemies/enemy_dark_bats.png',
             'デーモンロード': 'assets/enemies/enemy_demon_lord.png',
             '深淵の支配者': 'assets/enemies/enemy_abyss_ruler.png',
+            'アルコン・デウス': 'assets/enemies/enemy_archon_deus.png',
+            'リヴァイアサン・コア': 'assets/enemies/enemy_leviathan_core.png',
+            '真・デウス': 'assets/enemies/enemy_true_deus.png',
             '武器商人リョウ': 'assets/characters/sprites/merchant_weapon_walk.png',
             '防具商人サクラ': 'assets/characters/sprites/merchant_armor_walk.png',
             'アイテム商人ユウキ': 'assets/characters/sprites/merchant_item_walk.png',
@@ -58,7 +61,9 @@ class MapSystem {
             '宿屋の案内人': 'assets/characters/sprites/npc_citizen_male_walk.png',
             '銀行の案内人': 'assets/characters/sprites/npc_worker_walk.png',
             'ギルド案内人': 'assets/characters/sprites/npc_priest_walk.png',
-            '闇市の案内人': 'assets/characters/sprites/npc_worker_walk.png'
+            '闇市の案内人': 'assets/characters/sprites/npc_worker_walk.png',
+            '御神体': 'assets/objects/sacred_relic.png',
+            '郵便ポスト': 'assets/objects/post_box.png'
         };
         this.walkSprite = { frameWidth:72, frameHeight:92, frames:4, fps:7, frameSequence:[0,1,2,3], idleFrame:0, rows:{down:0,left:1,right:2,up:3} };
         this.tileSize = 32;
@@ -2828,7 +2833,13 @@ class MapSystem {
 
     preloadObjectImages(mapId = this.currentMap) {
         const map = this.maps[this.normalizeMapId(mapId)];
-        if (!map || !Array.isArray(map.objects)) return;
+        if (!map) return;
+
+        if (map.savePoint) {
+            this.loadObjectImage(this.getSavePointSpritePath(map.savePoint));
+        }
+
+        if (!Array.isArray(map.objects)) return;
 
         map.objects.forEach(object => {
             if (object.visible === false || !object.sprite) return;
@@ -2858,6 +2869,14 @@ class MapSystem {
         const key = npc.name || e;
         for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
         return pool[h % pool.length];
+    }
+
+    getSavePointSpritePath(savePoint) {
+        if (!savePoint) return null;
+        if (savePoint.image) return savePoint.image;
+        const name = savePoint.name || '';
+        if (name.includes('ベンチ')) return 'assets/objects/city_bench.png';
+        return 'assets/objects/save_point.png';
     }
 
     isShopStaffNPC(npc, spritePath = null) {
@@ -3111,6 +3130,270 @@ class MapSystem {
         };
         return buildingMapMapping[buildingType] || null;
     }
+
+    drawMapSymbol(ctx, kind, x, y, size = 32) {
+        const s = size / 32;
+        ctx.save();
+        ctx.translate(Math.round(x), Math.round(y));
+        ctx.lineWidth = Math.max(1, 2 * s);
+        ctx.strokeStyle = '#4ef7ff';
+        ctx.fillStyle = 'rgba(5, 12, 22, 0.94)';
+
+        const rect = (rx, ry, rw, rh, fill = ctx.fillStyle, stroke = ctx.strokeStyle) => {
+            ctx.fillStyle = fill;
+            ctx.strokeStyle = stroke;
+            ctx.fillRect(rx * s, ry * s, rw * s, rh * s);
+            ctx.strokeRect(rx * s + 0.5, ry * s + 0.5, rw * s - 1, rh * s - 1);
+        };
+        const line = (x1, y1, x2, y2, color = '#9ffcff') => {
+            ctx.strokeStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(x1 * s, y1 * s);
+            ctx.lineTo(x2 * s, y2 * s);
+            ctx.stroke();
+        };
+        const circle = (cx, cy, r, fill, stroke = '#4ef7ff') => {
+            ctx.fillStyle = fill;
+            ctx.strokeStyle = stroke;
+            ctx.beginPath();
+            ctx.arc(cx * s, cy * s, r * s, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        };
+
+        switch (kind) {
+            case 'building':
+            case 'office':
+                rect(-12, -14, 24, 28, '#142338', '#2fcfff');
+                for (let wy = -10; wy <= 6; wy += 8) {
+                    for (let wx = -7; wx <= 5; wx += 6) rect(wx, wy, 3, 3, '#6eeaff', '#6eeaff');
+                }
+                break;
+            case 'tree':
+                rect(-2, 2, 4, 12, '#4a2f1a', '#6b4528');
+                circle(-5, -1, 8, '#174c38', '#5ee7a8');
+                circle(5, 0, 8, '#123e34', '#48c891');
+                circle(0, -8, 8, '#1b6245', '#68f0b1');
+                break;
+            case 'torii':
+            case 'shrine':
+                line(-13, -12, 13, -12, '#ff7e62');
+                line(-10, -7, 10, -7, '#ffb06a');
+                line(-8, -7, -8, 13, '#ff7e62');
+                line(8, -7, 8, 13, '#ff7e62');
+                line(-12, 13, 12, 13, '#4ef7ff');
+                break;
+            case 'stall':
+                rect(-13, -4, 26, 18, '#142338', '#55e5ff');
+                rect(-15, -13, 30, 9, '#23314d', '#ffe470');
+                line(-8, -13, -8, -4, '#ff67b5');
+                line(0, -13, 0, -4, '#7df8ff');
+                line(8, -13, 8, -4, '#ff67b5');
+                break;
+            case 'pillar':
+                rect(-8, -14, 16, 5, '#25334c', '#d6f8ff');
+                rect(-5, -9, 10, 20, '#1b2538', '#9cdcff');
+                rect(-10, 11, 20, 4, '#25334c', '#d6f8ff');
+                break;
+            case 'treasure':
+                rect(-12, -6, 24, 18, '#4d3218', '#ffd15d');
+                line(-12, 0, 12, 0, '#ffd15d');
+                circle(0, 2, 3, '#ffe36f', '#fff3aa');
+                break;
+            case 'weapon_shop':
+                line(-11, 10, 11, -12, '#d9faff');
+                line(11, 10, -11, -12, '#d9faff');
+                rect(-3, -3, 6, 6, '#15233a', '#ffd15d');
+                break;
+            case 'armor_shop':
+                ctx.fillStyle = '#1a3150';
+                ctx.strokeStyle = '#7df8ff';
+                ctx.beginPath();
+                ctx.moveTo(0, -14);
+                ctx.lineTo(12, -8);
+                ctx.lineTo(9, 7);
+                ctx.lineTo(0, 15);
+                ctx.lineTo(-9, 7);
+                ctx.lineTo(-12, -8);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                line(0, -10, 0, 11, '#ffe36f');
+                break;
+            case 'item_shop':
+                rect(-6, -13, 12, 6, '#26354d', '#bffcff');
+                rect(-9, -7, 18, 20, '#113f37', '#7dffd2');
+                circle(0, 3, 5, '#60ffc5', '#d8fff2');
+                break;
+            case 'magic_shop':
+                ctx.fillStyle = '#24305a';
+                ctx.strokeStyle = '#ff78ff';
+                ctx.beginPath();
+                ctx.moveTo(0, -15);
+                ctx.lineTo(11, 0);
+                ctx.lineTo(0, 15);
+                ctx.lineTo(-11, 0);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                circle(0, 0, 4, '#7df8ff', '#dffcff');
+                break;
+            case 'inn':
+            case 'house':
+                ctx.fillStyle = '#203149';
+                ctx.strokeStyle = '#9ffcff';
+                ctx.beginPath();
+                ctx.moveTo(-14 * s, -2 * s);
+                ctx.lineTo(0, -15 * s);
+                ctx.lineTo(14 * s, -2 * s);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                rect(-11, -2, 22, 16, '#15243a', '#72dfff');
+                break;
+            case 'pond':
+                ctx.fillStyle = 'rgba(62, 189, 255, 0.55)';
+                ctx.strokeStyle = '#a9f7ff';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 14 * s, 8 * s, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                line(-9, -1, 8, -4, '#e0ffff');
+                break;
+            case 'elevator':
+                rect(-12, -14, 24, 28, '#101c2c', '#70eaff');
+                line(0, -13, 0, 13, '#70eaff');
+                circle(9, -7, 2, '#ff6868', '#ffd6d6');
+                circle(9, 0, 2, '#77ff8f', '#d7ffe0');
+                break;
+            case 'warning':
+                ctx.fillStyle = 'rgba(255, 80, 80, 0.7)';
+                ctx.strokeStyle = '#ffe36f';
+                ctx.beginPath();
+                ctx.moveTo(0, -14 * s);
+                ctx.lineTo(14 * s, 12 * s);
+                ctx.lineTo(-14 * s, 12 * s);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                line(0, -6, 0, 5, '#fff4b4');
+                circle(0, 10, 1.8, '#fff4b4', '#fff4b4');
+                break;
+            case 'lantern':
+                rect(-7, -10, 14, 20, '#5a2516', '#ffc36b');
+                circle(0, 0, 6, 'rgba(255, 190, 76, 0.7)', '#ffe0a0');
+                line(0, -15, 0, -10, '#bffcff');
+                break;
+            case 'bank':
+                rect(-12, -11, 24, 24, '#142338', '#77eaff');
+                circle(0, 0, 8, '#283f5e', '#ffe36f');
+                line(-5, 0, 5, 0, '#ffe36f');
+                break;
+            case 'guild':
+                line(-10, 10, 10, -12, '#d9faff');
+                line(10, 10, -10, -12, '#d9faff');
+                circle(0, 0, 6, '#26385a', '#ffe36f');
+                break;
+            case 'post_box':
+                rect(-10, -16, 20, 30, '#1b2940', '#ff6b8b');
+                rect(-7, -9, 14, 4, '#0a111d', '#ffdce4');
+                circle(0, 7, 3, '#5be7ff', '#e0ffff');
+                break;
+            case 'sacred_relic':
+                ctx.fillStyle = '#173342';
+                ctx.strokeStyle = '#ffe36f';
+                ctx.beginPath();
+                ctx.moveTo(0, -17 * s);
+                ctx.lineTo(10 * s, -3 * s);
+                ctx.lineTo(5 * s, 15 * s);
+                ctx.lineTo(-5 * s, 15 * s);
+                ctx.lineTo(-10 * s, -3 * s);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                circle(0, -1, 5, '#9ffcff', '#f2ffff');
+                break;
+            case 'save_point':
+            default:
+                circle(0, 0, 13, 'rgba(28, 232, 255, 0.2)', '#4ef7ff');
+                ctx.strokeStyle = '#dffcff';
+                ctx.beginPath();
+                ctx.moveTo(0, -13 * s);
+                ctx.lineTo(5 * s, -4 * s);
+                ctx.lineTo(13 * s, 0);
+                ctx.lineTo(5 * s, 4 * s);
+                ctx.lineTo(0, 13 * s);
+                ctx.lineTo(-5 * s, 4 * s);
+                ctx.lineTo(-13 * s, 0);
+                ctx.lineTo(-5 * s, -4 * s);
+                ctx.closePath();
+                ctx.stroke();
+                circle(0, 0, 3, '#dffcff', '#dffcff');
+                break;
+        }
+        ctx.restore();
+    }
+
+    drawNPCVisualFallback(ctx, npc, position) {
+        const name = npc && npc.name ? npc.name : '';
+        if (name.includes('郵便')) {
+            this.drawMapSymbol(ctx, 'post_box', position.x, position.y - 20, 36);
+            return;
+        }
+        if (name.includes('御神体')) {
+            this.drawMapSymbol(ctx, 'sacred_relic', position.x, position.y - 22, 42);
+            return;
+        }
+        if (npc && (npc.boss || npc.hostile)) {
+            this.drawMapSymbol(ctx, 'warning', position.x, position.y - 24, npc.boss ? 46 : 36);
+            return;
+        }
+
+        ctx.save();
+        ctx.translate(Math.round(position.x), Math.round(position.y));
+        ctx.fillStyle = '#111824';
+        ctx.strokeStyle = '#8af8ff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, -35, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#1b3348';
+        ctx.strokeStyle = '#59dfff';
+        ctx.fillRect(-11, -26, 22, 25);
+        ctx.strokeRect(-11, -26, 22, 25);
+        ctx.fillStyle = '#0b1018';
+        ctx.fillRect(-8, 0, 7, 14);
+        ctx.fillRect(1, 0, 7, 14);
+        ctx.restore();
+    }
+
+    drawSavePoint(ctx, savePoint) {
+        if (!savePoint) return;
+        const position = this.worldToScreenPoint(savePoint.x, savePoint.y);
+        const spritePath = this.getSavePointSpritePath(savePoint);
+        const sprite = spritePath ? this.loadObjectImage(spritePath) : null;
+        const w = savePoint.name && savePoint.name.includes('ベンチ') ? 76 : 42;
+        const h = savePoint.name && savePoint.name.includes('ベンチ') ? 38 : 54;
+
+        ctx.save();
+        ctx.strokeStyle = 'rgba(44, 255, 246, 0.52)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(position.x, position.y - Math.round(h * 0.36), Math.max(18, Math.round(w * 0.36)), 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        if (sprite && sprite.complete && sprite.naturalWidth > 0) {
+            const smoothing = ctx.imageSmoothingEnabled;
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(sprite, Math.round(position.x - w / 2), Math.round(position.y - h), w, h);
+            ctx.imageSmoothingEnabled = smoothing;
+        } else {
+            const kind = savePoint.name && savePoint.name.includes('ベンチ') ? 'house' : 'save_point';
+            this.drawMapSymbol(ctx, kind, position.x, position.y - 22, kind === 'house' ? 30 : 38);
+        }
+    }
     
     // 現在のマップを描画
     drawCurrentMap(ctx, canvas) {
@@ -3197,10 +3480,7 @@ class MapSystem {
             // タイプに応じた装飾
             if (building.type === 'building' || building.type === 'office') {
                 // 都市の建物（ビル風）
-                ctx.font = '32px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('🏢', building.x + building.width/2, building.y + building.height/2);
+                this.drawMapSymbol(ctx, building.type, building.x + building.width/2, building.y + building.height/2, 34);
 
                 // 窓の表現
                 ctx.fillStyle = 'rgba(255, 255, 200, 0.3)';
@@ -3214,64 +3494,42 @@ class MapSystem {
                     }
                 }
             } else if (building.type === 'tree') {
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('🌳', building.x + building.width/2, building.y + building.height/2);
+                this.drawMapSymbol(ctx, 'tree', building.x + building.width/2, building.y + building.height/2, 30);
             } else if (building.type === 'torii') {
-                ctx.font = '48px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('⛩️', building.x + building.width/2, building.y + building.height/2);
+                this.drawMapSymbol(ctx, 'torii', building.x + building.width/2, building.y + building.height/2, 48);
             } else if (building.type === 'stall') {
-                ctx.font = '20px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('🏪', building.x + building.width/2, building.y + building.height/2);
+                this.drawMapSymbol(ctx, 'stall', building.x + building.width/2, building.y + building.height/2, 30);
             } else if (building.type === 'pillar') {
-                ctx.font = '16px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('🏛️', building.x + building.width/2, building.y + building.height/2);
+                this.drawMapSymbol(ctx, 'pillar', building.x + building.width/2, building.y + building.height/2, 30);
             } else if (building.type === 'treasure') {
-                ctx.font = '20px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('📦', building.x + building.width/2, building.y + building.height/2);
+                this.drawMapSymbol(ctx, 'treasure', building.x + building.width/2, building.y + building.height/2, 30);
             } else if (building.type === 'weapon_shop') {
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('🗡️', building.x + building.width/2, building.y + building.height/2);
+                this.drawMapSymbol(ctx, 'weapon_shop', building.x + building.width/2, building.y + building.height/2, 32);
                 ctx.font = '10px Courier New';
                 ctx.fillStyle = '#ffffff';
                 ctx.fillText('武器店', building.x + building.width/2, building.y + building.height/2 + 15);
             } else if (building.type === 'armor_shop') {
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('🛡️', building.x + building.width/2, building.y + building.height/2);
+                this.drawMapSymbol(ctx, 'armor_shop', building.x + building.width/2, building.y + building.height/2, 32);
                 ctx.font = '10px Courier New';
                 ctx.fillStyle = '#ffffff';
                 ctx.fillText('防具店', building.x + building.width/2, building.y + building.height/2 + 15);
             } else if (building.type === 'item_shop') {
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('🧪', building.x + building.width/2, building.y + building.height/2);
+                this.drawMapSymbol(ctx, 'item_shop', building.x + building.width/2, building.y + building.height/2, 32);
                 ctx.font = '10px Courier New';
                 ctx.fillStyle = '#ffffff';
                 ctx.fillText('道具店', building.x + building.width/2, building.y + building.height/2 + 15);
             } else if (building.type === 'magic_shop') {
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('🔮', building.x + building.width/2, building.y + building.height/2);
+                this.drawMapSymbol(ctx, 'magic_shop', building.x + building.width/2, building.y + building.height/2, 32);
                 ctx.font = '10px Courier New';
                 ctx.fillStyle = '#ffffff';
                 ctx.fillText('魔法店', building.x + building.width/2, building.y + building.height/2 + 15);
             } else if (building.type === 'inn') {
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('🏠', building.x + building.width/2, building.y + building.height/2);
+                this.drawMapSymbol(ctx, 'inn', building.x + building.width/2, building.y + building.height/2, 32);
                 ctx.font = '10px Courier New';
                 ctx.fillStyle = '#ffffff';
                 ctx.fillText('宿屋', building.x + building.width/2, building.y + building.height/2 + 15);
             } else if (building.type === 'house') {
-                ctx.font = '20px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('🏘️', building.x + building.width/2, building.y + building.height/2);
+                this.drawMapSymbol(ctx, 'house', building.x + building.width/2, building.y + building.height/2, 30);
             } else if (building.type === 'wall') {
                 // 壁の表現（レンガ模様）
                 ctx.fillStyle = 'rgba(100, 100, 100, 0.3)';
@@ -3285,15 +3543,10 @@ class MapSystem {
                 }
             } else if (building.type === 'pond') {
                 // 池の表現
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('💧', building.x + building.width/2, building.y + building.height/2);
+                this.drawMapSymbol(ctx, 'pond', building.x + building.width/2, building.y + building.height/2, 34);
             } else if (building.type === 'elevator') {
                 // エレベーターの表現
-                ctx.font = '32px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('🚪', building.x + building.width/2, building.y + building.height/2);
+                this.drawMapSymbol(ctx, 'elevator', building.x + building.width/2, building.y + building.height/2, 36);
 
                 // エレベーターボタン
                 ctx.fillStyle = '#ff6666';
@@ -3312,35 +3565,22 @@ class MapSystem {
                 // ボスエリアの表現（赤く警告的に）
                 ctx.fillStyle = 'rgba(200, 50, 50, 0.3)';
                 ctx.fillRect(building.x, building.y, building.width, building.height);
-                ctx.font = '32px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('⚠️', building.x + building.width/2, building.y + building.height/2);
+                this.drawMapSymbol(ctx, 'warning', building.x + building.width/2, building.y + building.height/2, 40);
             } else if (building.type === 'shrine') {
                 // 神社の表現
-                ctx.font = '32px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('⛩️', building.x + building.width/2, building.y + building.height/2);
+                this.drawMapSymbol(ctx, 'shrine', building.x + building.width/2, building.y + building.height/2, 38);
             } else if (building.type === 'lantern') {
                 // 灯篭の表現
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('🏮', building.x + building.width/2, building.y + building.height/2);
+                this.drawMapSymbol(ctx, 'lantern', building.x + building.width/2, building.y + building.height/2, 32);
             } else if (building.type === 'bank') {
                 // 銀行の表現
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('💰', building.x + building.width/2, building.y + building.height/2);
+                this.drawMapSymbol(ctx, 'bank', building.x + building.width/2, building.y + building.height/2, 32);
                 ctx.font = '10px Courier New';
                 ctx.fillStyle = '#ffffff';
                 ctx.fillText('銀行', building.x + building.width/2, building.y + building.height/2 + 15);
             } else if (building.type === 'guild') {
                 // ギルドの表現
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('⚔️', building.x + building.width/2, building.y + building.height/2);
+                this.drawMapSymbol(ctx, 'guild', building.x + building.width/2, building.y + building.height/2, 32);
                 ctx.font = '10px Courier New';
                 ctx.fillStyle = '#ffffff';
                 ctx.fillText('ギルド', building.x + building.width/2, building.y + building.height/2 + 15);
@@ -3349,17 +3589,7 @@ class MapSystem {
         
         // セーブポイント
         if (map.savePoint) {
-            const savePoint = this.worldToScreenPoint(map.savePoint.x, map.savePoint.y);
-            ctx.font = '32px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(map.savePoint.emoji, savePoint.x, savePoint.y);
-            
-            // 光るエフェクト
-            ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(savePoint.x, savePoint.y - 10, 20, 0, Math.PI * 2);
-            ctx.stroke();
+            this.drawSavePoint(ctx, map.savePoint);
         }
     }
     
@@ -3486,8 +3716,8 @@ class MapSystem {
         const position = this.worldToScreenPoint(npc.x, npc.y);
 
         // 影（NPCも濃く・大きく）
-        const shadowRadiusX = npc.hostile ? 19 : 16;
-        const shadowRadiusY = npc.hostile ? 7 : 6;
+        const shadowRadiusX = npc.boss ? 28 : (npc.hostile ? 19 : 16);
+        const shadowRadiusY = npc.boss ? 9 : (npc.hostile ? 7 : 6);
         ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
         ctx.beginPath();
         ctx.ellipse(position.x, position.y + 4, shadowRadiusX, shadowRadiusY, 0, 0, Math.PI * 2);
@@ -3511,13 +3741,11 @@ class MapSystem {
                 ctx.restore();
                 ctx.imageSmoothingEnabled = ps;
             } else {
-                const size = npc.hostile ? 50 : 44;
+                const size = npc.boss ? 72 : (npc.hostile ? 50 : 44);
                 ctx.drawImage(sprite, position.x - size / 2, position.y - size, size, size * 1.25);
             }
         } else {
-            ctx.font = '32px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(npc.emoji, position.x, position.y);
+            this.drawNPCVisualFallback(ctx, npc, position);
         }
 
         // クエストマーカー表示（ストーリーNPC用）
