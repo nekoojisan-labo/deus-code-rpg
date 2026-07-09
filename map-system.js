@@ -9,7 +9,7 @@ class MapSystem {
         this.mapImages = {};
         this.spriteImages = {};
         this.objectImages = {};
-        this.assetVersion = '20260706-map-assets';
+        this.assetVersion = '20260710-field-motion';
         this.baseWidth = 800;
         this.baseHeight = 450;
         this.camera = { x: 0, y: 0 };
@@ -66,6 +66,16 @@ class MapSystem {
             '郵便ポスト': 'assets/objects/post_box.png'
         };
         this.walkSprite = { frameWidth:72, frameHeight:92, frames:4, fps:7, frameSequence:[0,1,2,3], idleFrame:0, rows:{down:0,left:1,right:2,up:3} };
+        this.npcMotion = {
+            citizenSpeed: 48,
+            hostileSpeed: 64,
+            maxDeltaMs: 50,
+            defaultRoamRadius: 30,
+            defaultWait: [650, 1700],
+            bodySize: 22,
+            separation: 28,
+            playerSeparation: 30
+        };
         this.tileSize = 32;
         this.mapWidth = 25;
         this.mapHeight = 19;
@@ -76,6 +86,7 @@ class MapSystem {
         this.applyShopImageMapOverrides();
         this.removeLegacyMapDuplicates();
         this.applyObjectLayerDefinitions();
+        this.initializeNPCMotionControllers();
         this.preloadMapImages();
         this.preloadSpriteImages();
         this.preloadObjectImages();
@@ -92,7 +103,8 @@ class MapSystem {
         this.transitioning = false;
         this.transitionCooldownMs = 700;
         this.transitionCooldownUntil = 0;
-        this.lastNpcUpdate = performance.now();
+        this._lastNpcUpdate = 0;
+        this._npcClock = 0;
     }
     
     initializeMaps() {
@@ -2606,7 +2618,11 @@ class MapSystem {
                 npc.originX = layout.x;
                 npc.originY = layout.y;
                 npc.facing = 'down';
-                npc.static = true;
+                if (this.isShopStaffNPC(npc)) {
+                    npc.static = true;
+                } else if (/^冒険者/.test(npc.name || '')) {
+                    npc.static = false;
+                }
             });
 
             this.constrainMapNPCsToWalkable(map);
@@ -2710,19 +2726,23 @@ class MapSystem {
         let spawn;
         const FACE = { north: 'up', south: 'down', west: 'left', east: 'right' };
 
-        // ★完全手動方式: エディタ(map-nav-editor-v3)で確定した spawnX/spawnY を最優先（全マップ共通）。
-        //   位置=spawnXY×scale を歩行可へスナップ。向き=spawnFace（無ければ進入方向 exit.direction）。
-        //   全遷移の spawnXY は「来た扉の前」自動値(旧returnDoorSpawn相当)で種焼き込み済みのため、
-        //   この切替後も既定の挙動は不変。以後はエディタで動かした分だけが反映される。
+        // エディタで確定した spawnX/spawnY が正本。通常遷移でも必ず最優先する。
+        // 自動扉アンカーは座標未設定時だけのフォールバックに限定する。
         if (Number.isFinite(exit.spawnX) && Number.isFinite(exit.spawnY)) {
             const safe = this.findSafeSpawnPoint(map, Math.round(exit.spawnX * scale), Math.round(exit.spawnY * scale), 24);
             const facing = exit.spawnFace || FACE[exit.direction] || null;
+            this._pendingSpawnFrom = null;
+            this._pendingSpawnTo = null;
             return facing ? { x: safe.x, y: safe.y, facing } : safe;
         }
 
         // spawnXY 未設定のフォールバック: 来た扉の前へ自動アンカー → 進入方向 → 中央。
         const anchored = this.returnDoorSpawn(map, scale);
-        if (anchored) return anchored;
+        if (anchored) {
+            this._pendingSpawnFrom = null;
+            this._pendingSpawnTo = null;
+            return anchored;
+        }
 
         const width = (canvas ? canvas.width : this.baseWidth) * scale;
         const height = (canvas ? canvas.height : this.baseHeight) * scale;
@@ -2735,6 +2755,8 @@ class MapSystem {
 
         // 片道出口等のフォールバックでも出発方向から内向き facing を与える。
         const sp = this.findSafeSpawnPoint(map, spawn.x, spawn.y, 24);
+        this._pendingSpawnFrom = null;
+        this._pendingSpawnTo = null;
         return FACE[exit.direction] ? { x: sp.x, y: sp.y, facing: FACE[exit.direction] } : sp;
     }
 
@@ -2871,6 +2893,49 @@ class MapSystem {
         return pool[h % pool.length];
     }
 
+    isCharacterWalkSpritePath(path) {
+        return typeof path === 'string' &&
+            /assets\/characters\/sprites\/[^/]+_walk\.(?:png|webp)(?:\?|$)/.test(path);
+    }
+
+    shouldAutoRoamNPC(npc) {
+        if (!npc || npc.static || npc.hostile || npc.boss || npc.questFlag || npc.shop) return false;
+        if (['アカリ', 'リク', 'ヤミ', '老神主'].includes(npc.name || '')) return false;
+        return this.isCharacterWalkSpritePath(this.getNPCSpritePath(npc));
+    }
+
+    getNPCMotionSpec(npc) {
+        if (npc && npc.move && npc.move.type && npc.move.type !== 'static') return npc.move;
+        if (!this.shouldAutoRoamNPC(npc)) return null;
+        return {
+            type: 'roam',
+            radius: this.npcMotion.defaultRoamRadius,
+            wait: [...this.npcMotion.defaultWait]
+        };
+    }
+
+    initializeNPCMotionControllers() {
+        Object.values(this.maps).forEach(map => {
+            if (!map || !Array.isArray(map.npcs)) return;
+            const scale = map.worldScale || 1;
+            map.npcs.forEach(npc => {
+                if (!npc || !Number.isFinite(npc.x) || !Number.isFinite(npc.y)) return;
+                npc.facing = npc.facing || 'down';
+                npc.animTime = Number.isFinite(npc.animTime) ? npc.animTime : 0;
+                npc.isMoving = false;
+                npc.originX = Number.isFinite(npc.originX) ? npc.originX : npc.x;
+                npc.originY = Number.isFinite(npc.originY) ? npc.originY : npc.y;
+
+                const motion = this.getNPCMotionSpec(npc);
+                npc._motionSource = npc.move && motion ? 'explicit' : (motion ? 'ambient' : 'static');
+                npc._patrol = motion
+                    ? this.buildPatrolController(npc, scale, npc.x, npc.y, motion)
+                    : null;
+            });
+            this.constrainMapNPCsToWalkable(map);
+        });
+    }
+
     getSavePointSpritePath(savePoint) {
         if (!savePoint) return null;
         if (savePoint.image) return savePoint.image;
@@ -2944,16 +3009,10 @@ class MapSystem {
         return { sx: col * ws.frameWidth, sy: row * ws.frameHeight, sw: ws.frameWidth, sh: ws.frameHeight };
     }
 
-    computeWalkJuice(isMoving, animTimeMs) {
-        // フレーム差が弱いNPC素材でも「接地して歩く」よう、足元を固定して体の揺れだけ足す。
-        const cyc = (animTimeMs / 1000) * Math.PI * 2 * 2.4;
-        const s = isMoving ? Math.sin(cyc) : 0;
-        const contact = isMoving ? (1 - Math.abs(s)) : 0;
-        const sx = isMoving ? (1 + contact * 0.075) : 1;
-        const sy = isMoving ? (1 - contact * 0.045) : 1;
-        const sway = isMoving ? s * 1.6 : 0;
-        const lean = isMoving ? s * 0.018 : 0;
-        return { sx, sy, sway, lean };
+    computeWalkJuice() {
+        // 歩行シートには4枚の実動作があるため、描画側で伸縮・傾斜を重ねない。
+        // 足元を固定したフルフレーム再生に統一し、浮遊やゴム状の変形を防ぐ。
+        return { sx: 1, sy: 1, sway: 0, lean: 0 };
     }
 
     updateFacingFromDelta(npc, dx, dy) {
@@ -2977,8 +3036,8 @@ class MapSystem {
 
     // 宣言データ move:{type,...}（BASE座標）→ ランタイム徘徊コントローラ。
     // move 無し/static/不正 は null（=静止）。pingpong終点・patrol各点・roam半径を ×scale。
-    buildPatrolController(npc, scale, sx, sy) {
-        const mv = npc.move;
+    buildPatrolController(npc, scale, sx, sy, moveSpec = null) {
+        const mv = moveSpec || npc.move;
         if (npc.static || !mv || !mv.type || mv.type === 'static') return null;
         const sp = p => ({ x: Math.round(p.x * scale), y: Math.round(p.y * scale) });
         if (mv.type === 'pingpong' && mv.to) {
@@ -3021,15 +3080,32 @@ class MapSystem {
     }
 
     // origin中心・半径内の歩行可能点を棄却サンプリングで1点。遠方ドリフトを構造的に防ぐ。
-    pickRoamTarget(map, ox, oy, radius) {
-        for (let i = 0; i < 12; i++) {
+    pickRoamTarget(map, ox, oy, radius, npc = null) {
+        for (let i = 0; i < 24; i++) {
             const ang = Math.random() * Math.PI * 2;
             const r = radius * (0.35 + Math.random() * 0.65);
             const x = Math.round(ox + Math.cos(ang) * r);
             const y = Math.round(oy + Math.sin(ang) * r);
-            if (this.isMapPositionWalkable(map, x, y, 22)) return { x, y };
+            if (this.isNPCMovementPositionAvailable(map, npc, x, y)) return { x, y };
         }
         return { x: ox, y: oy };
+    }
+
+    isNPCMovementPositionAvailable(map, npc, x, y) {
+        const cfg = this.npcMotion;
+        if (!this.isMapPositionWalkable(map, x, y, cfg.bodySize)) return false;
+        if (this.isPointInsideExit(map, x, y, true)) return false;
+
+        const player = (typeof window !== 'undefined') ? window.player : null;
+        if (player && Number.isFinite(player.x) && Number.isFinite(player.y) &&
+            Math.hypot(x - player.x, y - player.y) < cfg.playerSeparation) {
+            return false;
+        }
+
+        return !(map.npcs || []).some(other => {
+            if (!other || other === npc || !Number.isFinite(other.x) || !Number.isFinite(other.y)) return false;
+            return Math.hypot(x - other.x, y - other.y) < cfg.separation;
+        });
     }
 
     // 目標へ固定速度(px/frame)で1歩。歩けた時だけ npc.x/y を更新。
@@ -3038,12 +3114,12 @@ class MapSystem {
         const dx = target.x - npc.x, dy = target.y - npc.y;
         const dist = Math.hypot(dx, dy);
         if (dist <= Math.max(speed, 1.0)) {
-            if (this.isMapPositionWalkable(map, target.x, target.y, 22)) { npc.x = target.x; npc.y = target.y; }
+            if (this.isNPCMovementPositionAvailable(map, npc, target.x, target.y)) { npc.x = target.x; npc.y = target.y; }
             return { arrived: true, moved: false, blocked: false, vx: dx, vy: dy };
         }
         const nx = npc.x + (dx / dist) * speed;
         const ny = npc.y + (dy / dist) * speed;
-        if (this.isMapPositionWalkable(map, nx, ny, 22)) {
+        if (this.isNPCMovementPositionAvailable(map, npc, nx, ny)) {
             npc.x = nx; npc.y = ny;
             return { arrived: false, moved: true, blocked: false, vx: dx, vy: dy };
         }
@@ -3059,14 +3135,14 @@ class MapSystem {
             return;
         }
         if (pat.type === 'roam' && pat.mode === 'pick') {
-            pat.target = this.pickRoamTarget(map, npc.originX, npc.originY, pat.radius);
+            pat.target = this.pickRoamTarget(map, npc.originX, npc.originY, pat.radius, npc);
             pat.mode = 'walk';
         }
         const tgt = this.currentPatrolTarget(npc, pat);
         const res = this.stepTowards(npc, tgt, speed, map);
         if (res.moved) {
             npc.isMoving = true;
-            npc.animTime = (npc.animTime || 0) + 16; // フレーム固定（player/approachと一致・tab復帰時のテレポート防止）
+            npc.animTime = (npc.animTime || 0) + dt;
             this.updateFacingFromDelta(npc, res.vx, res.vy);
         } else {
             npc.isMoving = false;
@@ -3831,7 +3907,8 @@ class MapSystem {
 
     updateNPCs() {
         const now = performance.now();
-        const dt = this._lastNpcUpdate ? (now - this._lastNpcUpdate) : 16;
+        const measuredDt = this._lastNpcUpdate ? (now - this._lastNpcUpdate) : 16;
+        const dt = Math.max(1, Math.min(this.npcMotion.maxDeltaMs, measuredDt));
         this._lastNpcUpdate = now;
         this._npcClock = now;
         const map = this.maps[this.currentMap];
@@ -3851,21 +3928,21 @@ class MapSystem {
             return;
         }
 
-        const CITIZEN_SPEED = 1.2, HOSTILE_SPEED = 1.6; // px/frame（プレイヤー3より遅い徘徊速度・閾値0.2は余裕で超える）
         map.npcs.forEach(npc => {
+            const pat = npc._patrol;
+            if (!pat || npc.static) { npc.isMoving = false; return; }
+
             // 安全網: 何らかの理由で可動域外にいるNPCを最近傍の可動域へ戻し原点を再設定
-            if (!this.isMapPositionWalkable(map, npc.x, npc.y, 22)) {
-                const corrected = this.findNearestWalkablePoint(map, npc.x, npc.y, 22);
+            if (!this.isMapPositionWalkable(map, npc.x, npc.y, this.npcMotion.bodySize)) {
+                const corrected = this.findNearestWalkablePoint(map, npc.x, npc.y, this.npcMotion.bodySize);
                 npc.x = corrected.x;
                 npc.y = corrected.y;
                 npc.originX = corrected.x;
                 npc.originY = corrected.y;
             }
 
-            const pat = npc._patrol;
-            if (!pat || npc.static) { npc.isMoving = false; return; } // move 無し=静止
-
-            const speed = npc.hostile ? HOSTILE_SPEED : CITIZEN_SPEED;
+            const pixelsPerSecond = npc.hostile ? this.npcMotion.hostileSpeed : this.npcMotion.citizenSpeed;
+            const speed = pixelsPerSecond * dt / 1000;
             this.tickPatrol(npc, pat, map, speed, dt);
         });
     }
@@ -3875,6 +3952,7 @@ class MapSystem {
         if (!this.isObjectLayerMap(map) && (!map.walkableRects || map.walkableRects.length === 0)) return;
 
         map.npcs.forEach(npc => {
+            if (npc.static && this.isShopStaffNPC(npc)) return;
             if (this.isMapPositionWalkable(map, npc.x, npc.y, 22)) {
                 npc.originX = npc.originX ?? npc.x;
                 npc.originY = npc.originY ?? npc.y;
@@ -4232,7 +4310,8 @@ class MapSystem {
 
             // ★中心1点ではなくプレイヤーの体(箱)が出口箱に重なったら発火＝少し広く、脇をすり抜けない。
             //   ドアは上の requireFacing/autoEnter ゲートで誤発火を防止。
-            const HALF = 12, M = 0;
+            const HALF = 12;
+            const M = Math.max(8, Math.round(8 * this.getMapScale(this.currentMap)));
             const inTrig = (playerX + HALF + M >= exit.x && playerX - HALF - M <= exit.x + exit.width &&
                 playerY + HALF + M >= exit.y && playerY - HALF - M <= exit.y + exit.height);
 
@@ -4327,6 +4406,8 @@ class MapSystem {
         // currentMap は下の setTimeout 内で書き換わり、getSpawnPoint 実行時には
         // 既に遷移先になっている為、ここで控える）
         this.previousMap = this.currentMap;
+        this._pendingSpawnFrom = this.previousMap;
+        this._pendingSpawnTo = mapId;
         // ★逆戻り防止: 到着先の「戻り出口」は、プレイヤーが一度そのトリガーから出るまで武装解除。
         this._backExitArmed = false;
 
@@ -4779,52 +4860,70 @@ class ShopSystem {
 
     getShopItemCategory(details) {
         if (!details) return { label: '不明', shortLabel: '不明', order: 999, slotOrder: 99 };
-        if (details.isMagic) return { label: '神威 / 魔法', shortLabel: '魔法', order: 900, slotOrder: 0 };
-        if (details.isItem) return { label: 'アイテム', shortLabel: '道具', order: 800, slotOrder: 0 };
+        if (details.isMagic) return { label: '魔法', shortLabel: '魔法', order: 800, slotOrder: 0 };
+        if (details.isItem) return { label: '道具', shortLabel: '道具', order: 700, slotOrder: 0 };
         if (!details.isEquipment) return { label: 'その他', shortLabel: 'その他', order: 950, slotOrder: 0 };
 
         const slot = details.slot || details.type || 'equipment';
-        const slotLabels = { weapon: '武器', head: '頭防具', body: '体防具', hands: '腕防具', accessory: '装飾品' };
-        const slotShort = { weapon: '武器', head: '頭', body: '体', hands: '腕', accessory: '装飾' };
-        const slotOrder = { weapon: 10, head: 20, body: 30, hands: 40, accessory: 50 }[slot] || 90;
-        const roles = Array.isArray(details.allowedRoles) ? details.allowedRoles : [];
-        const has = (role) => roles.includes(role);
-        let roleLabel = '全員向け';
-        let roleOrder = 10;
-
-        if (has('tank') && has('all-rounder') && !has('healer') && !has('mage')) {
-            roleLabel = 'カイト/リク向け';
-            roleOrder = 20;
-        } else if (has('healer') && !has('mage') && !has('tank')) {
-            roleLabel = 'アカリ向け';
-            roleOrder = 30;
-        } else if (has('mage') && !has('healer') && !has('tank')) {
-            roleLabel = 'ヤミ向け';
-            roleOrder = 40;
-        } else if (has('healer') && has('mage') && !has('tank')) {
-            roleLabel = 'アカリ/ヤミ向け';
-            roleOrder = 35;
-        } else if (roles.length && !roles.every((role) => ['all-rounder', 'tank', 'healer', 'mage'].includes(role))) {
-            roleLabel = `装備可能: ${this.getShopRoleNames(details).join('/')}`;
-            roleOrder = 60;
+        if (slot === 'weapon') {
+            const roles = Array.isArray(details.allowedRoles) ? details.allowedRoles : [];
+            const id = String(details.id || '');
+            const name = String(details.name || '');
+            const isRod = /rod|ロッド/.test(id) || /ロッド/.test(name) || (roles.includes('healer') && !roles.includes('mage') && !roles.includes('tank'));
+            const isStaff = /staff|杖/.test(id) || /杖/.test(name) || (roles.includes('mage') && !roles.includes('healer') && !roles.includes('tank'));
+            if (isRod) return { label: 'ロッド', shortLabel: 'ロッド', order: 120, slotOrder: 12, slotLabel: '武器' };
+            if (isStaff) return { label: '杖', shortLabel: '杖', order: 110, slotOrder: 11, slotLabel: '武器' };
+            return { label: '剣', shortLabel: '剣', order: 100, slotOrder: 10, slotLabel: '武器' };
         }
 
+        const slotLabels = { head: '頭防具', body: '体防具', hands: '腕防具', accessory: 'アクセサリ' };
+        const slotShort = { head: '頭防具', body: '体防具', hands: '腕防具', accessory: 'アクセサリ' };
+        const slotOrder = { head: 200, body: 210, hands: 220, accessory: 230 }[slot] || 600;
         const slotLabel = slotLabels[slot] || '装備';
-        const shortSlot = slotShort[slot] || '装備';
+        const shortSlot = slotShort[slot] || slotLabel;
         return {
-            label: `${roleLabel} ・ ${slotLabel}`,
-            shortLabel: `${roleLabel} / ${shortSlot}`,
-            roleLabel,
+            label: slotLabel,
+            shortLabel: shortSlot,
             slotLabel,
-            order: roleOrder * 100 + slotOrder,
+            order: slotOrder,
             slotOrder
         };
     }
 
-    getDisplayShopItems(shopType) {
+    getShopCategoryGroups(shopType) {
         const list = this.shopData[shopType];
         if (!Array.isArray(list)) return [];
-        return list.map((raw, shopIndex) => {
+        const groups = new Map();
+        this.getDisplayShopItems(shopType).forEach((entry) => {
+            const category = entry.category || this.getShopItemCategory(entry.details);
+            const key = `cat:${category.order || 999}:${category.label || 'その他'}`;
+            const details = entry.details || {};
+            if (!groups.has(key)) {
+                groups.set(key, {
+                    key,
+                    label: category.label || 'その他',
+                    shortLabel: category.shortLabel || category.label || 'その他',
+                    order: category.order || 999,
+                    count: 0,
+                    minPrice: Number.POSITIVE_INFINITY,
+                    examples: []
+                });
+            }
+            const group = groups.get(key);
+            group.count++;
+            if (Number.isFinite(details.price)) group.minPrice = Math.min(group.minPrice, details.price);
+            if (details.name && group.examples.length < 3) group.examples.push(details.name);
+        });
+        return Array.from(groups.values()).map(group => ({
+            ...group,
+            minPrice: Number.isFinite(group.minPrice) ? group.minPrice : 0
+        })).sort((a, b) => (a.order || 999) - (b.order || 999) || String(a.label).localeCompare(String(b.label), 'ja'));
+    }
+
+    getDisplayShopItems(shopType, categoryKey = null) {
+        const list = this.shopData[shopType];
+        if (!Array.isArray(list)) return [];
+        const entries = list.map((raw, shopIndex) => {
             const details = this.getItemDetails(shopType, shopIndex);
             const category = this.getShopItemCategory(details);
             return { raw, shopIndex, details, category };
@@ -4835,6 +4934,11 @@ class ShopSystem {
                 || (da.requiredLevel || 0) - (db.requiredLevel || 0)
                 || (da.price || 0) - (db.price || 0)
                 || String(da.name || '').localeCompare(String(db.name || ''), 'ja');
+        });
+        if (!categoryKey) return entries;
+        return entries.filter((entry) => {
+            const category = entry.category || this.getShopItemCategory(entry.details);
+            return `cat:${category.order || 999}:${category.label || 'その他'}` === categoryKey;
         });
     }
     

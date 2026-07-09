@@ -2423,7 +2423,7 @@ window.MAP_OBJECTS = {
     "height": 58,
     "to": "shopping_street_south",
     "direction": "east",
-    "spawnX": 131,
+    "spawnX": 137,
     "spawnY": 390,
     "spawnFace": "right"
    },
@@ -3128,8 +3128,8 @@ window.MAP_OBJECTS = {
     "height": 48,
     "to": "shrine_south_gate",
     "direction": "west",
-    "spawnX": 655,
-    "spawnY": 252,
+    "spawnX": 661,
+    "spawnY": 255,
     "spawnFace": "left"
    }
   ],
@@ -3707,8 +3707,8 @@ window.MAP_OBJECTS = {
     "height": 50,
     "to": "subway_concourse_a",
     "direction": "south",
-    "spawnX": 172,
-    "spawnY": 110,
+    "spawnX": 179,
+    "spawnY": 128,
     "spawnFace": "down"
    },
    {

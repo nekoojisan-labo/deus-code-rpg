@@ -4,17 +4,27 @@
 > Codex 生成 → assets/ に配置 → 私が enemyImageMap / map.image / objects に紐付け。
 
 ## 既存の規約（生成時に揃える）
-- **敵スプライト**: `assets/enemies/enemy_<id>.png`（+ .webp）。透過背景・単体・中央・既存の精細なデジタルペイント調（例: enemy_ark_prime.png / enemy_abyss_ruler.png）。ゲームは getOptimizedImagePath で .webp を優先ロード。配線: `battle-system.js` の `enemyImageMap`(L158)。
+- **敵スプライト**: `assets/enemies/enemy_<id>.png`（+ .webp）。透過背景・単体・中央・既存の精細なデジタルペイント調（例: enemy_ark_prime.png / enemy_abyss_ruler.png）。ゲームは `getEnemyImagePath` で .webp を優先ロード。配線: `battle-system.js` の `enemyImageMap`。未解決時も絵文字には戻さず、汎用敵画像へフォールバックする。
 - **マップ背景**: `assets/maps/<map>.png`（+ .webp / _clean_v1 変種あり）。トップダウン2.5D・歩行領域が読み取れる構図。配線: マップ定義の `image:`。
 - **障害物オブジェクト**: `assets/objects/<name>.png`（+ .webp）。透過背景・単体（例: city_bench, residential_planter, street_lamp, bank_terminal）。配線: マップの objects[] に sprite として。
-- **敵分布(画像でなくデータ)**: `battle-system.js` encounterTables(L445/502) ＋ `map-system.js` getEncounterZone(L4228)。ステージ別に table/tier/levelRange を設定。
+- **主要キャラクター**:
+  - 正本グリーンバック: `assets/characters/source/greenback/<id>_stand_green.png`
+  - 全身立ち絵: `assets/characters/<id>_stand.png`（+ .webp）
+  - バストアップ: `assets/characters/<id>_bust.png`（+ .webp）
+  - `*_bust` は **会話シーンとステータス画面で共通使用**。`*_stand` は全身立ち絵用。旧 `*_portrait_vn*` は会話/ステータスの正本にしない。
+  - 生成/変換: `tools/generate_vn_stage_portraits.py`。緑背景からキャラ本体だけを抜き、人物ピクセルは不透明を維持する。
+- **敵分布(画像でなくデータ)**: `battle-system.js` encounterTables ＋ `map-system.js` getEncounterZone。ステージ別に table/tier/levelRange を設定。
+- **検証**:
+  - `node tools/map-asset-oracle.js`: マップ上のNPC/敵/オブジェクト/セーブポイントが絵文字や未設定素材に落ちないこと。
+  - `node tools/enemy-asset-oracle.js`: 戦闘敵DB全件が実在する敵画像へ解決され、戦闘描画に絵文字フォールバックが残らないこと。
+  - `python3 tools/vn-portrait-alpha-oracle.py`: 主要キャラの立ち絵/バストアップが欠けず、不透明を維持していること。
 
 ## 必要アセット一覧（フェーズ順）
 
 ### Phase 2（前半・加入。既存マップ流用＝背景/障害物は不要、敵スプライトのみ）
 | アセット | パス | 用途 | 状態 |
 |---|---|---|---|
-| 堕神スプライト | `assets/enemies/enemy_fallen_life_god.png` | リク加入の堕神戦ボス | **Codex生成待ち**（今はemoji🌿暫定） |
+| 堕神スプライト | `assets/enemies/enemy_fallen_life_god.png` | リク加入の堕神戦ボス | 生成済み・webpあり・`enemy-asset-oracle` 通過 |
 
 #### 堕神 生成プロンプト（Codex用）
 ```

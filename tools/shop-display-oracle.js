@@ -43,19 +43,37 @@ for (const type of Object.keys(shop.shopData)) {
   chk(`${type}: 全行の詳細と分類が解決できる`, entries.every(e => e.details && e.category && e.category.label));
 }
 
+['weapons', 'armor', 'black_market'].forEach((type) => {
+  const categories = shop.getShopCategoryGroups(type);
+  chk(`${type}: 購入前カテゴリが複数に分かれる`, categories.length > 1, `${categories.length}カテゴリ`);
+  categories.forEach((cat) => {
+    const filtered = shop.getDisplayShopItems(type, cat.key);
+    chk(`${type}/${cat.shortLabel}: カテゴリ件数が一致`, filtered.length === cat.count, `${filtered.length}/${cat.count}`);
+    chk(`${type}/${cat.shortLabel}: フィルタ後も元shopIndexを保持`, filtered.every(e => Number.isInteger(e.shopIndex) && shop.shopData[type][e.shopIndex] === e.raw));
+  });
+});
+
+['items', 'magic'].forEach((type) => {
+  const categories = shop.getShopCategoryGroups(type);
+  chk(`${type}: 単一カテゴリなので余計なカテゴリ選択を出さない`, categories.length === 1, `${categories.length}カテゴリ`);
+});
+
 const steel = entryByEquipment('weapons', 'steel_saber');
 const staff = entryByEquipment('weapons', 'oak_staff');
 const rod = entryByEquipment('weapons', 'prayer_rod');
-chk('武器店: 物理武器はカイト/リク向けに分類', steel && steel.category.label.includes('カイト/リク'), steel && steel.category.label);
-chk('武器店: 杖はヤミ向けに分類', staff && /ヤミ/.test(staff.category.label), staff && staff.category.label);
-chk('武器店: ロッドはアカリ向けに分類', rod && /アカリ/.test(rod.category.label), rod && rod.category.label);
+chk('武器店: 物理武器は剣カテゴリに分類', steel && steel.category.label === '剣', steel && steel.category.label);
+chk('武器店: 杖は杖カテゴリに分類', staff && staff.category.label === '杖', staff && staff.category.label);
+chk('武器店: ロッドはロッドカテゴリに分類', rod && rod.category.label === 'ロッド', rod && rod.category.label);
 
 const armorCats = shop.getDisplayShopItems('armor').map(e => e.category.label).join(' | ');
-chk('防具店: 頭/体/腕/装飾の分類を含む', ['頭防具', '体防具', '腕防具', '装飾品'].every(k => armorCats.includes(k)), armorCats);
-chk('防具店: 術士系と物理系の分類が混在せず表示できる', armorCats.includes('カイト/リク') && armorCats.includes('アカリ/ヤミ'), armorCats);
+chk('防具店: 頭/体/腕/アクセサリの分類を含む', ['頭防具', '体防具', '腕防具', 'アクセサリ'].every(k => armorCats.includes(k)), armorCats);
+chk('装備カテゴリ: キャラ向け文言をカテゴリ名に混ぜない', !/向け|カイト|リク|アカリ|ヤミ/.test(armorCats + ' | ' + shop.getDisplayShopItems('weapons').map(e => e.category.label).join(' | ')), armorCats);
 
 const black = shop.getDisplayShopItems('black_market');
 chk('闇市: 装備/アイテム/魔法の混在分類を保持', black.some(e => e.details.isEquipment) && black.some(e => e.details.isItem) && black.some(e => e.details.isMagic));
+
+const indexSource = read('index.html');
+chk('カテゴリ一覧: 件数表示を出さない', !/cat\.count\s*\}\s*件|count\}件/.test(indexSource));
 
 const firstWeapon = shop.getDisplayShopItems('weapons')[0];
 const beforeGold = W.player.gold;

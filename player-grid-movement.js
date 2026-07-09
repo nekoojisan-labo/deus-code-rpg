@@ -34,6 +34,24 @@ class PlayerGridMovement {
         // 歩数カウント
         this.stepCount = 0;
 
+        // 旧グリッド移動を再有効化しても絵文字描画へ戻らないよう、
+        // 現行マップと同じ歩行スプライトを使う。
+        this.spriteFrameWidth = 72;
+        this.spriteFrameHeight = 92;
+        this.spriteRows = { down: 0, left: 1, right: 2, up: 3 };
+        this.spriteFrames = [0, 1, 2, 3];
+        this.spriteImage = new Image();
+        this.spriteLoaded = false;
+        this.spriteFallbackTried = false;
+        this.spriteImage.onload = () => { this.spriteLoaded = true; };
+        this.spriteImage.onerror = () => {
+            if (!this.spriteFallbackTried) {
+                this.spriteFallbackTried = true;
+                this.spriteImage.src = 'assets/characters/sprites/kaito_walk.png?v=52';
+            }
+        };
+        this.spriteImage.src = 'assets/characters/sprites/kaito_walk.webp?v=52';
+
         // エンカウントカウンター
         this.encounterCounter = 0;
         this.encounterThreshold = 10;  // 10歩ごとにエンカウント判定
@@ -231,36 +249,77 @@ class PlayerGridMovement {
     // 描画
     // ==========================================
     render(ctx) {
-        const playerSize = 28;
+        const frameWidth = this.spriteFrameWidth;
+        const frameHeight = this.spriteFrameHeight;
+        const row = this.spriteRows[this.facing] ?? this.spriteRows.down;
+        const col = this.isMoving
+            ? this.spriteFrames[Math.floor(this.moveProgress * this.spriteFrames.length) % this.spriteFrames.length]
+            : 0;
+        const sx = col * frameWidth;
+        const sy = row * frameHeight;
+        const dw = 44;
+        const dh = Math.round(dw * frameHeight / frameWidth);
+        const dx = Math.round(this.pixelX - dw / 2);
+        const dy = Math.round(this.pixelY - dh + 8);
 
-        // プレイヤースプライト（絵文字で代用）
-        ctx.font = `${playerSize}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+        ctx.save();
+        ctx.imageSmoothingEnabled = false;
 
-        // 向きに応じた絵文字（簡易版）
-        let emoji = '🧑‍💼';
-        switch (this.facing) {
-            case 'up':
-                emoji = '🧑‍💼'; // 上向き
-                break;
-            case 'down':
-                emoji = '🧑‍💼'; // 下向き
-                break;
-            case 'left':
-                emoji = '🧑‍💼'; // 左向き
-                break;
-            case 'right':
-                emoji = '🧑‍💼'; // 右向き
-                break;
+        if (this.spriteLoaded && this.spriteImage.naturalWidth > 0) {
+            ctx.drawImage(this.spriteImage, sx, sy, frameWidth, frameHeight, dx, dy, dw, dh);
+        } else if (typeof window.drawWalkChar === 'function') {
+            const palette = window.CHAR_PALETTES?.kaito_walk || window.DEFAULT_PALETTE;
+            window.drawWalkChar(ctx, this.pixelX, this.pixelY + 8, this.facing, this.isMoving, performance.now(), palette, 1.1);
+        } else {
+            this.renderVectorFallback(ctx, this.pixelX, this.pixelY + 8);
         }
 
-        ctx.fillText(emoji, this.pixelX, this.pixelY);
+        ctx.restore();
+    }
 
-        // 名前表示
-        ctx.font = '12px Arial';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText('カイト', this.pixelX, this.pixelY + playerSize / 2 + 10);
+    renderVectorFallback(ctx, x, footY) {
+        ctx.save();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.fillStyle = 'rgba(0,0,0,0.35)';
+        ctx.beginPath();
+        ctx.ellipse(x, footY + 1, 11, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = '#06111e';
+        ctx.lineWidth = 7;
+        ctx.beginPath();
+        ctx.moveTo(x - 5, footY - 18);
+        ctx.lineTo(x - 7, footY - 4);
+        ctx.moveTo(x + 5, footY - 18);
+        ctx.lineTo(x + 7, footY - 4);
+        ctx.moveTo(x - 7, footY - 27);
+        ctx.lineTo(x - 12, footY - 15);
+        ctx.moveTo(x + 7, footY - 27);
+        ctx.lineTo(x + 12, footY - 15);
+        ctx.stroke();
+
+        ctx.fillStyle = '#0f1b29';
+        ctx.strokeStyle = '#35d9ff';
+        ctx.lineWidth = 2;
+        ctx.fillRect(x - 10, footY - 38, 20, 24);
+        ctx.strokeRect(x - 10, footY - 38, 20, 24);
+
+        ctx.fillStyle = '#e6b998';
+        ctx.beginPath();
+        ctx.arc(x, footY - 48, 8, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#10131a';
+        ctx.beginPath();
+        ctx.moveTo(x - 9, footY - 50);
+        ctx.lineTo(x - 4, footY - 62);
+        ctx.lineTo(x, footY - 52);
+        ctx.lineTo(x + 5, footY - 63);
+        ctx.lineTo(x + 9, footY - 50);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
     }
 
     // ==========================================

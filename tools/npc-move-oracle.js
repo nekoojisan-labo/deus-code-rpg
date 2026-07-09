@@ -1,7 +1,7 @@
 // npc-move-oracle.js — NPC徘徊「意図駆動移動」部品を実コードで検証する計器。
 // performance.now を手動クロック化し、実際の prepareScrollableMap→updateNPCs→computeWalkFrame を走らせて
 // 「歩行中はsx列が循環する(0固定でない=脚が動く)」「静止NPCはsx=0固定」
-// 「全NPCが毎フレーム可動域内」「roamが原点半径内に有界(遠方ドリフトなし)」を観測する。
+// 「一般NPCには自動roamが付く」「全移動NPCが毎フレーム可動域内」を観測する。
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.resolve(__dirname, '..');
 const read = (f) => fs.readFileSync(path.join(root, f), 'utf8');
@@ -23,7 +23,8 @@ const sb = {
   performance: { now: () => CLOCK },
   setTimeout: noop, clearTimeout: noop, requestAnimationFrame: noop,
   localStorage: { getItem: () => null, setItem: noop, removeItem: noop },
-  Math, JSON, Object, Array, Number, String, Boolean, Map, Set, isNaN, parseInt, parseFloat,
+  Math: Object.assign(Object.create(Math), { random: (() => { let s = 12345; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 0x100000000); })() }),
+  JSON, Object, Array, Number, String, Boolean, Map, Set, isNaN, parseInt, parseFloat,
   Date: function () { return { toISOString: () => '' }; }
 };
 sb.window.location = { search: '' }; sb.globalThis = sb; vm.createContext(sb);
@@ -38,7 +39,8 @@ const testMap = {
   walkableRects: [{ x: 40, y: 40, width: 720, height: 370 }],
   buildings: [],
   npcs: [
-    { x: 400, y: 225, emoji: '🧍', name: '静止市民' }, // move 無し → 静止
+    { x: 400, y: 225, emoji: '🧍', name: '静止市民', static: true },
+    { x: 500, y: 225, emoji: '👤', name: '街の住民' }, // 実スプライトを持つ一般NPC → 自動roam
     { x: 180, y: 225, emoji: '🚶', name: '往復市民', move: { type: 'pingpong', to: { x: 600, y: 225 } } },
     { x: 400, y: 300, emoji: '👾', name: '徘徊敵', hostile: true, move: { type: 'roam', radius: 50 } },
     { x: 300, y: 150, emoji: '💂', name: '巡回衛兵', move: { type: 'patrol', points: [{ x: 300, y: 150 }, { x: 600, y: 150 }, { x: 600, y: 360 }, { x: 300, y: 360 }], wait: 200 } }
@@ -47,6 +49,7 @@ const testMap = {
 ms.maps = { test: testMap };
 ms.currentMap = 'test';
 ms.prepareScrollableMap(testMap);
+ms.initializeNPCMotionControllers();
 
 const byName = {};
 testMap.npcs.forEach(n => { byName[n.name] = n; });
@@ -56,7 +59,8 @@ let pass = true;
 const chk = (label, cond, extra) => { console.log(`${cond ? '✅' : '❌'} ${label}${extra ? '  (' + extra + ')' : ''}`); pass = pass && cond; };
 
 // 初期状態の確認
-chk('move無しNPCは _patrol=null（静止・従来挙動）', byName['静止市民']._patrol === null);
+chk('static NPCは _patrol=null（固定配置を維持）', byName['静止市民']._patrol === null);
+chk('歩行スプライトを持つ一般NPCは move 指定なしでも自動roam', byName['街の住民']._patrol && byName['街の住民']._motionSource === 'ambient');
 chk('pingpong/patrol/roam は _patrol を持つ',
   byName['往復市民']._patrol && byName['徘徊敵']._patrol && byName['巡回衛兵']._patrol);
 
@@ -67,8 +71,7 @@ let movingAnyFrame = {};
 testMap.npcs.forEach(n => { sxSeen[n.name] = new Set(); movingAnyFrame[n.name] = false; });
 let outOfDomain = 0;
 let maxRoamDist = 0;
-let movingJuiceSeen = false;
-let staticJuiceChanged = false;
+let syntheticTransformSeen = false;
 const roam = byName['徘徊敵'];
 const roamRadiusScaled = roam._patrol.radius;
 let staticEverMoved = false;
@@ -83,11 +86,10 @@ for (let f = 0; f < FRAMES; f++) {
     const fr = ms.computeWalkFrame(n.facing, n.isMoving, n.animTime || 0);
     const juice = ms.computeWalkJuice(n.isMoving, n.animTime || 0);
     if (n.isMoving) { sxSeen[n.name].add(fr.sx); movingAnyFrame[n.name] = true; }
-    if (n.isMoving && (Math.abs((juice.sx || 1) - 1) > 0.01 || Math.abs(juice.sway || 0) > 0.5 || Math.abs(juice.lean || 0) > 0.005)) movingJuiceSeen = true;
+    if (Math.abs((juice.sx || 1) - 1) > 0.001 || Math.abs((juice.sy || 1) - 1) > 0.001 || Math.abs(juice.sway || 0) > 0.001 || Math.abs(juice.lean || 0) > 0.001) syntheticTransformSeen = true;
     if (n.name === '静止市民') {
       if (n.isMoving) staticEverMoved = true;
       if (fr.sx !== 0) staticSxNonzero = true;
-      if (Math.abs((juice.sx || 1) - 1) > 0.001 || Math.abs((juice.sy || 1) - 1) > 0.001 || Math.abs(juice.sway || 0) > 0.001 || Math.abs(juice.lean || 0) > 0.001) staticJuiceChanged = true;
     }
     if (n.name === '徘徊敵') {
       const d = Math.hypot(n.x - n.originX, n.y - n.originY);
@@ -99,7 +101,7 @@ for (let f = 0; f < FRAMES; f++) {
 // --- 検証 ---
 chk('静止市民は一度も isMoving=true にならない', !staticEverMoved);
 chk('静止市民の描画フレームは常に sx=0（idle列固定）', !staticSxNonzero);
-chk('静止市民は歩行補助juiceも完全静止（揺れ/傾きなし）', !staticJuiceChanged);
+chk('一般NPCは実際に移動する', movingAnyFrame['街の住民']);
 
 const pingSx = [...sxSeen['往復市民']].filter(v => v !== 0);
 chk('往復市民: 歩行中にsx列が「複数の非ゼロ列」を取る（脚が循環・0固定でない）',
@@ -111,7 +113,7 @@ chk('巡回衛兵: 歩行中にsx列が循環する', guardSx.length >= 2, `非�
 
 const roamSx = [...sxSeen['徘徊敵']].filter(v => v !== 0);
 chk('徘徊敵: 歩行中にsx列が循環する', roamSx.length >= 2, `非ゼロ列=${[...sxSeen['徘徊敵']].sort((a, b) => a - b).join(',')}`);
-chk('歩行中NPCは接地したまま揺れ/スクワッシュ/傾きの補助juiceを持つ', movingJuiceSeen);
+chk('歩行シートを伸縮・傾斜させず足元固定で描画する', !syntheticTransformSeen);
 
 chk('不変条件: 全NPCが全フレームで可動域内（域外0件）', outOfDomain === 0, `域外=${outOfDomain}件`);
 chk('徘徊敵: 原点からの最大距離が半径+1歩以内（遠方ドリフトなし）',

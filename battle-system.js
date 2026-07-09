@@ -156,6 +156,7 @@ class BattleSystem {
         this.encounterSteps = 0;
         this.encounterThreshold = this.getRandomEncounterSteps('medium');
         this.firstEncounter = true;  // 初回エンカウントフラグ
+        this.defaultEnemyImage = 'assets/enemies/enemy_shadow_entity.png';
         this.enemyImageMap = {
             // 旧type（フォールバック用に新アートへ差し替え）
             watcher: 'assets/enemies/enemy_corrupted_drone.png',
@@ -1665,6 +1666,38 @@ class BattleSystem {
         this.updateCurrentMemberDisplay();
     }
 
+    // コマンド選択中に直前メンバーへ戻る。
+    // 選択済みコマンドはまだ実行されていないため、該当スロットを消せば安全に選び直せる。
+    returnToPreviousMemberCommand() {
+        if (!this.inBattle || this.executingTurn || this.allCommandsSelected) return false;
+        const members = this.getPartyMembers();
+        if (!members || this.currentMemberIndex <= 0) return false;
+
+        let prevIndex = Math.min(this.currentMemberIndex - 1, members.length - 1);
+        while (prevIndex >= 0 && this.partyCommands[prevIndex]?.command === 'skip') {
+            prevIndex--;
+        }
+        if (prevIndex < 0) return false;
+
+        this.partyCommands[prevIndex] = null;
+        this.currentMemberIndex = prevIndex;
+        this.allCommandsSelected = false;
+        this.kamuiPlanning = false;
+        this.kamuiPlanningMember = null;
+        this.pendingMagic = null;
+        this.availableSkills = [];
+        this.availableTargets = [];
+        this.targetMode = null;
+        this._onEnemyTargetPick = null;
+        this.commandPhase = 'command';
+        this.selectedCommand = 0;
+        this.waitingForCommand = true;
+
+        this.showCommands();
+        this.updateCurrentMemberDisplay();
+        return true;
+    }
+
     // 現在のフェーズの選択ハイライトを更新（パネル内のコマンドリスト）
     refreshCurrentPhaseSelection() {
         BattlePanel.setSelectedIndex(this.selectedCommand);
@@ -1935,11 +1968,16 @@ class BattleSystem {
                 img.src = imagePath; img.alt = enemy?.name || ''; img.decoding = 'async';
                 img.onerror = function () {
                     if (!this.dataset.fallbackTried && this.src.includes('.webp')) { this.dataset.fallbackTried = '1'; this.src = this.src.replace('.webp', '.png'); return; }
+                    if (!this.dataset.defaultFallbackTried) {
+                        this.dataset.defaultFallbackTried = '1';
+                        this.src = 'assets/enemies/enemy_shadow_entity.png';
+                        return;
+                    }
                     this.style.display = 'none';
                 };
                 sprite.appendChild(img);
             } else {
-                sprite.textContent = enemy?.emoji || '??';
+                sprite.textContent = '';
             }
             // ★撃破済みは表示自体を消す（透明化ではなくスロットごと非表示＝画面から消える）
             if ((enemy.currentHp || 0) <= 0 || enemy.defeated) { slot.style.display = 'none'; }
@@ -1984,11 +2022,16 @@ class BattleSystem {
                     this.src = this.src.replace('.webp', '.png');
                     return;
                 }
+                if (!this.dataset.defaultFallbackTried) {
+                    this.dataset.defaultFallbackTried = '1';
+                    this.src = 'assets/enemies/enemy_shadow_entity.png';
+                    return;
+                }
                 this.style.display = 'none';
             };
             enemySprite.appendChild(img);
         } else {
-            enemySprite.textContent = enemy?.emoji || '??';
+            enemySprite.textContent = '';
         }
     }
 
@@ -2007,7 +2050,7 @@ class BattleSystem {
             return path.replace(/\.png$/, '.webp');
         }
         if (path) return path;
-        return null;
+        return this.defaultEnemyImage.replace(/\.png$/, '.webp');
     }
     
     // プレイヤーの攻撃

@@ -43,7 +43,7 @@ class StoryEventSystem {
         this.vnRight = document.getElementById('vnPortraitRight');
         // 話者名 → ポートレートのキャラキー
         this.PORTRAIT_KEYS = { 'カイト': 'kaito', 'アカリ': 'akari', 'リク': 'riku', 'ヤミ': 'yami' };
-        this.vnPortraitVersion = '20260706-solid-vn-map-assets';
+        this.vnPortraitVersion = '20260706-stand-bust-close-character-assets';
         this.vnLeftKey = null;   // 左に立っているキャラキー
         this.vnRightKey = null;  // 右
 
@@ -793,8 +793,8 @@ class StoryEventSystem {
         if (!key) { imgEl.classList.remove('shown', 'speaking'); imgEl.removeAttribute('src'); return; }
         // 会話シーンは切り抜き(透過)版を使う。メニュー/戦闘カードの額装版とはファイルを分けている
         const v = encodeURIComponent(this.vnPortraitVersion || 'vn');
-        const webp = `assets/characters/${key}_portrait_vn.webp?v=${v}`;
-        imgEl.onerror = () => { imgEl.onerror = null; imgEl.src = `assets/characters/${key}_portrait_vn.png?v=${v}`; };
+        const webp = `assets/characters/${key}_bust.webp?v=${v}`;
+        imgEl.onerror = () => { imgEl.onerror = null; imgEl.src = `assets/characters/${key}_bust.png?v=${v}`; };
         imgEl.src = webp;
         imgEl.classList.add('shown');
         imgEl.classList.remove('speaking');

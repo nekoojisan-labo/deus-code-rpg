@@ -34,7 +34,7 @@ const L = sys.vnLeft, R = sys.vnRight;
 const speak = (name) => { sys.revealPortraitFor(name); sys.updateSpeaker(name); };
 // 今“喋っている”として強調されている立ち絵のキー(srcから判定)
 const speakingKey = () => {
-  const pick = (el) => el.classList.contains('speaking') ? (String(el.src).match(/([a-z]+)_portrait_vn/) || [])[1] : null;
+  const pick = (el) => el.classList.contains('speaking') ? (String(el.src).match(/([a-z]+)_bust/) || [])[1] : null;
   return pick(L) || pick(R);
 };
 
@@ -53,7 +53,7 @@ chk('アカリが話す→強調=akari（右）・カイトは非強調', speaki
 
 speak('ヤミ');
 chk('★ヤミが話す→強調=yami（右が差し替わる・アカリのまま残らない）', speakingKey() === 'yami' && sys.vnRightKey === 'yami', `speaking=${speakingKey()} / right=${sys.vnRightKey}`);
-chk('ヤミ発話時、画面に出ている話者立ち絵はヤミ本人（話者とキャラグラ一致）', String(R.src).indexOf('yami_portrait_vn') >= 0);
+chk('ヤミ発話時、画面に出ている話者立ち絵はヤミ本人（話者とキャラグラ一致）', String(R.src).indexOf('yami_bust') >= 0);
 
 speak('カイト');
 chk('再びカイトが話す→強調=kaito（左に戻る）・右は非強調', speakingKey() === 'kaito' && !R.classList.contains('speaking'));

@@ -11,7 +11,7 @@
     <title>デウス・コード 八百万の神託 - RPG Demo</title>
     <link rel="preload" as="image" href="assets/title/title-screen.webp" type="image/webp">
     <!-- build: 2026-06-09T19:40 (fixed-message-panel-layout) -->
-    <script>window.__BUILD__='2026-07-06T-vn-portrait-cutout-no-backing';</script>
+    <script>window.__BUILD__='2026-07-06T-stand-bust-close-character-assets';</script>
     <style>
         * {
             margin: 0;
@@ -196,16 +196,14 @@
         .ui-panel__dmuted { color: var(--text-sub); font-size: 12px; }
         .ui-panel__dlead { display: flex; gap: 11px; align-items: center; margin-bottom: 9px; }
         .ui-panel__dlead img { width: 60px; height: 60px; border-radius: 9px; object-fit: cover; object-position: top center; border: 1px solid var(--accent-soft); background: #0b1626; }
-        /* ★顔アイコン: 立ち絵(240x320)から顔へズームした共通クロップ。
-           object-fit:cover は拡大できず顔が下端に切れる(=すみっこ)為、背景画像でズーム指定する。 */
+        /* 会話用と同じバストアップ画像を、ステータス/対象選択でも共通利用する。 */
         .menu-face {
             display: inline-block; flex: 0 0 auto; vertical-align: middle;
             border-radius: 9px; border: 1px solid var(--accent-soft);
             background-color: #0b1626; background-repeat: no-repeat;
-            background-position: var(--face-x, 50%) var(--face-y, 48%);
-            background-size: var(--face-zoom, 130%) auto;
+            background-position: center top;
+            background-size: cover;
         }
-        .menu-face[data-char="yami"] { --face-x: 54%; --face-y: 50%; --face-zoom: 132%; }
         /* ★数量ステッパ(売却の個数など): 左ペインに ▲ 数値 ▼。 */
         .ui-panel__stepper { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 180px; }
         .ui-panel__step-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
@@ -1339,19 +1337,19 @@
         .vn-portrait {
             position: absolute;
             bottom: 0;
-            height: 78%;
-            max-height: 360px;
+            height: 88%;
+            max-height: 400px;
             opacity: 0;
             /* 非発話側も実体感を残す。暗くしすぎると背景に溶けて透けて見える。 */
-            filter: brightness(0.92) saturate(1.02) contrast(1.03) drop-shadow(0 10px 26px rgba(0, 0, 0, 0.72));
+            filter: brightness(0.96) saturate(1.03) contrast(1.03) drop-shadow(0 12px 24px rgba(0, 0, 0, 0.72));
             transition: filter .25s ease, transform .25s ease;
-            transform: translateY(10px) scale(0.95);
+            transform: translateY(4px) scale(0.98);
             will-change: filter, transform;
             -webkit-user-drag: none; user-select: none;
         }
         .vn-portrait.shown { opacity: 1; }
         .vn-portrait.speaking {
-            filter: brightness(1.08) saturate(1.08) contrast(1.05) drop-shadow(0 12px 28px rgba(0, 0, 0, 0.78));
+            filter: brightness(1.08) saturate(1.08) contrast(1.05) drop-shadow(0 14px 28px rgba(0, 0, 0, 0.8));
             transform: translateY(0) scale(1.01);
             z-index: 2;
         }
@@ -1361,8 +1359,8 @@
             filter: brightness(0.98) saturate(1.02) contrast(1.02) drop-shadow(0 10px 26px rgba(0, 0, 0, 0.72));
             transform: translateY(4px) scale(0.97);
         }
-        .vn-left  { left: -2%; }
-        .vn-right { right: -2%; }
+        .vn-left  { left: -8%; }
+        .vn-right { right: -8%; }
 
         /* RPG風メッセージボックス */
         .opening-story-panel {
@@ -3591,7 +3589,7 @@
                     </div>
                     <div class="enemy-stage">
                         <div class="enemy-shadow" aria-hidden="true"></div>
-                        <div class="enemy-sprite" id="enemySprite">🤖</div>
+                        <div class="enemy-sprite" id="enemySprite"></div>
                     </div>
                 </div>
                 <!-- パーティメンバーステータス（画面下部に横並び表示） -->
@@ -3715,13 +3713,13 @@
     <script src="map-walkability-data.js?v=22"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=34"></script>
-    <script src="map-system.js?v=105"></script>
+    <script src="map-system.js?v=106"></script>
     <script src="map-system-grid.js"></script>
     <script src="player-grid-movement.js"></script>
     <script src="bgm-system.js?v=36"></script>
     <script src="party-system.js?v=50"></script>
     <script src="quest-system.js?v=9"></script>
-    <script src="story-events.js?v=69"></script>
+    <script src="story-events.js?v=74"></script>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -4115,12 +4113,12 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         playerSprite.onerror = () => {
             if (!playerSpriteFallbackTried) {
                 playerSpriteFallbackTried = true;
-                playerSprite.src = 'assets/characters/sprites/kaito_walk.png?v=52';
+                playerSprite.src = 'assets/characters/sprites/kaito_walk.png?v=53';
                 return;
             }
             console.log('⚠️ プレイヤースプライト読み込み失敗 - 絵文字で表示');
         };
-        playerSprite.src = 'assets/characters/sprites/kaito_walk.webp?v=52';
+        playerSprite.src = 'assets/characters/sprites/kaito_walk.webp?v=53';
 
         // Input handling
         const keys = {};
@@ -5902,8 +5900,11 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             });
         }
 
-        function menuFace(m) { const id = m.characterId || m.id || 'kaito'; return `assets/characters/${id}_portrait.webp`; }
-        // ★顔アイコン共通マークアップ: 立ち絵から顔へズームクロップ(.menu-face)。サイズだけ可変。
+        function menuFace(m) {
+            const id = (m && (m.characterId || m.id)) || 'kaito';
+            return `assets/characters/${id}_bust.webp?v=20260706-stand-bust-close`;
+        }
+        // ★バストアップ共通マークアップ: 会話用とステータス用で同じ画像を使う。サイズだけ可変。
         function menuFaceHtml(m, size) {
             const s = size || 50;
             const id = (m && (m.characterId || m.id)) || 'kaito';
@@ -5926,7 +5927,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             if (!m) return '';
             const st = (l, v) => `<div><span>${l}</span><b>${v}</b></div>`;
             const md = (m.magicDefense != null) ? m.magicDefense : Math.floor((m.defense || 0) * 0.5);
-            return `<div class="ui-panel__dlead">${menuFaceHtml(m, 60)}<div>
+            return `<div class="ui-panel__dlead">${menuFaceHtml(m, 96)}<div>
                 <div class="ui-panel__dname">${UIPanel.esc(m.name || 'カイト')} <span class="ui-panel__dmuted">/ ${roleLabel(m)}</span></div>
                 <div class="ui-panel__dmuted">Lv ${m.level || 1}</div>
                 ${menuBar('HP', m.hp || 0, m.maxHp || 1, 'hp')}${menuBar('MP', m.mp || 0, m.maxMp || 1, 'mp')}
@@ -5937,7 +5938,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         //   回復スキル/アイテムの対象選びでは「誰のHP/MPか」が分かれば十分（ステータス表は出さない）。
         function targetDetailHtml(m) {
             if (!m) return '';
-            return `<div class="ui-panel__dlead">${menuFaceHtml(m, 60)}<div>
+            return `<div class="ui-panel__dlead">${menuFaceHtml(m, 72)}<div>
                 <div class="ui-panel__dname">${UIPanel.esc(m.name || 'カイト')}</div>
                 <div class="ui-panel__dmuted">Lv ${m.level || 1}${(m.hp || 0) <= 0 ? '　<span style="color:#ff6b6b;">戦闘不能</span>' : ''}</div>
                 ${menuBar('HP', m.hp || 0, m.maxHp || 1, 'hp')}${menuBar('MP', m.mp || 0, m.maxMp || 1, 'mp')}
@@ -6010,6 +6011,43 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         function shopRoleNames(shop, d) {
             return (shop && typeof shop.getShopRoleNames === 'function') ? shop.getShopRoleNames(d).join(' / ') : '';
         }
+        function shopBuyCategories(shopType) {
+            const shop = window.gameShop;
+            if (shop && typeof shop.getShopCategoryGroups === 'function') return shop.getShopCategoryGroups(shopType);
+            const entries = (shop && typeof shop.getDisplayShopItems === 'function') ? shop.getDisplayShopItems(shopType) : [];
+            const groups = new Map();
+            entries.forEach((entry) => {
+                const cat = entry.category || shopCategoryMeta(shop, entry.details);
+                const key = `cat:${cat.order || 999}:${cat.label || 'その他'}`;
+                if (!groups.has(key)) groups.set(key, { key, label: cat.label || 'その他', shortLabel: cat.shortLabel || cat.label || 'その他', count: 0, minPrice: Infinity, examples: [] });
+                const g = groups.get(key);
+                g.count++;
+                if (entry.details && Number.isFinite(entry.details.price)) g.minPrice = Math.min(g.minPrice, entry.details.price);
+                if (entry.details && entry.details.name && g.examples.length < 3) g.examples.push(entry.details.name);
+            });
+            return Array.from(groups.values()).map(g => ({ ...g, minPrice: Number.isFinite(g.minPrice) ? g.minPrice : 0 }));
+        }
+        function shopCategoryIcon(cat) {
+            const label = `${(cat && cat.label) || ''} ${(cat && cat.shortLabel) || ''}`;
+            if (/剣|武器/.test(label)) return '⚔️';
+            if (/ロッド|杖/.test(label)) return '🪄';
+            if (/頭/.test(label)) return '⛑️';
+            if (/体|防具/.test(label)) return '🛡️';
+            if (/腕/.test(label)) return '🧤';
+            if (/装飾|アクセ/.test(label)) return '💍';
+            if (/魔法|神威/.test(label)) return '🔮';
+            if (/アイテム|道具/.test(label)) return '🧪';
+            return '📦';
+        }
+        function shopBuyEntries(shopType, categoryKey) {
+            const shop = window.gameShop;
+            if (shop && typeof shop.getDisplayShopItems === 'function') return shop.getDisplayShopItems(shopType, categoryKey || null);
+            return (((shop && shop.shopData[shopType]) || []).map((raw, shopIndex) => {
+                const details = shop.getItemDetails(shopType, shopIndex);
+                const category = shopCategoryMeta(shop, details);
+                return { raw, shopIndex, details, category };
+            }));
+        }
         function closeShopMenu() {
             if (window.UIPanel && UIPanel.isOpen()) UIPanel.close();
             const ov = document.getElementById('menuOverlay'); if (ov) ov.classList.remove('active');
@@ -6017,7 +6055,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         }
         function openShopMenu(shopType, shopkeeper) {
             if (shopType === 'inn') { openInnMenu(shopkeeper); return; }
-            window._shopCtx = { shopType, shopkeeper };
+            window._shopCtx = { shopType, shopkeeper, buyCategoryKey: null };
             const items = [
                 { icon: '🛒', label: '買う', value: 'buy' },
                 { icon: '💰', label: '売る', value: 'sell' },
@@ -6031,6 +6069,35 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 onSelect: (v) => { if (v === 'buy') openShopBuy(); else if (v === 'sell') openShopSell(); else closeShopMenu(); },
                 onCancel: () => closeShopMenu(),
                 hint: '↑↓ 選択 / Z 決定 / X 出る'
+            });
+        }
+        function openShopBuyCategories(notice, selectedKey) {
+            const ctx = window._shopCtx || {};
+            const shopType = ctx.shopType;
+            const categories = shopBuyCategories(shopType);
+            if (categories.length <= 1) { openShopBuy(notice, null, categories[0] && categories[0].key); return; }
+            const items = categories.map((cat) => ({
+                icon: shopCategoryIcon(cat),
+                label: cat.label,
+                sub: '',
+                right: '',
+                value: cat.key
+            }));
+            const selectedIndex = Math.max(0, categories.findIndex(cat => cat.key === (selectedKey || ctx.buyCategoryKey)));
+            UIPanel.open({
+                host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
+                title: '🛒 買う — 種類', items, selectedIndex, columns: 1,
+                footHtml: notice ? `<span style="color:#ff6b6b;font-weight:700;">${UIPanel.esc(notice)}</span>` : shopGoldFoot(),
+                detailFor: (it) => {
+                    const cat = categories.find(c => c.key === (it && it.value)) || categories[0];
+                    if (!cat) return '';
+                    return `<div class="ui-panel__dlead" style="align-items:center;">
+                        <div style="font-size:34px;width:50px;text-align:center;">${shopCategoryIcon(cat)}</div>
+                        <div><div class="ui-panel__dname">${UIPanel.esc(cat.label)}</div></div></div>`;
+                },
+                onSelect: (key) => { ctx.buyCategoryKey = key; openShopBuy(null, null, key); },
+                onCancel: () => openShopMenu(shopType, ctx.shopkeeper),
+                hint: '↑↓ 種類 / Z 決定 / X もどる'
             });
         }
         function shopBuyDetail(shopType, idx) {
@@ -6053,12 +6120,15 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                   <div style="font-size:14px;font-weight:700;color:${afford ? 'var(--accent)' : '#ff6b6b'};margin-top:3px;">${(d.price || 0).toLocaleString()} G${afford ? '' : '　(所持金不足)'}</div></div></div>
                 <div class="ui-panel__dmuted" style="padding:6px 2px;line-height:1.7;">${UIPanel.esc(d.description || '')}</div>`;
         }
-        function openShopBuy(notice, keepIndex) {
+        function openShopBuy(notice, keepIndex, categoryKey) {
             const ctx = window._shopCtx || {}; const shopType = ctx.shopType;
             const shop = window.gameShop;
-            const entries = (shop && typeof shop.getDisplayShopItems === 'function')
-                ? shop.getDisplayShopItems(shopType)
-                : (((shop && shop.shopData[shopType]) || []).map((raw, shopIndex) => ({ raw, shopIndex, details: shop.getItemDetails(shopType, shopIndex), category: shopCategoryMeta(shop, shop.getItemDetails(shopType, shopIndex)) })));
+            const categories = shopBuyCategories(shopType);
+            const selectedCategoryKey = categoryKey || ctx.buyCategoryKey || (categories.length === 1 ? categories[0].key : null);
+            if (!selectedCategoryKey && categories.length > 1) { openShopBuyCategories(notice); return; }
+            ctx.buyCategoryKey = selectedCategoryKey;
+            const currentCategory = categories.find(cat => cat.key === selectedCategoryKey);
+            const entries = shopBuyEntries(shopType, selectedCategoryKey);
             const items = entries.map((entry) => {
                 const i = entry.shopIndex;
                 const d = entry.details || shop.getItemDetails(shopType, i);
@@ -6079,11 +6149,12 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             const selectedIndex = keepIndex == null ? 0 : Math.max(0, entries.findIndex((entry) => entry.shopIndex === keepIndex));
             UIPanel.open({
                 host: 'menuPanelHost', overlay: 'menuOverlay', frame: true,
-                title: '🛒 買う', items, selectedIndex, columns: 1,
+                title: currentCategory ? `🛒 買う — ${currentCategory.shortLabel || currentCategory.label}` : '🛒 買う',
+                items, selectedIndex, columns: 1,
                 footHtml: notice ? `<span style="color:#ff6b6b;font-weight:700;">${UIPanel.esc(notice)}</span>` : shopGoldFoot(),
                 detailFor: (it) => shopBuyDetail(shopType, it && it.value != null ? it.value : null),
-                onSelect: (i) => { let msg = ''; if (shop) { const r = shop.buyItem(shopType, i); if (r && !r.success) msg = r.message || 'ゴールドが足りません'; } openShopBuy(msg, i); },
-                onCancel: () => openShopMenu(shopType, ctx.shopkeeper),
+                onSelect: (i) => { let msg = ''; if (shop) { const r = shop.buyItem(shopType, i); if (r && !r.success) msg = r.message || 'ゴールドが足りません'; } openShopBuy(msg, i, selectedCategoryKey); },
+                onCancel: () => categories.length > 1 ? openShopBuyCategories(null, selectedCategoryKey) : openShopMenu(shopType, ctx.shopkeeper),
                 hint: '↑↓ 選択 / Z 買う / X もどる'
             });
         }
@@ -6315,8 +6386,8 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             return path;
         }
 
-        // 立ち絵のキャッシュバスター（2026-06-12: 透過破損を修復した新版を確実に読ませる）
-        const PORTRAIT_ASSET_VER = '?v=2';
+        // バストアップ共通画像のキャッシュバスター（会話/ステータス/旧メニュー互換経路）
+        const PORTRAIT_ASSET_VER = '?v=20260706-stand-bust-close';
 
         function setMenuCharacterPortrait(portrait, emoji, imagePath, fallbackEmoji) {
             if (!portrait || !emoji) return;
@@ -6396,13 +6467,8 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             const portrait = document.getElementById('menuCharacterPortrait');
             const emoji = document.getElementById('menuCharacterEmoji');
 
-            if (member === player) {
-                setMenuCharacterPortrait(portrait, emoji, 'assets/characters/kaito_portrait.png', '🧑‍💼');
-            } else {
-                // 他のキャラクターの画像パス
-                const portraitPath = `assets/characters/${member.id}_portrait.png`;
-                setMenuCharacterPortrait(portrait, emoji, portraitPath, member.sprite || '👤');
-            }
+            const id = member === player ? 'kaito' : (member.id || member.characterId || 'kaito');
+            setMenuCharacterPortrait(portrait, emoji, `assets/characters/${id}_bust.png`, member.sprite || '👤');
         }
         
         // アイテムメニュー
@@ -7222,8 +7288,10 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 } else if (phase === 'skill') {
                     // スキル選択 → コマンド選択へ戻る
                     battleSystem.cancelKamuiPlanning();
+                } else if (phase === 'command') {
+                    // 2人目以降のコマンド選択中は、直前メンバーの入力へ戻って選び直せる。
+                    battleSystem.returnToPreviousMemberCommand();
                 }
-                // phase === 'command' のときは何もしない（最初のメンバーで戻る先がない）
             }
         }
 
