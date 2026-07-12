@@ -1484,10 +1484,10 @@ window.MAP_OBJECTS = {
     "spawnFace": "right"
    },
    {
-    "x": 101,
-    "y": 350,
-    "width": 30,
-    "height": 28,
+    "x": 98,
+    "y": 330,
+    "width": 34,
+    "height": 60,
     "to": "black_market_entrance",
     "direction": "west",
     "spawnX": 725,
@@ -2003,6 +2003,11 @@ window.MAP_OBJECTS = {
     },
     "solid": false,
     "flip": true
+   },
+   {
+    "kind": "holo_sign",
+    "x": 145,
+    "y": 336
    }
   ]
  },
@@ -2924,10 +2929,10 @@ window.MAP_OBJECTS = {
    {
     "kind": "solid_wall",
     "x": 609,
-    "y": 195,
+    "y": 150,
     "footprint": {
      "w": 98,
-     "h": 195
+     "h": 150
     }
    },
    {
@@ -2986,20 +2991,20 @@ window.MAP_OBJECTS = {
    },
    {
     "kind": "solid_wall",
-    "x": 100,
+    "x": 85,
     "y": 450,
     "footprint": {
-     "w": 200,
+     "w": 170,
      "h": 192
     }
    },
    {
     "kind": "solid_wall",
-    "x": 232,
-    "y": 345,
+    "x": 200,
+    "y": 350,
     "footprint": {
-     "w": 76,
-     "h": 32
+     "w": 40,
+     "h": 45
     }
    },
    {
@@ -3040,11 +3045,11 @@ window.MAP_OBJECTS = {
    },
    {
     "kind": "solid_wall",
-    "x": 587,
+    "x": 559,
     "y": 345,
     "footprint": {
-     "w": 96,
-     "h": 42
+     "w": 42,
+     "h": 45
     }
    },
    {
@@ -3278,16 +3283,16 @@ window.MAP_OBJECTS = {
     "y": 412,
     "footprint": {
      "w": 66,
-     "h": 116
+     "h": 82
     }
    },
    {
     "kind": "solid_wall",
-    "x": 266,
+    "x": 232,
     "y": 412,
     "footprint": {
-     "w": 132,
-     "h": 126
+     "w": 65,
+     "h": 112
     }
    },
    {
@@ -3297,15 +3302,6 @@ window.MAP_OBJECTS = {
     "footprint": {
      "w": 32,
      "h": 94
-    }
-   },
-   {
-    "kind": "solid_wall",
-    "x": 252,
-    "y": 290,
-    "footprint": {
-     "w": 75,
-     "h": 24
     }
    },
    {
@@ -3341,16 +3337,7 @@ window.MAP_OBJECTS = {
     "y": 414,
     "footprint": {
      "w": 146,
-     "h": 130
-    }
-   },
-   {
-    "kind": "solid_wall",
-    "x": 594,
-    "y": 286,
-    "footprint": {
-     "w": 112,
-     "h": 26
+     "h": 94
     }
    },
    {
@@ -3387,6 +3374,15 @@ window.MAP_OBJECTS = {
     "footprint": {
      "w": 76,
      "h": 120
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 300,
+    "y": 412,
+    "footprint": {
+     "w": 70,
+     "h": 72
     }
    }
   ]
