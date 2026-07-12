@@ -11,6 +11,9 @@
 // bme→sss 到着スポーンを闇市ドア横(85,340)に修正。
 // 2026-06-10: 壁footprintを刷新済みclean_v1背景の絵に合わせて全10マップ再作成
 // （並列エージェント艦隊・レンダリング照合・verify_map PASS済。家具はw/h/flip/solidオーバーライド付き）。
+// 2026-07-12: deep_tunnel / deep_tunnel_boss を object-layer 化。表示アート(clean_v1)と衝突を一致させるため
+//   subway_concourse_a の objects を複製し、下中央アルコーブ(345..455)を回廊として開口（南出口へ接続）。
+//   deep_tunnel の戻り口は絵に実在する左上シャッター(172,76)＝concourse側の扉と同位置に移設。
 window.MAP_OBJECTS = {
  "shinjuku_center_plaza": {
   "image": "assets/maps/shinjuku_center_plaza_clean_v1.png",
@@ -1120,14 +1123,14 @@ window.MAP_OBJECTS = {
     "height": 42,
     "to": "deep_tunnel",
     "direction": "north",
-    "spawnX": 701,
-    "spawnY": 228,
+    "spawnX": 200,
+    "spawnY": 130,
     "autoEnter": true,
     "visible": false,
     "requireFacing": "up",
     "requiredFlag": "arcDefeated",
     "lockedMsg": "深部への扉は固く閉ざされている… （アーク・プライムを討てば、この奥の深層トンネルへ続く道が開く）",
-    "spawnFace": "left"
+    "spawnFace": "down"
    }
   ],
   "objects": [
@@ -3701,12 +3704,15 @@ window.MAP_OBJECTS = {
   "image": "assets/maps/subway_concourse_a_clean_v1.png",
   "exits": [
    {
-    "x": 600,
-    "y": 380,
-    "width": 100,
-    "height": 50,
+    "x": 172,
+    "y": 76,
+    "width": 56,
+    "height": 42,
     "to": "subway_concourse_a",
-    "direction": "south",
+    "direction": "north",
+    "autoEnter": true,
+    "visible": false,
+    "requireFacing": "up",
     "spawnX": 179,
     "spawnY": 128,
     "spawnFace": "down"
@@ -3728,15 +3734,332 @@ window.MAP_OBJECTS = {
   "objects": [
    {
     "kind": "solid_wall",
-    "x": 0,
-    "y": 0,
-    "footprint": { "w": 120, "h": 460 }
+    "x": 28,
+    "y": 90,
+    "footprint": {
+     "w": 56,
+     "h": 90
+    }
    },
    {
     "kind": "solid_wall",
-    "x": 740,
-    "y": 0,
-    "footprint": { "w": 120, "h": 460 }
+    "x": 78,
+    "y": 108,
+    "footprint": {
+     "w": 44,
+     "h": 108
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 175,
+    "y": 118,
+    "footprint": {
+     "w": 150,
+     "h": 118
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 148,
+    "y": 130,
+    "footprint": {
+     "w": 24,
+     "h": 18
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 239,
+    "y": 130,
+    "footprint": {
+     "w": 22,
+     "h": 18
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 295,
+    "y": 122,
+    "footprint": {
+     "w": 90,
+     "h": 122
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 489,
+    "y": 122,
+    "footprint": {
+     "w": 58,
+     "h": 122
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 542,
+    "y": 140,
+    "footprint": {
+     "w": 48,
+     "h": 140
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 603,
+    "y": 120,
+    "footprint": {
+     "w": 74,
+     "h": 120
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 650,
+    "y": 142,
+    "footprint": {
+     "w": 24,
+     "h": 26
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 693,
+    "y": 112,
+    "footprint": {
+     "w": 106,
+     "h": 112
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 773,
+    "y": 90,
+    "footprint": {
+     "w": 54,
+     "h": 90
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 13,
+    "y": 150,
+    "footprint": {
+     "w": 26,
+     "h": 47
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 25,
+    "y": 260,
+    "footprint": {
+     "w": 50,
+     "h": 110
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 80,
+    "y": 240,
+    "footprint": {
+     "w": 60,
+     "h": 77
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 149,
+    "y": 272,
+    "footprint": {
+     "w": 50,
+     "h": 110
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 650,
+    "y": 272,
+    "footprint": {
+     "w": 48,
+     "h": 108
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 722,
+    "y": 254,
+    "footprint": {
+     "w": 68,
+     "h": 88
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 788,
+    "y": 140,
+    "footprint": {
+     "w": 24,
+     "h": 42
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 779,
+    "y": 190,
+    "footprint": {
+     "w": 42,
+     "h": 50
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 774,
+    "y": 258,
+    "footprint": {
+     "w": 52,
+     "h": 68
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 173,
+    "y": 450,
+    "footprint": {
+     "w": 346,
+     "h": 58
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 628,
+    "y": 450,
+    "footprint": {
+     "w": 345,
+     "h": 58
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 400,
+    "y": 450,
+    "footprint": {
+     "w": 110,
+     "h": 20
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 50,
+    "y": 392,
+    "footprint": {
+     "w": 100,
+     "h": 104
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 141,
+    "y": 392,
+    "footprint": {
+     "w": 86,
+     "h": 62
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 210,
+    "y": 392,
+    "footprint": {
+     "w": 54,
+     "h": 100
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 295,
+    "y": 392,
+    "footprint": {
+     "w": 22,
+     "h": 37
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 308,
+    "y": 392,
+    "footprint": {
+     "w": 75,
+     "h": 16
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 491,
+    "y": 392,
+    "footprint": {
+     "w": 72,
+     "h": 16
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 587,
+    "y": 392,
+    "footprint": {
+     "w": 62,
+     "h": 102
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 659,
+    "y": 392,
+    "footprint": {
+     "w": 86,
+     "h": 66
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 718,
+    "y": 392,
+    "footprint": {
+     "w": 36,
+     "h": 68
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 768,
+    "y": 392,
+    "footprint": {
+     "w": 64,
+     "h": 102
+    }
+   },
+   {
+    "kind": "street_lamp",
+    "x": 262,
+    "y": 174,
+    "w": 26,
+    "h": 82,
+    "footprint": {
+     "w": 16,
+     "h": 12
+    }
+   },
+   {
+    "kind": "street_lamp",
+    "x": 538,
+    "y": 174,
+    "w": 26,
+    "h": 82,
+    "footprint": {
+     "w": 16,
+     "h": 12
+    },
+    "flip": true
    }
   ],
   "npcs": [
@@ -3753,6 +4076,353 @@ window.MAP_OBJECTS = {
     "defeatedDialogue": "…解放される…神々の力よ、カイトに…",
     "hidden": false,
     "hideWhenFlag": "leviathanDefeated"
+   }
+  ]
+ },
+ "deep_tunnel_boss": {
+  "image": "assets/maps/subway_concourse_a_clean_v1.png",
+  "exits": [
+   {
+    "x": 350,
+    "y": 410,
+    "width": 100,
+    "height": 20,
+    "to": "deep_tunnel_4",
+    "direction": "south",
+    "spawnX": 401,
+    "spawnY": 403,
+    "spawnFace": "up"
+   }
+  ],
+  "objects": [
+   {
+    "kind": "solid_wall",
+    "x": 28,
+    "y": 90,
+    "footprint": {
+     "w": 56,
+     "h": 90
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 78,
+    "y": 108,
+    "footprint": {
+     "w": 44,
+     "h": 108
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 175,
+    "y": 118,
+    "footprint": {
+     "w": 150,
+     "h": 118
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 148,
+    "y": 130,
+    "footprint": {
+     "w": 24,
+     "h": 18
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 239,
+    "y": 130,
+    "footprint": {
+     "w": 22,
+     "h": 18
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 295,
+    "y": 122,
+    "footprint": {
+     "w": 90,
+     "h": 122
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 489,
+    "y": 122,
+    "footprint": {
+     "w": 58,
+     "h": 122
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 542,
+    "y": 140,
+    "footprint": {
+     "w": 48,
+     "h": 140
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 603,
+    "y": 120,
+    "footprint": {
+     "w": 74,
+     "h": 120
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 650,
+    "y": 142,
+    "footprint": {
+     "w": 24,
+     "h": 26
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 693,
+    "y": 112,
+    "footprint": {
+     "w": 106,
+     "h": 112
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 773,
+    "y": 90,
+    "footprint": {
+     "w": 54,
+     "h": 90
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 13,
+    "y": 150,
+    "footprint": {
+     "w": 26,
+     "h": 47
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 25,
+    "y": 260,
+    "footprint": {
+     "w": 50,
+     "h": 110
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 80,
+    "y": 240,
+    "footprint": {
+     "w": 60,
+     "h": 77
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 149,
+    "y": 272,
+    "footprint": {
+     "w": 50,
+     "h": 110
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 650,
+    "y": 272,
+    "footprint": {
+     "w": 48,
+     "h": 108
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 722,
+    "y": 254,
+    "footprint": {
+     "w": 68,
+     "h": 88
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 788,
+    "y": 140,
+    "footprint": {
+     "w": 24,
+     "h": 42
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 779,
+    "y": 190,
+    "footprint": {
+     "w": 42,
+     "h": 50
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 774,
+    "y": 258,
+    "footprint": {
+     "w": 52,
+     "h": 68
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 173,
+    "y": 450,
+    "footprint": {
+     "w": 346,
+     "h": 58
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 628,
+    "y": 450,
+    "footprint": {
+     "w": 345,
+     "h": 58
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 400,
+    "y": 450,
+    "footprint": {
+     "w": 110,
+     "h": 20
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 50,
+    "y": 392,
+    "footprint": {
+     "w": 100,
+     "h": 104
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 141,
+    "y": 392,
+    "footprint": {
+     "w": 86,
+     "h": 62
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 210,
+    "y": 392,
+    "footprint": {
+     "w": 54,
+     "h": 100
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 295,
+    "y": 392,
+    "footprint": {
+     "w": 22,
+     "h": 37
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 308,
+    "y": 392,
+    "footprint": {
+     "w": 75,
+     "h": 16
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 491,
+    "y": 392,
+    "footprint": {
+     "w": 72,
+     "h": 16
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 587,
+    "y": 392,
+    "footprint": {
+     "w": 62,
+     "h": 102
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 659,
+    "y": 392,
+    "footprint": {
+     "w": 86,
+     "h": 66
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 718,
+    "y": 392,
+    "footprint": {
+     "w": 36,
+     "h": 68
+    }
+   },
+   {
+    "kind": "solid_wall",
+    "x": 768,
+    "y": 392,
+    "footprint": {
+     "w": 64,
+     "h": 102
+    }
+   },
+   {
+    "kind": "street_lamp",
+    "x": 262,
+    "y": 174,
+    "w": 26,
+    "h": 82,
+    "footprint": {
+     "w": 16,
+     "h": 12
+    }
+   },
+   {
+    "kind": "street_lamp",
+    "x": 538,
+    "y": 174,
+    "w": 26,
+    "h": 82,
+    "footprint": {
+     "w": 16,
+     "h": 12
+    },
+    "flip": true
    }
   ]
  }
