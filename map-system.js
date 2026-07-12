@@ -1260,10 +1260,12 @@ class MapSystem {
                     { x: 656, y: 352, width: 34, height: 27, to: 'shop_item',   direction: 'north', spawnX: 400, spawnY: 380, visible: false, autoEnter: true }
                 ],
                 npcs: [
-                    { x: 110, y: 270, image: 'assets/characters/sprites/merchant_weapon_walk.png', emoji: '🗡️', name: '武器店の呼び込み', dialogue: '武器店は左上の入口から入って、店内スタッフに話しかけてくれ。', static: true },
+                    // ★(110,270)は防具店の屋根角に重なって見えたため、店上の歩道帯(y185)へ移設(2026-07-12・可動free=3確認済)
+                    { x: 130, y: 185, image: 'assets/characters/sprites/merchant_weapon_walk.png', emoji: '🗡️', name: '武器店の呼び込み', dialogue: '武器店は左上の入口から入って、店内スタッフに話しかけてくれ。', static: true },
                     { x: 245, y: 270, image: 'assets/characters/sprites/merchant_armor_walk.png', emoji: '🛡️', name: '防具店の呼び込み', dialogue: '防具店は左下の建物だ。入口に立てば入れる。', static: true },
                     { x: 555, y: 270, image: 'assets/characters/sprites/merchant_item_walk.png', emoji: '🧪', name: '道具店の呼び込み', dialogue: '道具店は右下。買い物は店内カウンターでどうぞ。', static: true },
-                    { x: 695, y: 270, image: 'assets/characters/sprites/merchant_magic_walk.png', emoji: '🔮', name: '魔法店の呼び込み', dialogue: '魔法店は右上の入口だ。中のミコトに聞いてくれ。', static: true }
+                    // ★(695,270)は道具店のファサードに重なって見えたため、店上の歩道帯(y185)へ移設(2026-07-12・可動free=4確認済)
+                    { x: 670, y: 185, image: 'assets/characters/sprites/merchant_magic_walk.png', emoji: '🔮', name: '魔法店の呼び込み', dialogue: '魔法店は右上の入口だ。中のミコトに聞いてくれ。', static: true }
                 ]
             },
             shopping_street_south: {
@@ -1925,10 +1927,10 @@ class MapSystem {
                 ],
                 npcs: [
                     // ★リク加入は植物園(第2章・堕神戦)。x/yは【BASE座標】=prepareScrollableMapが×worldScale(1.55)してWORLD化する。
-                    //   ⚠️現値(620,340)→WORLD(961,527)は object-layer 衝突内に落ち、constrainMapNPCsToWalkableが右下コーナー
-                    //   (約1051,527/開放4方向)へスナップする(到達は可能だが脆い)。座標の通路帯への正式移設は検証ハーネスで要再算出。
+                    //   2026-07-12: 旧(620,340)はスナップ先が右下植え込みの上に見えたため、正面広場(620,235)へ正式移設
+                    //   (検証ハーネスで walkable/free=4 確認済・スナップ不要の素の可動点)。
                     //   名前'リク'を checkInteractions が engageRiku へ流す。isNPCHiddenが rikuJoined で非表示化。
-                    { x: 620, y: 340, emoji: '🛡️', name: 'リク', dialogue: '…誰だ。俺に、構うな。' }
+                    { x: 620, y: 235, emoji: '🛡️', name: 'リク', dialogue: '…誰だ。俺に、構うな。' }
                 ]
             }
         };
