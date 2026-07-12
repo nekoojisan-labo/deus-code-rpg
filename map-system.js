@@ -766,8 +766,8 @@ class MapSystem {
                 { x: 350, y: 0, width: 100, height: 20, to: 'tokyo_gov_floor3', direction: 'north' }
             ],
             npcs: [
-                { x: 300, y: 300, emoji: '🤖', name: 'ガードロボ', dialogue: '侵入者を排除する。', hostile: true, level: 4 },
-                { x: 500, y: 300, emoji: '🤖', name: 'ガードロボ', dialogue: '侵入者を排除する。', hostile: true, level: 4 }
+                { x: 300, y: 285, emoji: '🤖', name: 'ガードロボ', dialogue: '侵入者を排除する。', hostile: true, level: 4 },
+                { x: 500, y: 285, emoji: '🤖', name: 'ガードロボ', dialogue: '侵入者を排除する。', hostile: true, level: 4 }
             ]
         };
 
@@ -792,7 +792,7 @@ class MapSystem {
             npcs: [
                 { x: 400, y: 180, emoji: '🦾', name: 'アーク・プライム', dialogue: '人間よ...お前たちの時代は終わりだ。', hostile: true, level: 35, boss: true }
             ],
-            savePoint: { x: 100, y: 350, emoji: '💠', name: '緊急セーブポイント' }
+            savePoint: { x: 170, y: 350, emoji: '💠', name: '緊急セーブポイント' }
         };
 
         // ==========================================
@@ -2320,10 +2320,10 @@ class MapSystem {
             deep_tunnel_boss: 'assets/maps/subway_concourse_a_clean_v1.png',
             shopping_district: 'assets/maps/shopping_street_north.png',
             residential_area: 'assets/maps/residential_street.png',
-            house_1: 'assets/maps/residential_street.png',
+            house_1: 'assets/maps/house_1.png',
             shrine_inner: 'assets/maps/shrine_south_gate.png',
-            tokyo_gov_floor2: 'assets/maps/tokyo_gov_approach.png',
-            tokyo_gov_floor3: 'assets/maps/tokyo_gov_approach.png'
+            tokyo_gov_floor2: 'assets/maps/tokyo_gov_floor2.png',
+            tokyo_gov_floor3: 'assets/maps/tokyo_gov_floor3.png'
         };
 
         // legacy マップ用の詳細 walkable データ（walkability-editor で生成）
