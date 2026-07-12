@@ -4060,6 +4060,11 @@ window.MAP_OBJECTS = {
      "h": 12
     },
     "flip": true
+   },
+   {
+    "kind": "black_market_gate",
+    "x": 400,
+    "y": 150
    }
   ],
   "npcs": [

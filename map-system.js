@@ -2550,7 +2550,7 @@ class MapSystem {
             },
             shop_armor: {
                 walkableRects: [ { x: 16, y: 58, width: 768, height: 392 } ],
-                collisionRects: [ { x: 0, y: 0, width: 800, height: 112 }, { x: 305, y: 112, width: 200, height: 24 }, { x: 0, y: 55, width: 140, height: 280 }, { x: 660, y: 55, width: 140, height: 280 }, { x: 272, y: 150, width: 260, height: 58 }, { x: 0, y: 360, width: 70, height: 90 }, { x: 730, y: 360, width: 70, height: 90 }, { x: 302, y: 372, width: 46, height: 24 }, { x: 452, y: 372, width: 46, height: 24 } ]
+                collisionRects: [ { x: 0, y: 0, width: 800, height: 112 }, { x: 305, y: 112, width: 200, height: 24 }, { x: 0, y: 55, width: 140, height: 280 }, { x: 660, y: 55, width: 140, height: 280 }, { x: 272, y: 150, width: 260, height: 58 }, { x: 0, y: 360, width: 70, height: 90 }, { x: 730, y: 360, width: 70, height: 90 }, { x: 302, y: 372, width: 46, height: 24 }, { x: 452, y: 372, width: 46, height: 24 }, { x: 70, y: 330, width: 90, height: 60 }, { x: 640, y: 330, width: 90, height: 60 } ]
             },
             shop_item: {
                 walkableRects: [ { x: 16, y: 58, width: 768, height: 392 } ],
@@ -2558,7 +2558,7 @@ class MapSystem {
             },
             shop_magic: {
                 walkableRects: [ { x: 16, y: 58, width: 768, height: 392 } ],
-                collisionRects: [ { x: 0, y: 0, width: 12, height: 450 }, { x: 788, y: 0, width: 12, height: 450 }, { x: 0, y: 0, width: 800, height: 128 }, { x: 0, y: 128, width: 72, height: 80 }, { x: 8, y: 212, width: 72, height: 86 }, { x: 728, y: 128, width: 72, height: 75 }, { x: 720, y: 212, width: 76, height: 86 }, { x: 176, y: 150, width: 450, height: 58 }, { x: 252, y: 366, width: 70, height: 30 }, { x: 478, y: 366, width: 70, height: 30 } ]
+                collisionRects: [ { x: 0, y: 0, width: 12, height: 450 }, { x: 788, y: 0, width: 12, height: 450 }, { x: 0, y: 0, width: 800, height: 128 }, { x: 0, y: 128, width: 72, height: 80 }, { x: 8, y: 212, width: 72, height: 86 }, { x: 728, y: 128, width: 72, height: 75 }, { x: 720, y: 212, width: 76, height: 86 }, { x: 176, y: 150, width: 450, height: 58 }, { x: 252, y: 366, width: 70, height: 30 }, { x: 478, y: 366, width: 70, height: 30 }, { x: 680, y: 298, width: 108, height: 88 }, { x: 8, y: 298, width: 122, height: 88 } ]
             },
             shop_inn: {
                 walkableRects: [ { x: 16, y: 58, width: 768, height: 392 } ],
@@ -2570,11 +2570,11 @@ class MapSystem {
             },
             shop_bank: {
                 walkableRects: [ { x: 16, y: 58, width: 768, height: 392 } ],
-                collisionRects: [ { x: 0, y: 0, width: 800, height: 56 }, { x: 0, y: 56, width: 88, height: 338 }, { x: 776, y: 56, width: 24, height: 394 }, { x: 18, y: 50, width: 100, height: 68 }, { x: 172, y: 62, width: 246, height: 90 }, { x: 614, y: 12, width: 138, height: 98 }, { x: 694, y: 170, width: 96, height: 192 }, { x: 174, y: 158, width: 238, height: 70 }, { x: 266, y: 354, width: 44, height: 80 }, { x: 448, y: 354, width: 46, height: 42 } ]
+                collisionRects: [ { x: 0, y: 0, width: 800, height: 56 }, { x: 0, y: 56, width: 88, height: 338 }, { x: 776, y: 56, width: 24, height: 394 }, { x: 18, y: 50, width: 100, height: 68 }, { x: 172, y: 62, width: 246, height: 90 }, { x: 614, y: 12, width: 138, height: 98 }, { x: 694, y: 170, width: 96, height: 192 }, { x: 174, y: 158, width: 238, height: 70 }, { x: 266, y: 354, width: 44, height: 80 }, { x: 448, y: 354, width: 46, height: 42 }, { x: 418, y: 62, width: 120, height: 90 }, { x: 412, y: 158, width: 118, height: 70 } ]
             },
             shop_black_market: {
                 walkableRects: [ { x: 16, y: 58, width: 768, height: 392 } ],
-                collisionRects: [ { x: 0, y: 0, width: 800, height: 18 }, { x: 0, y: 0, width: 14, height: 450 }, { x: 786, y: 0, width: 14, height: 450 }, { x: 14, y: 18, width: 772, height: 70 }, { x: 330, y: 88, width: 140, height: 55 }, { x: 40, y: 95, width: 130, height: 70 }, { x: 185, y: 95, width: 110, height: 60 }, { x: 505, y: 95, width: 110, height: 60 }, { x: 630, y: 95, width: 130, height: 70 }, { x: 40, y: 250, width: 120, height: 95 }, { x: 640, y: 250, width: 120, height: 95 }, { x: 60, y: 360, width: 150, height: 70 }, { x: 590, y: 360, width: 150, height: 70 } ]
+                collisionRects: [ { x: 0, y: 0, width: 800, height: 18 }, { x: 0, y: 0, width: 14, height: 450 }, { x: 786, y: 0, width: 14, height: 450 }, { x: 14, y: 18, width: 772, height: 70 }, { x: 330, y: 88, width: 140, height: 55 }, { x: 40, y: 95, width: 130, height: 70 }, { x: 185, y: 95, width: 110, height: 60 }, { x: 505, y: 95, width: 110, height: 60 }, { x: 630, y: 95, width: 130, height: 70 }, { x: 40, y: 250, width: 120, height: 95 }, { x: 640, y: 250, width: 120, height: 95 }, { x: 60, y: 360, width: 150, height: 70 }, { x: 590, y: 360, width: 150, height: 70 }, { x: 170, y: 160, width: 85, height: 75 }, { x: 630, y: 160, width: 130, height: 75 }, { x: 160, y: 255, width: 165, height: 100 }, { x: 590, y: 255, width: 55, height: 95 } ]
             }
         };
 
