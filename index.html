@@ -2275,7 +2275,7 @@
             }
         }
 
-        /* Back to Portfolio Button */
+        /* Controller actions */
         .controller-actions {
             display: flex;
             flex-direction: column;
@@ -2286,38 +2286,7 @@
             pointer-events: auto;
         }
 
-        .back-button {
-            /* コントローラーのクラスターを邪魔しないよう左隅へ固定配置 */
-            position: absolute;
-            left: 16px;
-            top: 12px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 0;
-            box-sizing: border-box;
-            background: rgba(0, 0, 0, 0.8);
-            color: #4aa3ff;
-            text-decoration: none;
-            padding: 6px 12px;
-            border-radius: 25px;
-            font-size: 12px;
-            font-weight: bold;
-            line-height: 1.2;
-            white-space: nowrap;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            border: 2px solid #0f3460;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            z-index: 1;
-        }
         
-        .back-button:hover {
-            background: #0f3460;
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(15, 52, 96, 0.5);
-        }
 
         /* ===== メッセージパネル（ストーリー会話・バトル/ステータス効果説明） =====
            常に同じ高さを確保し、表示・非表示は visibility/opacity で切り替える。
@@ -2802,16 +2771,6 @@
                 min-width: 0;
             }
 
-            .back-button {
-                position: static;
-                align-self: center;
-                min-width: 0;
-                max-width: min(178px, 46vw);
-                padding: 6px 10px;
-                font-size: 11px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
 
             .action-buttons {
                 gap: 7px;
@@ -3051,11 +3010,6 @@
                 gap: 6px;
             }
 
-            .back-button {
-                max-width: min(156px, 42vw);
-                padding: 5px 8px;
-                font-size: 10px;
-            }
 
             /* 戦闘画面のUI調整（小画面・パネル化済み） */
             .command-item {
@@ -3329,10 +3283,6 @@
                 gap: 6px;
             }
 
-            /* スペース確保のためポートフォリオボタンを非表示 */
-            .back-button {
-                display: none;
-            }
         }
 
         /* バトル中はDOMベースの #battleScreen が canvas を完全に覆うため、
@@ -3659,7 +3609,6 @@
 
             <!-- アクションボタン -->
             <div class="controller-actions">
-                <a href="../" class="back-button">← ポートフォリオに戻る</a>
                 <div class="action-buttons">
                     <div class="action-button menu" data-key="m">
                         <div style="text-align: center; font-size: 12px;">
