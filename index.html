@@ -3661,8 +3661,8 @@
     <script src="battle-system.js?v=92"></script>
     <script src="map-walkability-data.js?v=25"></script>
     <script src="object-catalog.js?v=2"></script>
-    <script src="map-objects-data.js?v=38"></script>
-    <script src="map-system.js?v=109"></script>
+    <script src="map-objects-data.js?v=39"></script>
+    <script src="map-system.js?v=110"></script>
     <script src="map-system-grid.js"></script>
     <script src="player-grid-movement.js"></script>
     <script src="bgm-system.js?v=36"></script>
@@ -4725,10 +4725,11 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
 
             try {
                 mapSystem = new MapSystem();
+                // 開始位置: 旧 y:380 は南口(北通りへ)の判定まで 7px で、下を 3 フレーム押すだけで出てしまった
                 const initialSpawn = mapSystem.getSpawnPoint({
                     to: mapSystem.currentMap,
                     spawnX: 400,
-                    spawnY: 380
+                    spawnY: 360
                 }, canvas);
                 player.x = initialSpawn.x;
                 player.y = initialSpawn.y;
@@ -4993,7 +4994,9 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             }
             if (moveX !== 0 && Math.abs(moveX) >= Math.abs(moveY)) player.facing = moveX > 0 ? 'right' : 'left';
             else if (moveY !== 0) player.facing = moveY > 0 ? 'down' : 'up';
-            
+            // 到着時に押していたキーから入力が変わったか（押し続けで戻り出口へ戻されない為の控え）
+            if (mapSystem.noteMoveInput) mapSystem.noteMoveInput((moveX || moveY) ? moveX + ',' + moveY : null);
+
             // 衝突判定（旧座標を渡してNPCから離れる動きを許可）
             if (newX !== player.x || newY !== player.y) {
                 if (!mapSystem.checkCollision(newX, newY, 24, oldX, oldY)) {
@@ -5012,20 +5015,27 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 player.animTime = (player.animTime || 0) + 16;
                 player.stepCount++;
                 document.getElementById('stepCount').textContent = player.stepCount;
-                
-                // マップ遷移チェック
-                const transition = mapSystem.checkMapTransition(player.x, player.y, player.facing);
+            }
+
+            // マップ遷移チェック: 動けた時に加え、壁やマップ端で止まったまま押している時も見る
+            //   （端で止まると判定が走らず、出口の中に立って押し続けても出られなかった）
+            let lockedNow = false;
+            if (moved || moveX !== 0 || moveY !== 0) {
+                const transition = checkExitAt();
                 if (transition) {
                     console.log('Transition detected:', transition);
                     if (transition.locked) {
-                        showMessage(transition.message);
+                        lockedNow = true;
+                        noticeLockedExit(transition);
                         player.x = oldX;
                         player.y = oldY;
                     } else if (transition.nextMap) {
                         runMapTransition(transition);
                     }
                 }
-                
+            }
+
+            if (moved) {
                 // ランダムエンカウントチェック
                 const area = mapSystem.getCurrentArea();
                 const encounterRate = mapSystem.getEncounterRate();
@@ -5043,15 +5053,18 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             // 前方自動入店: 方向キーを押している間、向いた先に自動入口があれば
             // （コリジョンで入口手前が塞がれていても）Z不要で入店する
             if ((moveX !== 0 || moveY !== 0) && mapSystem && !mapSystem.transitioning) {
-                const ahead = mapSystem.checkAutoEnterAhead(player.x, player.y, player.facing);
+                const ahead = checkAutoEnter(moveX, moveY);
                 if (ahead) {
                     if (ahead.locked) {
-                        showMessage(ahead.message);
+                        lockedNow = true;
+                        noticeLockedExit(ahead);
                     } else if (ahead.nextMap) {
                         runMapTransition(ahead);
                     }
                 }
             }
+            // 鍵付き出口から離れたら、次に来た時はまた案内する
+            if (!lockedNow) lastLockedNoticeExit = null;
 
             // 決定/話す（Z / Space / Enter） → NPC・宝箱・出入口インタラクション
             if (keys['z'] || keys['Z'] || keys[' '] || keys['Enter']) {
@@ -5069,6 +5082,37 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             // ※X（戻る）はフィールドでは動作なし（メニュー内のみキャンセル）
         }
 
+        function checkExitAt() {
+            return mapSystem.checkMapTransition(player.x, player.y, player.facing);
+        }
+
+        // 自動扉は「向き」で判定する。斜め押しでは向きが横になるため、上向きの扉に入れなかった。
+        // 斜め押しの時は縦・横どちらの向きでも扉に向かっていれば入る（向きに少し幅を持たせる）。
+        function checkAutoEnter(moveX, moveY) {
+            const dirs = [player.facing];
+            if (moveX !== 0 && moveY !== 0) dirs.push(moveY < 0 ? 'up' : 'down', moveX < 0 ? 'left' : 'right');
+            for (const dir of dirs) {
+                const hit = mapSystem.checkAutoEnterAhead(player.x, player.y, dir);
+                if (hit) return hit;
+            }
+            return null;
+        }
+
+        // 鍵付き出口の案内は、その出口に押し当てている間は1回だけ（閉じても押し続けると毎回出ていた）
+        let lastLockedNoticeExit = null;
+        function noticeLockedExit(result) {
+            if (result.exit && result.exit === lastLockedNoticeExit) return;
+            lastLockedNoticeExit = result.exit || null;
+            showMessage(result.message);
+        }
+
+        // 今押している方向キー（"x,y"、押していなければ null）
+        function heldMoveKey() {
+            const mx = (keys['ArrowRight'] || keys['d'] ? 1 : 0) - (keys['ArrowLeft'] || keys['a'] ? 1 : 0);
+            const my = (keys['ArrowDown'] || keys['s'] ? 1 : 0) - (keys['ArrowUp'] || keys['w'] ? 1 : 0);
+            return (mx || my) ? mx + ',' + my : null;
+        }
+
         function runMapTransition(transition) {
             if (!transition || !transition.nextMap) return;
 
@@ -5080,7 +5124,9 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 player.y = spawn.y;
                 if (spawn.facing) player.facing = spawn.facing;   // ★来た扉の前で「中を向いて」出る
                 mapSystem.updateCamera(player.x, player.y, canvas);
-                if (mapSystem.startTransitionCooldown) {
+                if (mapSystem.finishArrival) {
+                    mapSystem.finishArrival(player.x, player.y, heldMoveKey());
+                } else if (mapSystem.startTransitionCooldown) {
                     mapSystem.startTransitionCooldown();
                 }
 
@@ -5778,7 +5824,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 player.x = px; player.y = py;
                 if (data.playerPos.facing) player.facing = data.playerPos.facing;
             } else {
-                const spawn = mapSystem.getSpawnPoint({ to: mapId, spawnX: 400, spawnY: 380 }, canvas);
+                const spawn = mapSystem.getSpawnPoint({ to: mapId, spawnX: 400, spawnY: 360 }, canvas);
                 player.x = spawn.x; player.y = spawn.y;
             }
             if (mapSystem.updateCamera) mapSystem.updateCamera(player.x, player.y, canvas);

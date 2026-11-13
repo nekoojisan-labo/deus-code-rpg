@@ -864,7 +864,8 @@ class MapSystem {
             treasures: [
                 { x: 100, y: 80, item: 'エリクサー', opened: false }
             ],
-            savePoint: { x: 700, y: 350, emoji: '🔮', name: '古代の魔法陣' }
+            // 旧 y:350 は壁の中（判定距離50に届かず使えなかった）→ 床の上へ
+            savePoint: { x: 700, y: 300, emoji: '🔮', name: '古代の魔法陣' }
         };
 
         // 深層地下トンネル ボス部屋
@@ -2731,7 +2732,8 @@ class MapSystem {
         // エディタで確定した spawnX/spawnY が正本。通常遷移でも必ず最優先する。
         // 自動扉アンカーは座標未設定時だけのフォールバックに限定する。
         if (Number.isFinite(exit.spawnX) && Number.isFinite(exit.spawnY)) {
-            const safe = this.findSafeSpawnPoint(map, Math.round(exit.spawnX * scale), Math.round(exit.spawnY * scale), 24);
+            const safe = this.keepArrivalClearOfBackExit(map, targetMap,
+                this.findSafeSpawnPoint(map, Math.round(exit.spawnX * scale), Math.round(exit.spawnY * scale), 24));
             const facing = exit.spawnFace || FACE[exit.direction] || null;
             this._pendingSpawnFrom = null;
             this._pendingSpawnTo = null;
@@ -2756,7 +2758,7 @@ class MapSystem {
         else spawn = { x: Math.round(width / 2), y: Math.round(height / 2) };
 
         // 片道出口等のフォールバックでも出発方向から内向き facing を与える。
-        const sp = this.findSafeSpawnPoint(map, spawn.x, spawn.y, 24);
+        const sp = this.keepArrivalClearOfBackExit(map, targetMap, this.findSafeSpawnPoint(map, spawn.x, spawn.y, 24));
         this._pendingSpawnFrom = null;
         this._pendingSpawnTo = null;
         return FACE[exit.direction] ? { x: sp.x, y: sp.y, facing: FACE[exit.direction] } : sp;
@@ -3928,7 +3930,11 @@ class MapSystem {
             if (exit.visible === false && !exit.autoEnter) continue;
             const p = this.worldToScreenPoint(exit.x + exit.width / 2, exit.y + exit.height / 2);
             if (p.x < -24 || p.x > canvas.width + 24 || p.y < -24 || p.y > canvas.height + 24) continue;
-            const label = (arrows[exit.direction] || '◇') + ' ' + (target.name || exit.to);
+            // 自動扉は「入る向き(requireFacing)」で矢印を出す（駅の地下入口は direction:south と
+            //   requireFacing:up が食い違い、上へ入る扉に ↓ が出ていた）
+            const facingEdge = { up: 'north', down: 'south', left: 'west', right: 'east' }[exit.requireFacing];
+            const arrowDir = (exit.autoEnter && facingEdge) || exit.direction;
+            const label = (arrows[arrowDir] || '◇') + ' ' + (target.name || exit.to);
             const width = Math.min(canvas.width - 16, ctx.measureText(label).width + 18);
             const x = Math.max(width / 2 + 8, Math.min(canvas.width - width / 2 - 8, p.x));
             const y = Math.max(16, Math.min(canvas.height - 16, p.y));
@@ -4338,13 +4344,77 @@ class MapSystem {
     isTransitionCoolingDown() {
         return this.getNow() < (this.transitionCooldownUntil || 0);
     }
-    
+
+    // 接触出口の実効範囲（プレイヤーの体の箱＋余白が出口箱に重なる中心位置の範囲）。
+    // 発火判定・到着点・戻り出口の武装で同じ範囲を使う。
+    contactTriggerRect(exit, mapId = this.currentMap) {
+        const P = 12 + Math.max(8, Math.round(8 * this.getMapScale(mapId)));
+        return { L: exit.x - P, T: exit.y - P, R: exit.x + exit.width + P, B: exit.y + exit.height + P };
+    }
+
+    // 今いるマップの「来た所へ戻る出口」か
+    isBackExit(exit) {
+        const backTo = this.previousMap ? this.normalizeMapId(this.previousMap) : null;
+        return !!backTo && this.normalizeMapId(exit.to) === backTo;
+    }
+
+    // ★到着点は戻り出口（接触）の実効範囲の外に置く。範囲内に出すと、一度外へ出るまで戻り出口が
+    //   効かず（逆戻り防止の武装待ち）、すぐ戻りたい時に「回り込む」動きが要った。
+    //   範囲の外側 ARRIVAL_CLEARANCE px まで、出口から離れる向き（出口の direction の内向きを優先）へ押し出す。
+    keepArrivalClearOfBackExit(map, mapId, point) {
+        const from = this._pendingSpawnFrom || this.previousMap;
+        if (!map || !from || !point) return point;
+        const back = (map.exits || []).find(e => !e.autoEnter && e.visible !== false &&
+            this.normalizeMapId(e.to) === this.normalizeMapId(from));
+        if (!back) return point;
+        const G = 6; // ARRIVAL_CLEARANCE
+        const t = this.contactTriggerRect(back, mapId);
+        if (!(point.x > t.L - G && point.x < t.R + G && point.y > t.T - G && point.y < t.B + G)) return point;
+        const sides = [
+            { edge: 'north', x: point.x, y: t.B + G, dx: 0, dy: 1 },
+            { edge: 'south', x: point.x, y: t.T - G, dx: 0, dy: -1 },
+            { edge: 'west', x: t.R + G, y: point.y, dx: 1, dy: 0 },
+            { edge: 'east', x: t.L - G, y: point.y, dx: -1, dy: 0 }
+        ];
+        const cost = s => (s.edge === back.direction ? 0 : 10000) + Math.hypot(s.x - point.x, s.y - point.y);
+        sides.sort((a, b) => cost(a) - cost(b));
+        for (const s of sides) {
+            for (let extra = 0; extra <= 30; extra += 3) {
+                const x = Math.round(s.x + s.dx * extra), y = Math.round(s.y + s.dy * extra);
+                if (this.isSafeSpawnPoint(map, x, y, 24)) return { x, y };
+            }
+        }
+        return point;
+    }
+
+    // 到着点へ置いた直後の締め（index.html の runMapTransition から呼ぶ）。
+    //  - 戻り出口の武装: 到着点が戻り出口の範囲外なら即武装（範囲内なら従来通り一度出るまで待つ）
+    //  - 押しっぱなしの方向キーを控える: 離すか変えるまで戻り出口は発火しない（押し続けで戻されない）
+    //  - 遷移クールダウンを解く: 解かないと到着後約0.7秒は出口も武装も効かないまま歩けてしまい、
+    //    出口を素通りしたり、戻り出口の中で武装されず回り込みが要ったりした
+    finishArrival(x, y, heldKey = null) {
+        const map = this.maps[this.currentMap];
+        const back = map && (map.exits || []).find(e => !e.autoEnter && e.visible !== false && this.isBackExit(e));
+        if (back) {
+            const t = this.contactTriggerRect(back);
+            this._backExitArmed = !(x >= t.L && x <= t.R && y >= t.T && y <= t.B);
+        } else {
+            this._backExitArmed = true;
+        }
+        this._arrivalHeldKey = heldKey || null;
+        this.transitionCooldownUntil = 0;
+    }
+
+    // 毎フレームの方向キー（"x,y" か null）。到着時に押していたキーから変わったら控えを消す。
+    noteMoveInput(key) {
+        if (this._arrivalHeldKey && key !== this._arrivalHeldKey) this._arrivalHeldKey = null;
+    }
+
     // マップ遷移チェック
     checkMapTransition(playerX, playerY, playerFacing = null) {
         const map = this.maps[this.currentMap];
         if (!map || this.transitioning || this.isTransitionCoolingDown()) return null;
 
-        const backTo = this.previousMap ? this.normalizeMapId(this.previousMap) : null;
         for (const exit of (map.exits || [])) {
             // autoEnterドアは接触では発火させない（checkAutoEnterAheadの「向きを合わせて
             // 歩き込んだ時」のみ）。退店スポーンがドア余白に掛かっても再入店ループしない
@@ -4356,22 +4426,24 @@ class MapSystem {
 
             // ★中心1点ではなくプレイヤーの体(箱)が出口箱に重なったら発火＝少し広く、脇をすり抜けない。
             //   ドアは上の requireFacing/autoEnter ゲートで誤発火を防止。
-            const HALF = 12;
-            const M = Math.max(8, Math.round(8 * this.getMapScale(this.currentMap)));
-            const inTrig = (playerX + HALF + M >= exit.x && playerX - HALF - M <= exit.x + exit.width &&
-                playerY + HALF + M >= exit.y && playerY - HALF - M <= exit.y + exit.height);
+            const t = this.contactTriggerRect(exit);
+            const inTrig = playerX >= t.L && playerX <= t.R && playerY >= t.T && playerY <= t.B;
 
             // ★逆戻り防止: 戻り出口(来た扉)は、到着後プレイヤーが一度トリガーから出るまで発火させない。
-            //   spawnは扉の真横に出るので、判定を広げると即逆戻りし得る。位置ベースで「一度離れたら武装」。
-            if (backTo && this.normalizeMapId(exit.to) === backTo && !this._backExitArmed) {
-                if (!inTrig) this._backExitArmed = true; // 一度出た → 以後は通常通り発火（=戻れる）
-                continue;
+            //   位置ベースで「一度離れたら武装」（到着点が範囲外なら finishArrival で即武装）。
+            //   さらに到着時に押していた方向キーを押し続けている間も発火させない。
+            if (this.isBackExit(exit)) {
+                if (!this._backExitArmed) {
+                    if (!inTrig) this._backExitArmed = true; // 一度出た → 以後は通常通り発火（=戻れる）
+                    continue;
+                }
+                if (this._arrivalHeldKey) continue;
             }
 
             if (inTrig) {
-                // ロック/章進行フラグゲートのチェック
+                // ロック/章進行フラグゲートのチェック（どの出口かも返し、案内の重複表示を防ぐ）
                 const gate = this.evalExitGate(exit);
-                if (gate) return gate;
+                if (gate) return { ...gate, exit };
 
                 return { nextMap: this.normalizeMapId(exit.to), exit: exit };
             }
@@ -4426,6 +4498,7 @@ class MapSystem {
         for (const exit of map.exits) {
             if (!exit.autoEnter) continue;          // 自動入口のみ対象（街の端の出口は対象外）
             if (exit.requireFacing && exit.requireFacing !== facing) continue;  // 素通り誤発火の防止ゲート
+            if (this._arrivalHeldKey && this.isBackExit(exit)) continue;        // 押し続けで戻されない
             const L = exit.x, Rt = exit.x + exit.width, T = exit.y, B = exit.y + exit.height;
             // 侵入方向(requireFacing)の手前側＝街路側に居て、横方向にドアと重なる時のみ発火。
             // 内側(箱の中)〜手前 reach までを許容し、ドアに歩き込むほど確実に入れる。
@@ -4436,7 +4509,7 @@ class MapSystem {
             else if (facing === 'right') hit = playerY >= T - LAT && playerY <= B + LAT && playerX <= Rt && playerX >= L - R;
             if (!hit) continue;
             const gate = this.evalExitGate(exit);
-            if (gate) return gate;
+            if (gate) return { ...gate, exit };
             return { nextMap: this.normalizeMapId(exit.to), exit };
         }
 

@@ -1114,7 +1114,7 @@ window.MAP_OBJECTS = {
     "direction": "north",
     "spawnX": 698,
     "spawnY": 416,
-    "spawnFace": "up"
+    "spawnFace": "down"
    },
    {
     "x": 172,

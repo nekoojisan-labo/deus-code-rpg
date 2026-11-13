@@ -95,6 +95,16 @@ for (const [from, map] of Object.entries(ms.maps)) {
     row.expected = expected;
     row.raw = raw;
     row.matchesConfigured = spawn.x === expected.x && spawn.y === expected.y;
+    // 2026-11-13: 到着点が「戻り出口（接触）」の実効範囲(体の箱+余白)の外側 6px 以内に入る時は、
+    //   範囲の外へ押し出す規則（map-system keepArrivalClearOfBackExit）。その場合だけ、
+    //   設定値が範囲内だったこと・押し出し後は範囲外・移動 40px 以内・安全、を独立に確かめて一致扱いにする。
+    if (!row.matchesConfigured && !reverse.autoEnter && reverse.visible !== false) {
+      const P = 12 + Math.max(8, Math.round(8 * scale)) + 6;
+      const zone = (p) => p.x > reverse.x - P && p.x < reverse.x + reverse.width + P && p.y > reverse.y - P && p.y < reverse.y + reverse.height + P;
+      const moved = Math.hypot(spawn.x - expected.x, spawn.y - expected.y);
+      row.pushedClear = zone(expected) && !zone(spawn) && moved <= 40;
+      row.matchesConfigured = row.pushedClear;
+    }
     row.correctionDistance = Math.round(Math.hypot(expected.x - raw.x, expected.y - raw.y));
     row.safe = ms.isSafeSpawnPoint(target, spawn.x, spawn.y, 24);
     row.free = ms.spawnFreeDirections(target, spawn.x, spawn.y, 24);
