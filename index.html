@@ -4884,10 +4884,22 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 const dw = 52, dh = 66;
                 const dx = Math.round(playerDrawX - dw / 2);
                 const dy = Math.round((playerDrawY + 6) - dh);
-                const ps = ctx.imageSmoothingEnabled;
+                // Keep the character opaque; separate its silhouette from dark/busy art.
+                // A tight pale edge and dark contact edge work on both night and bright maps.
+                ctx.save();
+                ctx.globalAlpha = 1;
+                ctx.globalCompositeOperation = 'source-over';
                 ctx.imageSmoothingEnabled = false;
+                ctx.shadowColor = 'rgba(210, 245, 255, 0.85)';
+                ctx.shadowBlur = 3;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
                 ctx.drawImage(playerSprite, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
-                ctx.imageSmoothingEnabled = ps;
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+                ctx.shadowBlur = 1;
+                ctx.shadowOffsetY = 1;
+                ctx.drawImage(playerSprite, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
+                ctx.restore();
             }
         }
 
@@ -8131,6 +8143,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                             mapSystem.drawNPCs(ctx, storyFlags);
                             drawPlayer();
                         }
+                        if (mapSystem.drawExitGuides) mapSystem.drawExitGuides(ctx, canvas);
                     } else {
                         drawPlayer();
                     }

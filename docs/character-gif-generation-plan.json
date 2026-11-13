@@ -1,0 +1,2704 @@
+{
+  "status": "prepared_only_no_gif_generated",
+  "method": "Requested GPT Image 2.6 image-to-GIF generation, not static format conversion",
+  "generation_access": "unverified; current image_gen tool has no GIF output/model parameter",
+  "scope": "All 19 existing humanoid field sprite identities plus the non-hostile patrol drone. Hostile/boss map entries and environmental props inventoried separately, not silently counted as ordinary NPCs.",
+  "quality_gate": [
+    "Generate and inspect Kaito down-facing idle and walking prototypes before batch generation",
+    "Confirm actual GIF frame count, durations, loop seam and identity retention",
+    "No character-body semitransparency; verify silhouette against bright and dark backgrounds",
+    "GIF palette transparency must be validated, not assumed equivalent to RGBA PNG",
+    "Decode generated frames into engine-controlled texture atlas/frames; do not rely on animated HTMLImageElement timing in canvas",
+    "Keep existing 4-direction, idle/move selection, foot anchors and collision coordinates",
+    "No production replacement until visual and runtime tests pass; retain current sprite fallback"
+  ],
+  "target_atlas_frame_size": [
+    72,
+    92
+  ],
+  "target_display_size_player": [
+    52,
+    66
+  ],
+  "target_display_size_npc": [
+    50,
+    64
+  ],
+  "actors": [
+    {
+      "id": "akari",
+      "role": "main_character",
+      "source": "assets/characters/sprites/akari_walk.png",
+      "source_size": [
+        288,
+        368
+      ],
+      "source_alpha_extrema": [
+        0,
+        255
+      ],
+      "existing_format": "4 direction rows x 4 full-body frames, 72x92 per frame",
+      "jobs": [
+        {
+          "id": "akari_down_idle",
+          "direction": "down",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "akari_down_walk",
+          "direction": "down",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "akari_left_idle",
+          "direction": "left",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "akari_left_walk",
+          "direction": "left",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "akari_right_idle",
+          "direction": "right",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "akari_right_walk",
+          "direction": "right",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "akari_up_idle",
+          "direction": "up",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "akari_up_walk",
+          "direction": "up",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        }
+      ]
+    },
+    {
+      "id": "banker",
+      "role": "npc_asset",
+      "source": "assets/characters/sprites/banker_walk.png",
+      "source_size": [
+        288,
+        368
+      ],
+      "source_alpha_extrema": [
+        0,
+        255
+      ],
+      "existing_format": "4 direction rows x 4 full-body frames, 72x92 per frame",
+      "jobs": [
+        {
+          "id": "banker_down_idle",
+          "direction": "down",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "banker_down_walk",
+          "direction": "down",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "banker_left_idle",
+          "direction": "left",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "banker_left_walk",
+          "direction": "left",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "banker_right_idle",
+          "direction": "right",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "banker_right_walk",
+          "direction": "right",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "banker_up_idle",
+          "direction": "up",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "banker_up_walk",
+          "direction": "up",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        }
+      ]
+    },
+    {
+      "id": "citizen",
+      "role": "npc_asset",
+      "source": "assets/characters/sprites/citizen_walk.png",
+      "source_size": [
+        288,
+        368
+      ],
+      "source_alpha_extrema": [
+        0,
+        255
+      ],
+      "existing_format": "4 direction rows x 4 full-body frames, 72x92 per frame",
+      "jobs": [
+        {
+          "id": "citizen_down_idle",
+          "direction": "down",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "citizen_down_walk",
+          "direction": "down",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "citizen_left_idle",
+          "direction": "left",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "citizen_left_walk",
+          "direction": "left",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "citizen_right_idle",
+          "direction": "right",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "citizen_right_walk",
+          "direction": "right",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "citizen_up_idle",
+          "direction": "up",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "citizen_up_walk",
+          "direction": "up",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        }
+      ]
+    },
+    {
+      "id": "dark_merchant",
+      "role": "npc_asset",
+      "source": "assets/characters/sprites/dark_merchant_walk.png",
+      "source_size": [
+        288,
+        368
+      ],
+      "source_alpha_extrema": [
+        0,
+        255
+      ],
+      "existing_format": "4 direction rows x 4 full-body frames, 72x92 per frame",
+      "jobs": [
+        {
+          "id": "dark_merchant_down_idle",
+          "direction": "down",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "dark_merchant_down_walk",
+          "direction": "down",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "dark_merchant_left_idle",
+          "direction": "left",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "dark_merchant_left_walk",
+          "direction": "left",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "dark_merchant_right_idle",
+          "direction": "right",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "dark_merchant_right_walk",
+          "direction": "right",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "dark_merchant_up_idle",
+          "direction": "up",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "dark_merchant_up_walk",
+          "direction": "up",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        }
+      ]
+    },
+    {
+      "id": "guildmaster",
+      "role": "npc_asset",
+      "source": "assets/characters/sprites/guildmaster_walk.png",
+      "source_size": [
+        288,
+        368
+      ],
+      "source_alpha_extrema": [
+        0,
+        255
+      ],
+      "existing_format": "4 direction rows x 4 full-body frames, 72x92 per frame",
+      "jobs": [
+        {
+          "id": "guildmaster_down_idle",
+          "direction": "down",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "guildmaster_down_walk",
+          "direction": "down",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "guildmaster_left_idle",
+          "direction": "left",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "guildmaster_left_walk",
+          "direction": "left",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "guildmaster_right_idle",
+          "direction": "right",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "guildmaster_right_walk",
+          "direction": "right",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "guildmaster_up_idle",
+          "direction": "up",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "guildmaster_up_walk",
+          "direction": "up",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        }
+      ]
+    },
+    {
+      "id": "innkeeper",
+      "role": "npc_asset",
+      "source": "assets/characters/sprites/innkeeper_walk.png",
+      "source_size": [
+        288,
+        368
+      ],
+      "source_alpha_extrema": [
+        0,
+        255
+      ],
+      "existing_format": "4 direction rows x 4 full-body frames, 72x92 per frame",
+      "jobs": [
+        {
+          "id": "innkeeper_down_idle",
+          "direction": "down",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "innkeeper_down_walk",
+          "direction": "down",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "innkeeper_left_idle",
+          "direction": "left",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "innkeeper_left_walk",
+          "direction": "left",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "innkeeper_right_idle",
+          "direction": "right",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "innkeeper_right_walk",
+          "direction": "right",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "innkeeper_up_idle",
+          "direction": "up",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "innkeeper_up_walk",
+          "direction": "up",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        }
+      ]
+    },
+    {
+      "id": "kaito",
+      "role": "main_character",
+      "source": "assets/characters/sprites/kaito_walk.png",
+      "source_size": [
+        288,
+        368
+      ],
+      "source_alpha_extrema": [
+        0,
+        255
+      ],
+      "existing_format": "4 direction rows x 4 full-body frames, 72x92 per frame",
+      "jobs": [
+        {
+          "id": "kaito_down_idle",
+          "direction": "down",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "kaito_down_walk",
+          "direction": "down",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "kaito_left_idle",
+          "direction": "left",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "kaito_left_walk",
+          "direction": "left",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "kaito_right_idle",
+          "direction": "right",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "kaito_right_walk",
+          "direction": "right",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "kaito_up_idle",
+          "direction": "up",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "kaito_up_walk",
+          "direction": "up",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        }
+      ]
+    },
+    {
+      "id": "merchant_armor",
+      "role": "npc_asset",
+      "source": "assets/characters/sprites/merchant_armor_walk.png",
+      "source_size": [
+        288,
+        368
+      ],
+      "source_alpha_extrema": [
+        0,
+        255
+      ],
+      "existing_format": "4 direction rows x 4 full-body frames, 72x92 per frame",
+      "jobs": [
+        {
+          "id": "merchant_armor_down_idle",
+          "direction": "down",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_armor_down_walk",
+          "direction": "down",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_armor_left_idle",
+          "direction": "left",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_armor_left_walk",
+          "direction": "left",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_armor_right_idle",
+          "direction": "right",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_armor_right_walk",
+          "direction": "right",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_armor_up_idle",
+          "direction": "up",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_armor_up_walk",
+          "direction": "up",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        }
+      ]
+    },
+    {
+      "id": "merchant_item",
+      "role": "npc_asset",
+      "source": "assets/characters/sprites/merchant_item_walk.png",
+      "source_size": [
+        288,
+        368
+      ],
+      "source_alpha_extrema": [
+        0,
+        255
+      ],
+      "existing_format": "4 direction rows x 4 full-body frames, 72x92 per frame",
+      "jobs": [
+        {
+          "id": "merchant_item_down_idle",
+          "direction": "down",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_item_down_walk",
+          "direction": "down",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_item_left_idle",
+          "direction": "left",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_item_left_walk",
+          "direction": "left",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_item_right_idle",
+          "direction": "right",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_item_right_walk",
+          "direction": "right",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_item_up_idle",
+          "direction": "up",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_item_up_walk",
+          "direction": "up",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        }
+      ]
+    },
+    {
+      "id": "merchant_magic",
+      "role": "npc_asset",
+      "source": "assets/characters/sprites/merchant_magic_walk.png",
+      "source_size": [
+        288,
+        368
+      ],
+      "source_alpha_extrema": [
+        0,
+        255
+      ],
+      "existing_format": "4 direction rows x 4 full-body frames, 72x92 per frame",
+      "jobs": [
+        {
+          "id": "merchant_magic_down_idle",
+          "direction": "down",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_magic_down_walk",
+          "direction": "down",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_magic_left_idle",
+          "direction": "left",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_magic_left_walk",
+          "direction": "left",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_magic_right_idle",
+          "direction": "right",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_magic_right_walk",
+          "direction": "right",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_magic_up_idle",
+          "direction": "up",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_magic_up_walk",
+          "direction": "up",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        }
+      ]
+    },
+    {
+      "id": "merchant_weapon",
+      "role": "npc_asset",
+      "source": "assets/characters/sprites/merchant_weapon_walk.png",
+      "source_size": [
+        288,
+        368
+      ],
+      "source_alpha_extrema": [
+        0,
+        255
+      ],
+      "existing_format": "4 direction rows x 4 full-body frames, 72x92 per frame",
+      "jobs": [
+        {
+          "id": "merchant_weapon_down_idle",
+          "direction": "down",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_weapon_down_walk",
+          "direction": "down",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_weapon_left_idle",
+          "direction": "left",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_weapon_left_walk",
+          "direction": "left",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_weapon_right_idle",
+          "direction": "right",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_weapon_right_walk",
+          "direction": "right",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_weapon_up_idle",
+          "direction": "up",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "merchant_weapon_up_walk",
+          "direction": "up",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        }
+      ]
+    },
+    {
+      "id": "npc_citizen_female",
+      "role": "npc_asset",
+      "source": "assets/characters/sprites/npc_citizen_female_walk.png",
+      "source_size": [
+        288,
+        368
+      ],
+      "source_alpha_extrema": [
+        0,
+        255
+      ],
+      "existing_format": "4 direction rows x 4 full-body frames, 72x92 per frame",
+      "jobs": [
+        {
+          "id": "npc_citizen_female_down_idle",
+          "direction": "down",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_citizen_female_down_walk",
+          "direction": "down",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_citizen_female_left_idle",
+          "direction": "left",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_citizen_female_left_walk",
+          "direction": "left",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_citizen_female_right_idle",
+          "direction": "right",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_citizen_female_right_walk",
+          "direction": "right",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_citizen_female_up_idle",
+          "direction": "up",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_citizen_female_up_walk",
+          "direction": "up",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        }
+      ]
+    },
+    {
+      "id": "npc_citizen_male",
+      "role": "npc_asset",
+      "source": "assets/characters/sprites/npc_citizen_male_walk.png",
+      "source_size": [
+        288,
+        368
+      ],
+      "source_alpha_extrema": [
+        0,
+        255
+      ],
+      "existing_format": "4 direction rows x 4 full-body frames, 72x92 per frame",
+      "jobs": [
+        {
+          "id": "npc_citizen_male_down_idle",
+          "direction": "down",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_citizen_male_down_walk",
+          "direction": "down",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_citizen_male_left_idle",
+          "direction": "left",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_citizen_male_left_walk",
+          "direction": "left",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_citizen_male_right_idle",
+          "direction": "right",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_citizen_male_right_walk",
+          "direction": "right",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_citizen_male_up_idle",
+          "direction": "up",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_citizen_male_up_walk",
+          "direction": "up",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        }
+      ]
+    },
+    {
+      "id": "npc_elder",
+      "role": "npc_asset",
+      "source": "assets/characters/sprites/npc_elder_walk.png",
+      "source_size": [
+        288,
+        368
+      ],
+      "source_alpha_extrema": [
+        0,
+        255
+      ],
+      "existing_format": "4 direction rows x 4 full-body frames, 72x92 per frame",
+      "jobs": [
+        {
+          "id": "npc_elder_down_idle",
+          "direction": "down",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_elder_down_walk",
+          "direction": "down",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_elder_left_idle",
+          "direction": "left",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_elder_left_walk",
+          "direction": "left",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_elder_right_idle",
+          "direction": "right",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_elder_right_walk",
+          "direction": "right",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_elder_up_idle",
+          "direction": "up",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_elder_up_walk",
+          "direction": "up",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        }
+      ]
+    },
+    {
+      "id": "npc_priest",
+      "role": "npc_asset",
+      "source": "assets/characters/sprites/npc_priest_walk.png",
+      "source_size": [
+        288,
+        368
+      ],
+      "source_alpha_extrema": [
+        0,
+        255
+      ],
+      "existing_format": "4 direction rows x 4 full-body frames, 72x92 per frame",
+      "jobs": [
+        {
+          "id": "npc_priest_down_idle",
+          "direction": "down",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_priest_down_walk",
+          "direction": "down",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_priest_left_idle",
+          "direction": "left",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_priest_left_walk",
+          "direction": "left",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_priest_right_idle",
+          "direction": "right",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_priest_right_walk",
+          "direction": "right",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_priest_up_idle",
+          "direction": "up",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_priest_up_walk",
+          "direction": "up",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        }
+      ]
+    },
+    {
+      "id": "npc_resident",
+      "role": "npc_asset",
+      "source": "assets/characters/sprites/npc_resident_walk.png",
+      "source_size": [
+        288,
+        368
+      ],
+      "source_alpha_extrema": [
+        0,
+        255
+      ],
+      "existing_format": "4 direction rows x 4 full-body frames, 72x92 per frame",
+      "jobs": [
+        {
+          "id": "npc_resident_down_idle",
+          "direction": "down",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_resident_down_walk",
+          "direction": "down",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_resident_left_idle",
+          "direction": "left",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_resident_left_walk",
+          "direction": "left",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_resident_right_idle",
+          "direction": "right",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_resident_right_walk",
+          "direction": "right",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_resident_up_idle",
+          "direction": "up",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_resident_up_walk",
+          "direction": "up",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        }
+      ]
+    },
+    {
+      "id": "npc_worker",
+      "role": "npc_asset",
+      "source": "assets/characters/sprites/npc_worker_walk.png",
+      "source_size": [
+        288,
+        368
+      ],
+      "source_alpha_extrema": [
+        0,
+        255
+      ],
+      "existing_format": "4 direction rows x 4 full-body frames, 72x92 per frame",
+      "jobs": [
+        {
+          "id": "npc_worker_down_idle",
+          "direction": "down",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_worker_down_walk",
+          "direction": "down",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_worker_left_idle",
+          "direction": "left",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_worker_left_walk",
+          "direction": "left",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_worker_right_idle",
+          "direction": "right",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_worker_right_walk",
+          "direction": "right",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_worker_up_idle",
+          "direction": "up",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "npc_worker_up_walk",
+          "direction": "up",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        }
+      ]
+    },
+    {
+      "id": "riku",
+      "role": "main_character",
+      "source": "assets/characters/sprites/riku_walk.png",
+      "source_size": [
+        288,
+        368
+      ],
+      "source_alpha_extrema": [
+        0,
+        255
+      ],
+      "existing_format": "4 direction rows x 4 full-body frames, 72x92 per frame",
+      "jobs": [
+        {
+          "id": "riku_down_idle",
+          "direction": "down",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "riku_down_walk",
+          "direction": "down",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "riku_left_idle",
+          "direction": "left",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "riku_left_walk",
+          "direction": "left",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "riku_right_idle",
+          "direction": "right",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "riku_right_walk",
+          "direction": "right",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "riku_up_idle",
+          "direction": "up",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "riku_up_walk",
+          "direction": "up",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        }
+      ]
+    },
+    {
+      "id": "yami",
+      "role": "main_character",
+      "source": "assets/characters/sprites/yami_walk.png",
+      "source_size": [
+        288,
+        368
+      ],
+      "source_alpha_extrema": [
+        0,
+        255
+      ],
+      "existing_format": "4 direction rows x 4 full-body frames, 72x92 per frame",
+      "jobs": [
+        {
+          "id": "yami_down_idle",
+          "direction": "down",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "yami_down_walk",
+          "direction": "down",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            0,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and down-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "yami_left_idle",
+          "direction": "left",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "yami_left_walk",
+          "direction": "left",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            92,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and left-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "yami_right_idle",
+          "direction": "right",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "yami_right_walk",
+          "direction": "right",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            184,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and right-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "yami_up_idle",
+          "direction": "up",
+          "motion": "idle",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. Subtle breathing and one natural blink; feet stay planted. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        },
+        {
+          "id": "yami_up_walk",
+          "direction": "up",
+          "motion": "walk",
+          "reference_crop_xywh": [
+            0,
+            276,
+            72,
+            92
+          ],
+          "target_frames": 8,
+          "target_loop": true,
+          "status": "not_generated",
+          "prompt": "Animate the supplied existing game character using image-to-GIF generation. Preserve this exact character identity, costume, palette, proportions and up-facing orientation. One seamless in-place walking cycle, alternating full-body weight and feet, no translation. Fixed camera, fixed scale, stable foot anchor and framing. No camera motion, no added scenery, no text, no morphing, no change of clothing. Keep the character body fully opaque; isolate the outside silhouette cleanly. Seamless loop. Do not fade body pixels to create transparency."
+        }
+      ]
+    },
+    {
+      "id": "patrol_drone",
+      "role": "nonhuman_npc",
+      "source": "assets/enemies/enemy_patrol_drone.png",
+      "jobs": [
+        {
+          "id": "patrol_drone_original_idle",
+          "direction": "original",
+          "motion": "idle",
+          "status": "not_generated",
+          "target_frames": 8,
+          "prompt": "Animate the supplied patrol drone as a seamless GIF loop. Preserve exact design and palette. original orientation, subtle hovering for idle; no camera movement or translation, fixed anchor, no added scenery, body fully opaque, clean isolated outer silhouette."
+        },
+        {
+          "id": "patrol_drone_down_roam",
+          "direction": "down",
+          "motion": "roam",
+          "status": "not_generated",
+          "target_frames": 8,
+          "prompt": "Animate the supplied patrol drone as a seamless GIF loop. Preserve exact design and palette. down orientation, subtle hovering for roam; no camera movement or translation, fixed anchor, no added scenery, body fully opaque, clean isolated outer silhouette."
+        },
+        {
+          "id": "patrol_drone_left_roam",
+          "direction": "left",
+          "motion": "roam",
+          "status": "not_generated",
+          "target_frames": 8,
+          "prompt": "Animate the supplied patrol drone as a seamless GIF loop. Preserve exact design and palette. left orientation, subtle hovering for roam; no camera movement or translation, fixed anchor, no added scenery, body fully opaque, clean isolated outer silhouette."
+        },
+        {
+          "id": "patrol_drone_right_roam",
+          "direction": "right",
+          "motion": "roam",
+          "status": "not_generated",
+          "target_frames": 8,
+          "prompt": "Animate the supplied patrol drone as a seamless GIF loop. Preserve exact design and palette. right orientation, subtle hovering for roam; no camera movement or translation, fixed anchor, no added scenery, body fully opaque, clean isolated outer silhouette."
+        },
+        {
+          "id": "patrol_drone_up_roam",
+          "direction": "up",
+          "motion": "roam",
+          "status": "not_generated",
+          "target_frames": 8,
+          "prompt": "Animate the supplied patrol drone as a seamless GIF loop. Preserve exact design and palette. up orientation, subtle hovering for roam; no camera movement or translation, fixed anchor, no added scenery, body fully opaque, clean isolated outer silhouette."
+        }
+      ]
+    }
+  ],
+  "actor_count": 20,
+  "generation_job_count": 157,
+  "cost_status": "not_estimated_or_authorized_for_paid_API_batch",
+  "deployment": "not_requested_or_performed",
+  "portrait_jobs": [
+    {
+      "id": "kaito_bust_idle",
+      "source": "assets/characters/kaito_bust.png",
+      "status": "not_generated",
+      "target_frames": 8,
+      "prompt": "Animate this exact dialogue bust as a seamless GIF: subtle breathing and one natural blink only, preserve identity, clothing, expression, scale, and framing. Fully opaque body, clean isolated silhouette, no scenery or camera movement."
+    },
+    {
+      "id": "akari_bust_idle",
+      "source": "assets/characters/akari_bust.png",
+      "status": "not_generated",
+      "target_frames": 8,
+      "prompt": "Animate this exact dialogue bust as a seamless GIF: subtle breathing and one natural blink only, preserve identity, clothing, expression, scale, and framing. Fully opaque body, clean isolated silhouette, no scenery or camera movement."
+    },
+    {
+      "id": "riku_bust_idle",
+      "source": "assets/characters/riku_bust.png",
+      "status": "not_generated",
+      "target_frames": 8,
+      "prompt": "Animate this exact dialogue bust as a seamless GIF: subtle breathing and one natural blink only, preserve identity, clothing, expression, scale, and framing. Fully opaque body, clean isolated silhouette, no scenery or camera movement."
+    },
+    {
+      "id": "yami_bust_idle",
+      "source": "assets/characters/yami_bust.png",
+      "status": "not_generated",
+      "target_frames": 8,
+      "prompt": "Animate this exact dialogue bust as a seamless GIF: subtle breathing and one natural blink only, preserve identity, clothing, expression, scale, and framing. Fully opaque body, clean isolated silhouette, no scenery or camera movement."
+    }
+  ],
+  "total_planned_jobs_with_portraits": 161,
+  "inventory_summary": {
+    "maps": 27,
+    "npc_instances": 48,
+    "human_instances": 26,
+    "enemy_instances": 19,
+    "object_instances": 2,
+    "nonhuman_npc_instances": 1,
+    "unresolved_sprite_count": 0
+  }
+}

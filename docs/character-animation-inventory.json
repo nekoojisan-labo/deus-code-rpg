@@ -1,0 +1,1337 @@
+{
+  "generatedAt": "2026-11-12T02:22:45.215Z",
+  "sourceRevision": "1286fb4 with local rendering edits",
+  "player": {
+    "name": "カイト",
+    "sprite": "assets/characters/sprites/kaito_walk.webp",
+    "animationNeeds": {
+      "idle": true,
+      "walkFourDirections": true,
+      "directionalIdle": true
+    }
+  },
+  "npcInstances": [
+    {
+      "map": "deep_tunnel",
+      "mapName": "深層地下トンネル - 第1層",
+      "index": 0,
+      "id": null,
+      "name": "シャドウエンティティ",
+      "emoji": "👹",
+      "sprite": "assets/enemies/enemy_shadow_entity.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": true,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "enemy",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "deep_tunnel",
+      "mapName": "深層地下トンネル - 第1層",
+      "index": 1,
+      "id": null,
+      "name": "データスパイダー",
+      "emoji": "🕷️",
+      "sprite": "assets/enemies/enemy_data_spider.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": true,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "enemy",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "deep_tunnel",
+      "mapName": "深層地下トンネル - 第1層",
+      "index": 2,
+      "id": null,
+      "name": "グリッチスピリット",
+      "emoji": "⚡",
+      "sprite": "assets/enemies/enemy_glitch_spirit.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": true,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "enemy",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "deep_tunnel",
+      "mapName": "深層地下トンネル - 第1層",
+      "index": 3,
+      "id": "leviathan_core_boss",
+      "name": "リヴァイアサン・コア",
+      "emoji": "🐉",
+      "sprite": "assets/enemies/enemy_leviathan_core.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": false,
+      "boss": true,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "enemy",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "deep_tunnel_2",
+      "mapName": "深層地下トンネル - 第2層",
+      "index": 0,
+      "id": null,
+      "name": "ネクロマンサー",
+      "emoji": "💀",
+      "sprite": "assets/enemies/enemy_necromancer.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": true,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "enemy",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "deep_tunnel_2",
+      "mapName": "深層地下トンネル - 第2層",
+      "index": 1,
+      "id": null,
+      "name": "データドラゴン",
+      "emoji": "🐉",
+      "sprite": "assets/enemies/enemy_data_dragon.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": true,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "enemy",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shop_weapon",
+      "mapName": "武器店 - リョウの店",
+      "index": 0,
+      "id": null,
+      "name": "武器商人リョウ",
+      "emoji": "🗡️",
+      "sprite": "assets/characters/sprites/merchant_weapon_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": true,
+      "shop": true,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shop_armor",
+      "mapName": "防具店 - サクラの店",
+      "index": 0,
+      "id": null,
+      "name": "防具商人サクラ",
+      "emoji": "🛡️",
+      "sprite": "assets/characters/sprites/merchant_armor_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": true,
+      "shop": true,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shop_item",
+      "mapName": "道具店 - ユウキの店",
+      "index": 0,
+      "id": null,
+      "name": "アイテム商人ユウキ",
+      "emoji": "🧪",
+      "sprite": "assets/characters/sprites/merchant_item_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": true,
+      "shop": true,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shop_magic",
+      "mapName": "魔法店 - ミコトの店",
+      "index": 0,
+      "id": null,
+      "name": "魔法商人ミコト",
+      "emoji": "🔮",
+      "sprite": "assets/characters/sprites/merchant_magic_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": true,
+      "shop": true,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shop_inn",
+      "mapName": "宿屋 - やすらぎの宿",
+      "index": 0,
+      "id": null,
+      "name": "宿屋の主人",
+      "emoji": "🏠",
+      "sprite": "assets/characters/sprites/innkeeper_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": true,
+      "shop": true,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shop_guild",
+      "mapName": "冒険者ギルド",
+      "index": 0,
+      "id": null,
+      "name": "ギルドマスター",
+      "emoji": "⚔️",
+      "sprite": "assets/characters/sprites/guildmaster_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": true,
+      "shop": false,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shop_guild",
+      "mapName": "冒険者ギルド",
+      "index": 1,
+      "id": null,
+      "name": "冒険者A",
+      "emoji": "🧝",
+      "sprite": "assets/characters/sprites/npc_worker_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": {
+        "type": "roam",
+        "radius": 30,
+        "wait": [
+          650,
+          1700
+        ]
+      },
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": true,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shop_guild",
+      "mapName": "冒険者ギルド",
+      "index": 2,
+      "id": null,
+      "name": "冒険者B",
+      "emoji": "🧙",
+      "sprite": "assets/characters/sprites/npc_priest_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": {
+        "type": "roam",
+        "radius": 30,
+        "wait": [
+          650,
+          1700
+        ]
+      },
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": true,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shop_bank",
+      "mapName": "新宿中央銀行",
+      "index": 0,
+      "id": null,
+      "name": "銀行員",
+      "emoji": "💰",
+      "sprite": "assets/characters/sprites/banker_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": true,
+      "shop": false,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shop_black_market",
+      "mapName": "闇市 - 裏商店",
+      "index": 0,
+      "id": null,
+      "name": "闇商人",
+      "emoji": "👨‍🔧",
+      "sprite": "assets/characters/sprites/dark_merchant_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": true,
+      "shop": true,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "house_1",
+      "mapName": "民家",
+      "index": 0,
+      "id": null,
+      "name": "住人",
+      "emoji": "👨",
+      "sprite": "assets/characters/sprites/npc_resident_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": {
+        "type": "roam",
+        "radius": 30,
+        "wait": [
+          650,
+          1700
+        ]
+      },
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": true,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shrine_inner",
+      "mapName": "明治神宮 - 本殿",
+      "index": 0,
+      "id": null,
+      "name": "御神体",
+      "emoji": "⛩️",
+      "sprite": "assets/objects/sacred_relic.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": false,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "object",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "tokyo_gov_floor2",
+      "mapName": "東京都庁 - 2階",
+      "index": 0,
+      "id": null,
+      "name": "ガードロボ",
+      "emoji": "🤖",
+      "sprite": "assets/enemies/enemy_guard_robo.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": true,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "enemy",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "tokyo_gov_floor2",
+      "mapName": "東京都庁 - 2階",
+      "index": 1,
+      "id": null,
+      "name": "ガードロボ",
+      "emoji": "🤖",
+      "sprite": "assets/enemies/enemy_guard_robo.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": true,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "enemy",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "tokyo_gov_floor3",
+      "mapName": "東京都庁 - 最上階",
+      "index": 0,
+      "id": null,
+      "name": "アーク・プライム",
+      "emoji": "🦾",
+      "sprite": "assets/enemies/enemy_ark_prime.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": true,
+      "boss": true,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "enemy",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "deep_tunnel_3",
+      "mapName": "深層地下トンネル - 第3層",
+      "index": 0,
+      "id": null,
+      "name": "ファントム",
+      "emoji": "👻",
+      "sprite": "assets/enemies/enemy_phantom.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": true,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "enemy",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "deep_tunnel_3",
+      "mapName": "深層地下トンネル - 第3層",
+      "index": 1,
+      "id": null,
+      "name": "ダークバット群",
+      "emoji": "🦇",
+      "sprite": "assets/enemies/enemy_dark_bats.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": true,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "enemy",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "deep_tunnel_3",
+      "mapName": "深層地下トンネル - 第3層",
+      "index": 2,
+      "id": null,
+      "name": "スケルトンナイト",
+      "emoji": "💀",
+      "sprite": "assets/enemies/enemy_skeleton_knight.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": true,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "enemy",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "deep_tunnel_4",
+      "mapName": "深層地下トンネル - 第4層（最深部）",
+      "index": 0,
+      "id": null,
+      "name": "クイーンスパイダー",
+      "emoji": "🕷️",
+      "sprite": "assets/enemies/enemy_queen_spider.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": true,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "enemy",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "deep_tunnel_4",
+      "mapName": "深層地下トンネル - 第4層（最深部）",
+      "index": 1,
+      "id": null,
+      "name": "デーモンロード",
+      "emoji": "👹",
+      "sprite": "assets/enemies/enemy_demon_lord.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": true,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "enemy",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "deep_tunnel_boss",
+      "mapName": "深淵の玉座",
+      "index": 0,
+      "id": null,
+      "name": "真・デウス",
+      "emoji": "🌟",
+      "sprite": "assets/enemies/enemy_true_deus.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": false,
+      "boss": true,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "enemy",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shinjuku_center_plaza",
+      "mapName": "新宿 - 中央広場",
+      "index": 0,
+      "id": null,
+      "name": "感情を失った市民",
+      "emoji": "👤",
+      "sprite": "assets/characters/sprites/npc_citizen_male_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": {
+        "type": "roam",
+        "radius": 30,
+        "wait": [
+          650,
+          1700
+        ]
+      },
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": true,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shinjuku_station_gate",
+      "mapName": "新宿駅 - 改札前",
+      "index": 0,
+      "id": null,
+      "name": "パトロールドローン",
+      "emoji": "🤖",
+      "sprite": "assets/enemies/enemy_patrol_drone.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": false,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": {
+        "type": "roam",
+        "radius": 45,
+        "wait": [
+          500,
+          1400
+        ]
+      },
+      "classification": "nonhuman_npc",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": true,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shinjuku_station_gate",
+      "mapName": "新宿駅 - 改札前",
+      "index": 1,
+      "id": null,
+      "name": "アカリ",
+      "emoji": "🧙‍♀️",
+      "sprite": "assets/characters/sprites/akari_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "subway_concourse_a",
+      "mapName": "新宿駅 - 地下コンコースA",
+      "index": 0,
+      "id": null,
+      "name": "暴走ドローン",
+      "emoji": "🤖",
+      "sprite": "assets/enemies/enemy_corrupted_drone.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": true,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "enemy",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shopping_street_north",
+      "mapName": "渋谷商業街 - 北通り",
+      "index": 0,
+      "id": null,
+      "name": "武器店の呼び込み",
+      "emoji": "🗡️",
+      "sprite": "assets/characters/sprites/merchant_weapon_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": true,
+      "shop": false,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shopping_street_north",
+      "mapName": "渋谷商業街 - 北通り",
+      "index": 1,
+      "id": null,
+      "name": "防具店の呼び込み",
+      "emoji": "🛡️",
+      "sprite": "assets/characters/sprites/merchant_armor_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": true,
+      "shop": false,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shopping_street_north",
+      "mapName": "渋谷商業街 - 北通り",
+      "index": 2,
+      "id": null,
+      "name": "道具店の呼び込み",
+      "emoji": "🧪",
+      "sprite": "assets/characters/sprites/merchant_item_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": true,
+      "shop": false,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shopping_street_north",
+      "mapName": "渋谷商業街 - 北通り",
+      "index": 3,
+      "id": null,
+      "name": "魔法店の呼び込み",
+      "emoji": "🔮",
+      "sprite": "assets/characters/sprites/merchant_magic_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": true,
+      "shop": false,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shopping_street_south",
+      "mapName": "渋谷商業街 - 南広場",
+      "index": 0,
+      "id": null,
+      "name": "宿屋の案内人",
+      "emoji": "🏠",
+      "sprite": "assets/characters/sprites/innkeeper_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": true,
+      "shop": false,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shopping_street_south",
+      "mapName": "渋谷商業街 - 南広場",
+      "index": 1,
+      "id": null,
+      "name": "銀行の案内人",
+      "emoji": "💰",
+      "sprite": "assets/characters/sprites/banker_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": true,
+      "shop": false,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shopping_street_south",
+      "mapName": "渋谷商業街 - 南広場",
+      "index": 2,
+      "id": null,
+      "name": "ギルド案内人",
+      "emoji": "⚔️",
+      "sprite": "assets/characters/sprites/guildmaster_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": true,
+      "shop": false,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shopping_street_south",
+      "mapName": "渋谷商業街 - 南広場",
+      "index": 3,
+      "id": null,
+      "name": "路地裏の男",
+      "emoji": "🕵️",
+      "sprite": "assets/characters/sprites/dark_merchant_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": true,
+      "shop": false,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "black_market_entrance",
+      "mapName": "闇市 - 入口路地",
+      "index": 0,
+      "id": null,
+      "name": "ヤミ",
+      "emoji": "🧑‍💻",
+      "sprite": "assets/characters/sprites/yami_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": true,
+      "shop": false,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "black_market_entrance",
+      "mapName": "闇市 - 入口路地",
+      "index": 1,
+      "id": null,
+      "name": "闇市の案内人",
+      "emoji": "👨‍🔧",
+      "sprite": "assets/characters/sprites/dark_merchant_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": true,
+      "shop": false,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "residential_street",
+      "mapName": "住宅街 - 東通り",
+      "index": 0,
+      "id": null,
+      "name": "おばあさん",
+      "emoji": "👵",
+      "sprite": "assets/characters/sprites/npc_elder_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": {
+        "type": "roam",
+        "radius": 22,
+        "wait": [
+          1400,
+          3000
+        ]
+      },
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": true,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "residential_street",
+      "mapName": "住宅街 - 東通り",
+      "index": 1,
+      "id": null,
+      "name": "郵便ポスト",
+      "emoji": "📮",
+      "sprite": "assets/objects/post_box.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": false,
+      "boss": false,
+      "static": true,
+      "shop": false,
+      "motion": null,
+      "classification": "object",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "shrine_south_gate",
+      "mapName": "明治神宮 - 南参道",
+      "index": 0,
+      "id": null,
+      "name": "老神主",
+      "emoji": "👴",
+      "sprite": "assets/characters/sprites/npc_priest_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": true,
+      "shop": false,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "tokyo_gov_approach",
+      "mapName": "東京都庁 - アーク前庭",
+      "index": 0,
+      "id": null,
+      "name": "セキュリティドローン",
+      "emoji": "🤖",
+      "sprite": "assets/enemies/enemy_security_drone.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": true,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "enemy",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "tokyo_gov_approach",
+      "mapName": "東京都庁 - アーク前庭",
+      "index": 1,
+      "id": null,
+      "name": "セキュリティドローン",
+      "emoji": "🤖",
+      "sprite": "assets/enemies/enemy_security_drone.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": true,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "enemy",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "tokyo_gov_approach",
+      "mapName": "東京都庁 - アーク前庭",
+      "index": 2,
+      "id": "archon_deus_boss",
+      "name": "アルコン・デウス",
+      "emoji": "👑",
+      "sprite": "assets/enemies/enemy_archon_deus.png",
+      "spriteExists": true,
+      "walkSprite": false,
+      "hostile": false,
+      "boss": true,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "enemy",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": false
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    },
+    {
+      "map": "biodome_gate",
+      "mapName": "バイオドーム - 西ゲート",
+      "index": 0,
+      "id": null,
+      "name": "リク",
+      "emoji": "🛡️",
+      "sprite": "assets/characters/sprites/riku_walk.png",
+      "spriteExists": true,
+      "walkSprite": true,
+      "hostile": false,
+      "boss": false,
+      "static": false,
+      "shop": false,
+      "motion": null,
+      "classification": "human",
+      "animationNeeds": {
+        "idle": true,
+        "walkFourDirections": false,
+        "directionalIdle": true
+      },
+      "basis": "Evaluated MapSystem constructor and getNPCSpritePath/getNPCMotionSpec; classification provisional for non-character sprites"
+    }
+  ],
+  "summary": {
+    "maps": 27,
+    "npcInstances": 48,
+    "uniqueResolvedSprites": [
+      "assets/enemies/enemy_shadow_entity.png",
+      "assets/enemies/enemy_data_spider.png",
+      "assets/enemies/enemy_glitch_spirit.png",
+      "assets/enemies/enemy_leviathan_core.png",
+      "assets/enemies/enemy_necromancer.png",
+      "assets/enemies/enemy_data_dragon.png",
+      "assets/characters/sprites/merchant_weapon_walk.png",
+      "assets/characters/sprites/merchant_armor_walk.png",
+      "assets/characters/sprites/merchant_item_walk.png",
+      "assets/characters/sprites/merchant_magic_walk.png",
+      "assets/characters/sprites/innkeeper_walk.png",
+      "assets/characters/sprites/guildmaster_walk.png",
+      "assets/characters/sprites/npc_worker_walk.png",
+      "assets/characters/sprites/npc_priest_walk.png",
+      "assets/characters/sprites/banker_walk.png",
+      "assets/characters/sprites/dark_merchant_walk.png",
+      "assets/characters/sprites/npc_resident_walk.png",
+      "assets/objects/sacred_relic.png",
+      "assets/enemies/enemy_guard_robo.png",
+      "assets/enemies/enemy_ark_prime.png",
+      "assets/enemies/enemy_phantom.png",
+      "assets/enemies/enemy_dark_bats.png",
+      "assets/enemies/enemy_skeleton_knight.png",
+      "assets/enemies/enemy_queen_spider.png",
+      "assets/enemies/enemy_demon_lord.png",
+      "assets/enemies/enemy_true_deus.png",
+      "assets/characters/sprites/npc_citizen_male_walk.png",
+      "assets/enemies/enemy_patrol_drone.png",
+      "assets/characters/sprites/akari_walk.png",
+      "assets/enemies/enemy_corrupted_drone.png",
+      "assets/characters/sprites/yami_walk.png",
+      "assets/characters/sprites/npc_elder_walk.png",
+      "assets/objects/post_box.png",
+      "assets/enemies/enemy_security_drone.png",
+      "assets/enemies/enemy_archon_deus.png",
+      "assets/characters/sprites/riku_walk.png"
+    ],
+    "missingOrNonWalk": [
+      {
+        "map": "deep_tunnel",
+        "name": "シャドウエンティティ",
+        "sprite": "assets/enemies/enemy_shadow_entity.png",
+        "classification": "enemy"
+      },
+      {
+        "map": "deep_tunnel",
+        "name": "データスパイダー",
+        "sprite": "assets/enemies/enemy_data_spider.png",
+        "classification": "enemy"
+      },
+      {
+        "map": "deep_tunnel",
+        "name": "グリッチスピリット",
+        "sprite": "assets/enemies/enemy_glitch_spirit.png",
+        "classification": "enemy"
+      },
+      {
+        "map": "deep_tunnel",
+        "name": "リヴァイアサン・コア",
+        "sprite": "assets/enemies/enemy_leviathan_core.png",
+        "classification": "enemy"
+      },
+      {
+        "map": "deep_tunnel_2",
+        "name": "ネクロマンサー",
+        "sprite": "assets/enemies/enemy_necromancer.png",
+        "classification": "enemy"
+      },
+      {
+        "map": "deep_tunnel_2",
+        "name": "データドラゴン",
+        "sprite": "assets/enemies/enemy_data_dragon.png",
+        "classification": "enemy"
+      },
+      {
+        "map": "shrine_inner",
+        "name": "御神体",
+        "sprite": "assets/objects/sacred_relic.png",
+        "classification": "object"
+      },
+      {
+        "map": "tokyo_gov_floor2",
+        "name": "ガードロボ",
+        "sprite": "assets/enemies/enemy_guard_robo.png",
+        "classification": "enemy"
+      },
+      {
+        "map": "tokyo_gov_floor2",
+        "name": "ガードロボ",
+        "sprite": "assets/enemies/enemy_guard_robo.png",
+        "classification": "enemy"
+      },
+      {
+        "map": "tokyo_gov_floor3",
+        "name": "アーク・プライム",
+        "sprite": "assets/enemies/enemy_ark_prime.png",
+        "classification": "enemy"
+      },
+      {
+        "map": "deep_tunnel_3",
+        "name": "ファントム",
+        "sprite": "assets/enemies/enemy_phantom.png",
+        "classification": "enemy"
+      },
+      {
+        "map": "deep_tunnel_3",
+        "name": "ダークバット群",
+        "sprite": "assets/enemies/enemy_dark_bats.png",
+        "classification": "enemy"
+      },
+      {
+        "map": "deep_tunnel_3",
+        "name": "スケルトンナイト",
+        "sprite": "assets/enemies/enemy_skeleton_knight.png",
+        "classification": "enemy"
+      },
+      {
+        "map": "deep_tunnel_4",
+        "name": "クイーンスパイダー",
+        "sprite": "assets/enemies/enemy_queen_spider.png",
+        "classification": "enemy"
+      },
+      {
+        "map": "deep_tunnel_4",
+        "name": "デーモンロード",
+        "sprite": "assets/enemies/enemy_demon_lord.png",
+        "classification": "enemy"
+      },
+      {
+        "map": "deep_tunnel_boss",
+        "name": "真・デウス",
+        "sprite": "assets/enemies/enemy_true_deus.png",
+        "classification": "enemy"
+      },
+      {
+        "map": "shinjuku_station_gate",
+        "name": "パトロールドローン",
+        "sprite": "assets/enemies/enemy_patrol_drone.png",
+        "classification": "nonhuman_npc"
+      },
+      {
+        "map": "subway_concourse_a",
+        "name": "暴走ドローン",
+        "sprite": "assets/enemies/enemy_corrupted_drone.png",
+        "classification": "enemy"
+      },
+      {
+        "map": "residential_street",
+        "name": "郵便ポスト",
+        "sprite": "assets/objects/post_box.png",
+        "classification": "object"
+      },
+      {
+        "map": "tokyo_gov_approach",
+        "name": "セキュリティドローン",
+        "sprite": "assets/enemies/enemy_security_drone.png",
+        "classification": "enemy"
+      },
+      {
+        "map": "tokyo_gov_approach",
+        "name": "セキュリティドローン",
+        "sprite": "assets/enemies/enemy_security_drone.png",
+        "classification": "enemy"
+      },
+      {
+        "map": "tokyo_gov_approach",
+        "name": "アルコン・デウス",
+        "sprite": "assets/enemies/enemy_archon_deus.png",
+        "classification": "enemy"
+      }
+    ]
+  }
+}

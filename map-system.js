@@ -3719,7 +3719,7 @@ class MapSystem {
         ctx.fillStyle = fill;
         ctx.strokeStyle = stroke;
         ctx.lineWidth = 2;
-        ctx.globalAlpha = 0.92;
+        ctx.globalAlpha *= 0.92;
 
         if (object.kind === 'street_lamp') {
             ctx.beginPath();
@@ -3892,12 +3892,56 @@ class MapSystem {
         drawables
             .sort((a, b) => (a.depth - b.depth) || (a.order - b.order))
             .forEach(entry => {
-                if (entry.type === 'object') this.drawObject(ctx, entry.object);
+                if (entry.type === 'object') {
+                    const o = entry.object;
+                    // Fade foreground objects only where they cover the player's body.
+                    // Keep collision geometry and painter order unchanged.
+                    const scale = this.getMapScale(this.currentMap);
+                    const overlapsPlayer = player && entry.depth > player.y &&
+                        o.x + o.w / 2 > player.x - 18 * scale &&
+                        o.x - o.w / 2 < player.x + 18 * scale &&
+                        o.y > player.y - 64 * scale && o.y - o.h < player.y;
+                    ctx.save();
+                    if (overlapsPlayer) ctx.globalAlpha *= 0.45;
+                    this.drawObject(ctx, o);
+                    ctx.restore();
+                }
                 else if (entry.type === 'npc') this.drawSingleNPC(ctx, entry.npc, storyFlags);
                 else if (entry.type === 'player' && typeof drawPlayerCallback === 'function') drawPlayerCallback();
             });
     }
 
+    // Render after world entities so foreground art cannot hide navigation hints.
+    drawExitGuides(ctx, canvas) {
+        const map = this.maps[this.currentMap];
+        if (!map) return;
+        const arrows = { north: '↑', south: '↓', east: '→', west: '←' };
+        ctx.save();
+        ctx.globalAlpha = 1;
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        for (const exit of (map.exits || [])) {
+            const target = this.maps[this.normalizeMapId(exit.to)];
+            if (!target || this.evalExitGate(exit)) continue;
+            // Hidden non-door exits may be secrets; do not reveal them.
+            if (exit.visible === false && !exit.autoEnter) continue;
+            const p = this.worldToScreenPoint(exit.x + exit.width / 2, exit.y + exit.height / 2);
+            if (p.x < -24 || p.x > canvas.width + 24 || p.y < -24 || p.y > canvas.height + 24) continue;
+            const label = (arrows[exit.direction] || '◇') + ' ' + (target.name || exit.to);
+            const width = Math.min(canvas.width - 16, ctx.measureText(label).width + 18);
+            const x = Math.max(width / 2 + 8, Math.min(canvas.width - width / 2 - 8, p.x));
+            const y = Math.max(16, Math.min(canvas.height - 16, p.y));
+            ctx.fillStyle = 'rgba(4,12,24,0.90)';
+            ctx.fillRect(x - width / 2, y - 11, width, 22);
+            ctx.strokeStyle = '#83e7ff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x - width / 2, y - 11, width, 22);
+            ctx.fillStyle = '#ecfbff';
+            ctx.fillText(label, x, y, width - 12);
+        }
+        ctx.restore();
+    }
     drawNPCs(ctx, storyFlags) {
         const map = this.maps[this.currentMap];
         if (!map || !map.npcs) return;
