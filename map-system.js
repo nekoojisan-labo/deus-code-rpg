@@ -9,7 +9,7 @@ class MapSystem {
         this.mapImages = {};
         this.spriteImages = {};
         this.objectImages = {};
-        this.assetVersion = '20260710-field-motion';
+        this.assetVersion = '20261113-idle-motion';
         this.baseWidth = 800;
         this.baseHeight = 450;
         this.camera = { x: 0, y: 0 };
@@ -66,6 +66,11 @@ class MapSystem {
             '郵便ポスト': 'assets/objects/post_box.png'
         };
         this.walkSprite = { frameWidth:72, frameHeight:92, frames:4, fps:7, frameSequence:[0,1,2,3], idleFrame:0, rows:{down:0,left:1,right:2,up:3} };
+        // 待機シート(*_idle.png・tools/generate_idle_sprites.py): 歩行シートと同じ並び・寸法の呼吸4コマ。停止中に実時間で回す。
+        this.idleSprite = { frames: 4, cycleMs: 1200 };
+        // 1枚絵(敵・ドローン)の描画側の動き。hover=上へ浮く(沈まない) / breathe=下端固定で縦だけ伸縮。
+        this.ambientMotion = { hoverPeriodMs: 1800, hoverAmplitudePx: 3, breathePeriodMs: 1600, breatheScale: 0.02 };
+        this.hoverSpritePaths = new Set();
         this.npcMotion = {
             citizenSpeed: 48,
             hostileSpeed: 64,
@@ -2766,7 +2771,7 @@ class MapSystem {
 
     getOptimizedImagePath(path) {
         if (typeof path !== 'string') return path;
-        if (path.startsWith('assets/characters/sprites/') && path.endsWith('_walk.png')) {
+        if (path.startsWith('assets/characters/sprites/') && (path.endsWith('_walk.png') || path.endsWith('_idle.png'))) {
             return path;
         }
         const webpEligible = (
@@ -2854,6 +2859,8 @@ class MapSystem {
         map.npcs.forEach(npc => {
             const path = this.getNPCSpritePath(npc);
             this.loadSpriteImage(path);
+            const idlePath = this.getIdleSpritePath(path);
+            if (idlePath) this.loadSpriteImage(idlePath);
         });
     }
 
@@ -3011,6 +3018,99 @@ class MapSystem {
         if (!isMoving) { col = ws.idleFrame; }
         else { const seq = ws.frameSequence; const idx = Math.floor((animTimeMs / 1000) * ws.fps) % seq.length; col = seq[idx]; }
         return { sx: col * ws.frameWidth, sy: row * ws.frameHeight, sw: ws.frameWidth, sh: ws.frameHeight };
+    }
+
+    getAnimClockMs() {
+        return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    }
+
+    // 名前などの文字列から決まる位相(乱数なし)。全員が同じ拍で上下しないようにずらす。
+    getAnimPhaseMs(key, periodMs = this.idleSprite.cycleMs) {
+        const s = String(key == null ? '' : key);
+        let h = 2166136261;
+        for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+        return h % periodMs;
+    }
+
+    getIdleSpritePath(walkPath) {
+        if (!this.isCharacterWalkSpritePath(walkPath)) return null;
+        return walkPath.split('?')[0].replace(/_walk\.(?:png|webp)$/, '_idle.png');
+    }
+
+    // 待機シートは読み込み済み・歩行シートと同じ寸法の時だけ使う(違えば歩行シート列0へ戻る)。
+    isUsableIdleSheet(idleImage, walkImage) {
+        const ws = this.walkSprite;
+        return Boolean(
+            idleImage && walkImage && idleImage.complete && idleImage.naturalWidth > 0 &&
+            idleImage.naturalWidth === walkImage.naturalWidth &&
+            idleImage.naturalHeight === walkImage.naturalHeight &&
+            idleImage.naturalWidth >= ws.frameWidth * ws.frames &&
+            idleImage.naturalHeight >= ws.frameHeight * 4
+        );
+    }
+
+    computeIdleFrame(facing, clockMs, phaseMs = 0) {
+        const ws = this.walkSprite, is = this.idleSprite;
+        const row = ws.rows[facing] ?? ws.rows.down;
+        const t = (((clockMs + phaseMs) % is.cycleMs) + is.cycleMs) % is.cycleMs;
+        const col = Math.min(is.frames - 1, Math.floor((t / is.cycleMs) * is.frames));
+        return { sx: col * ws.frameWidth, sy: row * ws.frameHeight, sw: ws.frameWidth, sh: ws.frameHeight };
+    }
+
+    // 歩行中=歩行シート(animTime) / 停止中=待機シート(実時間+位相)。寸法・足元は同じなので切替で跳ねない。
+    selectCharacterFrame(walkImage, idleImage, facing, isMoving, animTimeMs, clockMs, phaseMs = 0) {
+        if (!isMoving && this.isUsableIdleSheet(idleImage, walkImage)) {
+            return Object.assign({ image: idleImage, idle: true }, this.computeIdleFrame(facing, clockMs, phaseMs));
+        }
+        return Object.assign({ image: walkImage, idle: false }, this.computeWalkFrame(facing, isMoving, animTimeMs));
+    }
+
+    // 歩行コマの時計を実時間で進める(描画の頻度で歩く見え方が変わらない)。NPC の updateNPCs と同じ上限で丸める。
+    advanceAnimTime(entity, key) {
+        const now = this.getAnimClockMs();
+        if (!this._animLastAt) this._animLastAt = {};
+        const prev = this._animLastAt[key];
+        this._animLastAt[key] = now;
+        const raw = Number.isFinite(prev) ? now - prev : 16;
+        const dt = Math.max(1, Math.min(this.npcMotion.maxDeltaMs, raw));
+        entity.animTime = (entity.animTime || 0) + dt;
+        return dt;
+    }
+
+    // 浮く1枚絵: 敵データで type が drone の敵の画像(index.html で battleSystem から渡す)。
+    setHoverSpritePaths(paths) {
+        this.hoverSpritePaths = new Set((paths || [])
+            .filter(p => typeof p === 'string')
+            .map(p => p.split('?')[0].replace(/\.webp$/, '.png')));
+    }
+
+    getNPCAmbientKind(npc, spritePath) {
+        if (!npc || typeof spritePath !== 'string') return 'none';
+        if (this.isCharacterWalkSpritePath(spritePath)) return 'none';
+        if (spritePath.includes('/objects/')) return 'none';
+        const key = spritePath.split('?')[0].replace(/\.webp$/, '.png');
+        if (this.hoverSpritePaths && this.hoverSpritePaths.has(key)) return 'hover';
+        if (npc.hostile || npc.boss) return 'breathe';
+        return 'none';
+    }
+
+    computeAmbientMotion(kind, clockMs, phaseMs = 0) {
+        const am = this.ambientMotion;
+        if (kind === 'hover') {
+            const a = (2 * Math.PI * (clockMs + phaseMs)) / am.hoverPeriodMs;
+            return { dy: -Math.round(((1 - Math.cos(a)) / 2) * am.hoverAmplitudePx), sy: 1 };
+        }
+        if (kind === 'breathe') {
+            const a = (2 * Math.PI * (clockMs + phaseMs)) / am.breathePeriodMs;
+            return { dy: 0, sy: 1 + am.breatheScale * Math.sin(a) };
+        }
+        return { dy: 0, sy: 1 };
+    }
+
+    getNPCAnimPhaseKey(npc) {
+        const ox = Number.isFinite(npc.originX) ? npc.originX : npc.x;
+        const oy = Number.isFinite(npc.originY) ? npc.originY : npc.y;
+        return `${npc.id || npc.name || npc.emoji || ''}@${Math.round(ox)},${Math.round(oy)}`;
     }
 
     computeWalkJuice() {
@@ -3805,8 +3905,11 @@ class MapSystem {
 
         if (sprite && sprite.complete && sprite.naturalWidth > 0) {
             if (this.isWalkSpriteSheet(spritePath, sprite)) {
-                // スプライトシート: 歩行中はフレームアニメ、停止中はアイドルフレーム(col=0)で完全静止
-                const f = this.computeWalkFrame(npc.facing, npc.isMoving, npc.animTime || 0);
+                // スプライトシート: 歩行中は歩行コマ、停止中は待機シートの呼吸4コマ(無い・読めない時は歩行シート列0)
+                const idlePath = this.getIdleSpritePath(spritePath);
+                const idleSprite = idlePath ? this.loadSpriteImage(idlePath) : null;
+                const f = this.selectCharacterFrame(sprite, idleSprite, npc.facing, npc.isMoving, npc.animTime || 0,
+                    this.getAnimClockMs(), this.getAnimPhaseMs(this.getNPCAnimPhaseKey(npc)));
                 const juice = this.computeWalkJuice(npc.isMoving, npc.animTime || 0);
                 const baseDw = npc.hostile ? 56 : 50, baseDh = npc.hostile ? 72 : 64;
                 const dw = Math.round(baseDw * juice.sx), dh = Math.round(baseDh * juice.sy);
@@ -3817,12 +3920,20 @@ class MapSystem {
                 ctx.imageSmoothingEnabled = false;
                 ctx.translate(footX, footY);
                 if (juice.lean) ctx.rotate(juice.lean);
-                ctx.drawImage(sprite, f.sx, f.sy, f.sw, f.sh, -Math.round(dw / 2), -dh, dw, dh);
+                ctx.drawImage(f.image, f.sx, f.sy, f.sw, f.sh, -Math.round(dw / 2), -dh, dw, dh);
                 ctx.restore();
                 ctx.imageSmoothingEnabled = ps;
             } else {
+                // 1枚絵: 描き直さず描画側の変形だけ。影(上で描画済み)と下端の位置は変えない。
                 const size = npc.boss ? 72 : (npc.hostile ? 50 : 44);
-                ctx.drawImage(sprite, position.x - size / 2, position.y - size, size, size * 1.25);
+                const baseH = size * 1.25;
+                const bottom = position.y - size + baseH;
+                const kind = this.getNPCAmbientKind(npc, spritePath);
+                const motion = kind === 'none'
+                    ? { dy: 0, sy: 1 }
+                    : this.computeAmbientMotion(kind, this.getAnimClockMs(), this.getAnimPhaseMs(this.getNPCAnimPhaseKey(npc)));
+                const h = baseH * motion.sy;
+                ctx.drawImage(sprite, position.x - size / 2, bottom - h + motion.dy, size, h);
             }
         } else {
             this.drawNPCVisualFallback(ctx, npc, position);
@@ -4662,7 +4773,7 @@ class MapSystem {
                 else if (this.isMapPositionWalkable(map, nx, npc.y, 22)) { npc.x = nx; movedNpc = true; }
                 else if (this.isMapPositionWalkable(map, npc.x, ny, 22)) { npc.y = ny; movedNpc = true; }
                 npc.isMoving = movedNpc;
-                npc.animTime = (npc.animTime || 0) + 16;
+                this.advanceAnimTime(npc, `approach:${npc.name}`);
                 npc.facing = faceDir;
             } else if (dist <= TRIGGER && dist > REACH) {
                 npc._approaching = true;

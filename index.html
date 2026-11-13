@@ -3662,7 +3662,7 @@
     <script src="map-walkability-data.js?v=25"></script>
     <script src="object-catalog.js?v=2"></script>
     <script src="map-objects-data.js?v=39"></script>
-    <script src="map-system.js?v=110"></script>
+    <script src="map-system.js?v=111"></script>
     <script src="map-system-grid.js"></script>
     <script src="player-grid-movement.js"></script>
     <script src="bgm-system.js?v=36"></script>
@@ -4062,12 +4062,19 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
         playerSprite.onerror = () => {
             if (!playerSpriteFallbackTried) {
                 playerSpriteFallbackTried = true;
-                playerSprite.src = 'assets/characters/sprites/kaito_walk.png?v=53';
+                playerSprite.src = 'assets/characters/sprites/kaito_walk.png?v=54';
                 return;
             }
             console.log('⚠️ プレイヤースプライト読み込み失敗 - 絵文字で表示');
         };
-        playerSprite.src = 'assets/characters/sprites/kaito_walk.webp?v=53';
+        playerSprite.src = 'assets/characters/sprites/kaito_walk.webp?v=54';
+        // 待機シート(呼吸4コマ・PNGのみ)。読めない/寸法違いの時は歩行シートの列0で描く(mapSystem.selectCharacterFrame)。
+        const playerIdleSprite = new Image();
+        playerIdleSprite.decoding = 'async';
+        playerIdleSprite.onerror = () => {
+            console.log('⚠️ プレイヤー待機スプライト読み込み失敗 - 歩行シートの列0で表示');
+        };
+        playerIdleSprite.src = 'assets/characters/sprites/kaito_idle.png?v=54';
 
         // Input handling
         const keys = {};
@@ -4733,6 +4740,12 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 }, canvas);
                 player.x = initialSpawn.x;
                 player.y = initialSpawn.y;
+                // 浮く1枚絵 = 敵データで type が drone の敵の画像(名前の決め打ちではなく既存の分類から決める)
+                if (battleSystem && battleSystem.enemyDatabase && mapSystem.setHoverSpritePaths) {
+                    mapSystem.setHoverSpritePaths(Object.values(battleSystem.enemyDatabase)
+                        .filter(e => e && e.type === 'drone')
+                        .map(e => battleSystem.getEnemyImagePath(e)));
+                }
                 console.log('[DEBUG] ✓ MapSystem initialized (legacy)');
             } catch (e) {
                 console.error('[ERROR] MapSystem failed:', e);
@@ -4881,7 +4894,11 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
 
             // フルフレーム再生(本物の歩行コマをそのまま送る・整数スナップ)
             if (playerSpriteLoaded && mapSystem && mapSystem.computeWalkFrame) {
-                const f = mapSystem.computeWalkFrame(player.facing, player.isMoving, player.animTime || 0);
+                // 歩行中=歩行シート / 停止中=待機シート(同じコマ寸法・同じ足元)。縁取りの2回とも同じ画像・同じコマ。
+                const f = mapSystem.selectCharacterFrame
+                    ? mapSystem.selectCharacterFrame(playerSprite, playerIdleSprite, player.facing, player.isMoving,
+                        player.animTime || 0, mapSystem.getAnimClockMs(), 0)
+                    : Object.assign({ image: playerSprite }, mapSystem.computeWalkFrame(player.facing, player.isMoving, player.animTime || 0));
                 const dw = 52, dh = 66;
                 const dx = Math.round(playerDrawX - dw / 2);
                 const dy = Math.round((playerDrawY + 6) - dh);
@@ -4895,11 +4912,11 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 ctx.shadowBlur = 3;
                 ctx.shadowOffsetX = 0;
                 ctx.shadowOffsetY = 0;
-                ctx.drawImage(playerSprite, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
+                ctx.drawImage(f.image, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
                 ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
                 ctx.shadowBlur = 1;
                 ctx.shadowOffsetY = 1;
-                ctx.drawImage(playerSprite, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
+                ctx.drawImage(f.image, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
                 ctx.restore();
             }
         }
@@ -5012,7 +5029,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             // 移動した場合
             if (moved) {
                 player.isMoving = true;
-                player.animTime = (player.animTime || 0) + 16;
+                mapSystem.advanceAnimTime(player, 'player'); // 歩行コマの時計は実時間基準(NPCと同じ)
                 player.stepCount++;
                 document.getElementById('stepCount').textContent = player.stepCount;
             }
