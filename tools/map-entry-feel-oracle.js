@@ -279,6 +279,29 @@ for (const [id, m] of Object.entries(ms.maps)) {
   }
 }
 
+// ---- C1/C2: 闇市（black_market_entrance） ----
+{
+  const id = 'black_market_entrance';
+  const m = ms.maps[id];
+  ms.currentMap = id;
+  // C1 階段の右の行き止まりの切れ込み（世界座標 x708〜762, y420〜515）に立てない
+  let open = 0;
+  for (let x = 708; x <= 762; x += 3) for (let y = 420; y <= 515; y += 3) if (ms.isMapPositionWalkable(m, x, y, 24)) open++;
+  if (open) fail('C1', `${id}: 階段右の切れ込みに歩ける点が ${open} 点残っている`);
+  // C2 店の扉の案内ラベル（概算: 全角12px・半角7px＋余白18、高さ22）がヤミの絵（足元基準 50x64）に重ならない
+  const yami = (m.npcs || []).find((n) => n.name === 'ヤミ');
+  const door = (m.exits || []).find((e) => N(e.to) === 'shop_black_market');
+  if (yami && door) {
+    const text = '↑ ' + (ms.maps.shop_black_market.name || '');
+    const w = [...text].reduce((s, ch) => s + (ch.charCodeAt(0) > 255 ? 12 : 7), 0) + 18;
+    const s = ms.getMapScale(id);
+    const cx = door.x + door.width / 2 + (door.guideDx || 0) * s, cy = door.y + door.height / 2 + (door.guideDy || 0) * s;
+    const L = { l: cx - w / 2, r: cx + w / 2, t: cy - 11, b: cy + 11 };
+    const Y = { l: yami.x - 25, r: yami.x + 25, t: yami.y + 6 - 64, b: yami.y + 6 };
+    if (L.l < Y.r && Y.l < L.r && L.t < Y.b && Y.t < L.b) fail('C2', `${id}: 店の扉の案内（${Math.round(L.l)}..${Math.round(L.r)}, ${Math.round(L.t)}..${Math.round(L.b)}）がヤミの絵に重なる`);
+  }
+}
+
 console.log('=== マップ出入りの体感検査（実コードを1フレームずつ） ===');
 console.log('遷移 | 入るキー | 到着点/向き | A1 すぐ戻る | A2 押し続け | A3 離して戻る | A4 向き');
 table.forEach((r) => console.log(`${r.from} -> ${r.to} | ${r.inKey} | ${r.spawn} | ${r.a1} | ${r.a2} | ${r.a3} | ${r.a4}`));
@@ -291,4 +314,4 @@ if (fails.length) {
   console.log('❌ 不合格あり');
   process.exit(1);
 }
-console.log('✅ 全PASS: 到着→すぐ戻れる／押し続けで戻されない／離せば戻れる／向き／自動扉の斜め進入／案内1回／セーブ判定／矢印');
+console.log('✅ 全PASS: 到着→すぐ戻れる／押し続けで戻されない／離せば戻れる／向き／自動扉の斜め進入／案内1回／セーブ判定／矢印／開始位置／闇市の切れ込みと案内位置');

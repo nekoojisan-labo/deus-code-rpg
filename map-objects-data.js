@@ -2447,7 +2447,8 @@ window.MAP_OBJECTS = {
     "autoEnter": true,
     "visible": false,
     "requireFacing": "up",
-    "spawnFace": "up"
+    "spawnFace": "up",
+    "guideDy": -22
    }
   ],
   "objects": [
@@ -2828,6 +2829,64 @@ window.MAP_OBJECTS = {
      "h": 16
     },
     "flip": true
+   },
+   {
+    "kind": "solid_wall",
+    "x": 474,
+    "y": 336,
+    "footprint": {
+     "w": 40,
+     "h": 70
+    },
+    "note": "2026-11-13 階段右の行き止まりの切れ込みを塞ぐ"
+   },
+   {
+    "kind": "black_market_gate",
+    "x": 400,
+    "y": 336,
+    "w": 84,
+    "h": 72,
+    "footprint": {
+     "w": 76,
+     "h": 14
+    },
+    "note": "2026-11-13 中央下の階段は閉鎖（行き止まりの目印）"
+   },
+   {
+    "kind": "black_market_gate",
+    "x": 127,
+    "y": 80,
+    "w": 50,
+    "h": 44,
+    "footprint": {
+     "w": 44,
+     "h": 14
+    },
+    "note": "2026-11-13 左の路地の奥は閉鎖（行き止まりの目印）"
+   },
+   {
+    "kind": "black_market_gate",
+    "x": 678,
+    "y": 48,
+    "w": 48,
+    "h": 44,
+    "footprint": {
+     "w": 44,
+     "h": 14
+    },
+    "note": "2026-11-13 右の大通りの北端は閉鎖（行き止まりの目印）"
+   },
+   {
+    "kind": "black_market_gate",
+    "x": 643,
+    "y": 450,
+    "w": 66,
+    "h": 58,
+    "footprint": {
+     "w": 60,
+     "h": 14
+    },
+    "note": "2026-11-13 右の大通りの南端は閉鎖（行き止まりの目印）"
    }
   ]
  },

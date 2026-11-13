@@ -3928,7 +3928,10 @@ class MapSystem {
             if (!target || this.evalExitGate(exit)) continue;
             // Hidden non-door exits may be secrets; do not reveal them.
             if (exit.visible === false && !exit.autoEnter) continue;
-            const p = this.worldToScreenPoint(exit.x + exit.width / 2, exit.y + exit.height / 2);
+            // guideDx/guideDy（データ座標）: 案内が人物などに重なる出口だけ、ラベルの位置をずらす
+            const gs = this.getMapScale(this.currentMap);
+            const p = this.worldToScreenPoint(exit.x + exit.width / 2 + (exit.guideDx || 0) * gs,
+                exit.y + exit.height / 2 + (exit.guideDy || 0) * gs);
             if (p.x < -24 || p.x > canvas.width + 24 || p.y < -24 || p.y > canvas.height + 24) continue;
             // 自動扉は「入る向き(requireFacing)」で矢印を出す（駅の地下入口は direction:south と
             //   requireFacing:up が食い違い、上へ入る扉に ↓ が出ていた）
