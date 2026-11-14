@@ -4096,7 +4096,7 @@ class MapSystem {
 
         map.npcs.forEach(npc => {
             const pat = npc._patrol;
-            if (!pat || npc.static) { npc.isMoving = false; return; }
+            if (!pat || npc.static) { if (!npc._approaching) npc.isMoving = false; return; }
 
             // 安全網: 何らかの理由で可動域外にいるNPCを最近傍の可動域へ戻し原点を再設定
             if (!this.isMapPositionWalkable(map, npc.x, npc.y, this.npcMotion.bodySize)) {
