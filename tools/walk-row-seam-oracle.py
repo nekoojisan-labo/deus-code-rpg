@@ -1,4 +1,4 @@
-# この19枚専用の座標指定を含む。未解決3種（banker・dark_merchant・npc_citizen_female）は入力のまま出す。
+# この19枚専用の座標指定を含む。未解決だった3種（banker・dark_merchant・npc_citizen_female）は横向きを画像生成で描き直したため（regen_side_rows_from_imagegen.py）、npc_priest は顔を埋めたため、画素の保存の検査から外す。
 """Independent cell inspection (does not import the repair implementation).
 
 python check_walk_rows.py INPUT_DIR CANDIDATE_DIR [--json result.json]
@@ -17,6 +17,10 @@ BROKEN={'akari','banker','dark_merchant','guildmaster','innkeeper','merchant_arm
         'merchant_magic','merchant_weapon','npc_citizen_female','npc_citizen_male',
         'npc_priest','riku','yami'}
 DIRS=('down','left','right','up')
+# 横向きを画像生成で描き直した種類（tools/regen_side_rows_from_imagegen.py）と、
+# 透けた顔を同じ向きの正常なコマの画素で埋めた npc_priest は、画素の保存の検査の対象外。
+# 代わりに下向きの人物（y=0..87）が入力と同じ画素であることを確かめる。足の底・上端・欠片の検査はそのまま。
+REDRAWN={'banker','dark_merchant','npc_citizen_female','npc_priest'}
 # Exact natural-height exceptions, not a free tolerance enlargement. The input
 # already contains these complete, isolated figures. See report.md evidence.
 HEIGHT_EXCEPTIONS={
@@ -32,6 +36,7 @@ HEIGHT_EXCEPTIONS={
     ('npc_citizen_male','right',2):80,('npc_citizen_male','right',3):80,
     ('npc_citizen_male','up',3):81,
     ('npc_citizen_male','left',1):81,('npc_citizen_male','left',3):80,
+    ('banker','up',1):79,
 }
 
 def main_component(mask):
@@ -98,7 +103,11 @@ def check_one(path,reference,strict=False):
                     if strict or not allowed:local.append('height')
             m['errors']=local;cells.append(m)
             errors.extend(f'{direction}[{c}]:{e}' for e in local)
-    for c in range(4):
+    if kind in REDRAWN:
+        same_down=np.array_equal(a[:88],b[:88])
+        strips.append(dict(redrawn=True,down_rows_0_87_equal=same_down))
+        if not same_down:errors.append('down:pixels_changed')
+    for c in ([] if kind in REDRAWN else range(4)):
         aa=a[:,c*72:(c+1)*72];bb=b[:,c*72:(c+1)*72]
         va=aa[aa[:,:,3]>0];vb=bb[bb[:,:,3]>0]
         same=np.array_equal(multiset(va),multiset(vb))

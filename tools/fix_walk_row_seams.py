@@ -1,4 +1,4 @@
-# この19枚専用の座標指定を含む。未解決3種（banker・dark_merchant・npc_citizen_female）は入力のまま出す。
+# この19枚専用の座標指定を含む。未解決3種（banker・dark_merchant・npc_citizen_female）は入力のまま出す（その後 regen_side_rows_from_imagegen.py で横向きを描き直した）。
 """Rearrange the supplied 72x92 walk assets; never resample or paint pixels.
 
 Usage: python fix_walk_row_seams.py INPUT_DIR OUTPUT_DIR

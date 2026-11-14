@@ -9,7 +9,7 @@ class MapSystem {
         this.mapImages = {};
         this.spriteImages = {};
         this.objectImages = {};
-        this.assetVersion = '20261113-side-rows';
+        this.assetVersion = '20261114-side-regen';
         this.baseWidth = 800;
         this.baseHeight = 450;
         this.camera = { x: 0, y: 0 };
