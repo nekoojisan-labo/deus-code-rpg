@@ -1,5 +1,5 @@
 const fs = require('fs'), path = require('path'), vm = require('vm');
-const root = '/Users/takayamanoboruhaku/projects/_deus/clone2';
+const root = path.resolve(__dirname, '..');
 const read = (f) => fs.readFileSync(path.join(root, f), 'utf8');
 const noop = () => {};
 const sb = {

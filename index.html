@@ -3659,10 +3659,10 @@
     <script src="ui-panel.js?v=7"></script>
     <script src="save-system.js?v=2"></script>
     <script src="battle-system.js?v=92"></script>
-    <script src="map-walkability-data.js?v=25"></script>
+    <script src="map-walkability-data.js?v=26"></script>
     <script src="object-catalog.js?v=2"></script>
-    <script src="map-objects-data.js?v=39"></script>
-    <script src="map-system.js?v=114"></script>
+    <script src="map-objects-data.js?v=40"></script>
+    <script src="map-system.js?v=115"></script>
     <script src="map-system-grid.js"></script>
     <script src="player-grid-movement.js"></script>
     <script src="bgm-system.js?v=36"></script>
@@ -4917,6 +4917,15 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 ctx.shadowBlur = 1;
                 ctx.shadowOffsetY = 1;
                 ctx.drawImage(f.image, f.sx, f.sy, f.sw, f.sh, dx, dy, dw, dh);
+                ctx.restore();
+            } else {
+                // 歩行画像が webp も png も読めない時(読み込み中も含む)。影だけで主人公が消えないよう絵文字で描く。
+                ctx.save();
+                ctx.globalAlpha = 1;
+                ctx.font = '40px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText('🧑', Math.round(playerDrawX), Math.round(playerDrawY + 6));
                 ctx.restore();
             }
         }

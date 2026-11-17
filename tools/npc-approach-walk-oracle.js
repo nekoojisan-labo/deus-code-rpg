@@ -78,6 +78,36 @@ ms._npcPaused = false;
 sb.window.isMessageShown = true;
 ms.updateNPCs();
 chk('会話中(メッセージ表示中)は駆け寄り中でも isMoving=false', a2.isMoving === false);
+sb.window.isMessageShown = false;
+
+// 壁に詰まった駆け寄り: 主人公との間に壁があり、ほとんど進めない時は「その場で足踏み」せず立って待つ。
+// (闇市の入口でヤミが障害物に当たり、y が毎フレーム 0.0x px ずつしか動かないのに歩きの絵のまま足踏みしていた)
+const wallMap = {
+  walkableRects: [{ x: 40, y: 40, width: 720, height: 370 }],
+  buildings: [{ x: 230, y: 150, width: 30, height: 200 }],   // ヤミと主人公の間の縦長の壁
+  npcs: [{ x: 300, y: 250, emoji: '👤', name: 'ヤミ' }]
+};
+ms.maps.wall = wallMap; ms.currentMap = 'wall';
+ms.prepareScrollableMap(wallMap);
+ms.initializeNPCMotionControllers();
+const yami = wallMap.npcs[0];
+// prepareScrollableMap で座標が拡大されるので、拡大後の壁とヤミの位置から主人公を置く。
+const wall = wallMap.buildings[0];
+const wpx = wall.x - 20, wpy = yami.y - 2;   // 壁の向こう(左)。距離は TRIGGER(132) 以内
+if (!(Math.hypot(yami.x - wpx, yami.y - wpy) <= 132)) throw new Error('試験の配置が駆け寄りの範囲外');
+CLOCK += 16; ms.updateApproachNPCs(wpx, wpy, {}); ms.updateNPCs();
+let stuckWalk = 0, last = { x: yami.x, y: yami.y };
+for (let i = 0; i < 120; i++) {
+  frame(wpx, wpy);
+  const moved = Math.hypot(yami.x - last.x, yami.y - last.y);
+  last = { x: yami.x, y: yami.y };
+  if (i > 30 && moved < 0.5 && yami.isMoving) stuckWalk++;
+}
+chk('壁に詰まって進めない時は足踏みしない(isMoving=false・待機の絵)', stuckWalk === 0 && yami.isMoving === false && pick(yami).idle === true, `足踏み${stuckWalk}フレーム x=${yami.x.toFixed(1)} y=${yami.y.toFixed(1)}`);
+chk('詰まっても主人公の方を向いている', yami.facing === 'left', `facing=${yami.facing}`);
+chk('詰まっても駆け寄りは続いている(主人公が近づけば会話になる)', yami._approaching === true);
+const reach2 = frame(yami.x - 30, yami.y);
+chk('主人公が近づけば会話用に返る', reach2 === yami);
 
 console.log(`\n${pass ? '✅ 全PASS' : '❌ 不合格あり'}`);
 process.exit(pass ? 0 : 1);

@@ -279,6 +279,94 @@ for (const [id, m] of Object.entries(ms.maps)) {
   }
 }
 
+// ---- A10: 出口の正面から入れる ----
+//   各出口の「入る向き」の真後ろに歩ける筋（出口の幅の 5 か所 × 手前 10/40/80/120px）を取り、その筋から入る向きのキーだけを押し続けて
+//   出口が発動する（鍵付きは案内が出る）か。歩ける筋があるのに 1 本も着かない＝出口の判定が絵の入口より奥／手前に壁がある。
+//   歩ける筋が 1 本も無い（出口の手前が塞がれている）のも不合格。
+const a10 = [];
+for (const [id, m] of Object.entries(ms.maps)) {
+  const sc = ms.getMapScale(id);
+  for (const e of (m.exits || [])) {
+    // 接触の出口は体の余白ぶん、自動扉は到達帯（28*scale）ぶんが、出口の前縁から手前に効く範囲
+    const P = e.autoEnter ? Math.round(28 * sc) : 12 + Math.max(8, Math.round(8 * sc));
+    const k = enterKey(ms, id, e);
+    const [nx, ny] = VEC[k];
+    let starts = 0, okLanes = 0, cStarts = 0, cOk = 0; const bad = [];
+    const savedNpcs = m.npcs; m.npcs = [];   // 人の立ち位置は別の話（地形と出口のずれだけを見る）
+    for (let li = 0; li < 5; li++) {
+      const t = 0.15 + li * 0.175;
+      for (const d of (e.autoEnter ? [-40, -20, -4, 20, 50, 90] : [-4, 20, 50, 90])) {
+        // 出口が効き始める線（前縁＋P）から d 手前（d<0 は効く範囲の内側）
+        let sx, sy;
+        if (ny !== 0) { sx = e.x + e.width * t; sy = ny < 0 ? e.y + e.height + P + d : e.y - P - d; }
+        else { sy = e.y + e.height * t; sx = nx < 0 ? e.x + e.width + P + d : e.x - P - d; }
+        sx = Math.round(sx); sy = Math.round(sy);
+        ms.currentMap = id;
+        if (!ms.isSafeSpawnPoint(m, sx, sy, 24)) continue;
+        starts++;
+        W.reset(id, sx, sy, k);
+        let hit = false;
+        for (let f = 0; f < 240 && !hit; f++) { W.frame([k]); if (env.transitions.length || env.messages.length) hit = true; }
+        if (hit) okLanes++; else bad.push(`${sx},${sy}→${env.player.x},${env.player.y}`);
+        if (li === 2) { cStarts++; if (hit) cOk++; }
+      }
+    }
+    m.npcs = savedNpcs;
+    a10.push({ id, to: N(e.to), k, starts, okLanes, cStarts, cOk });
+    if (starts > 0 && cOk < cStarts) fail('A11', `${id} -> ${N(e.to)}: 出口の中心の真後ろから ${k} 押し続けで入れない筋がある（${cStarts} 本中 ${cOk} 本・出口 ${Math.round(e.x)},${Math.round(e.y)} ${Math.round(e.width)}x${Math.round(e.height)}。判定の中心が絵の入口の真ん中からずれている）`);
+    if (starts === 0) fail('A10', `${id} -> ${N(e.to)}: 出口の正面（${k} 向きの真後ろ）に歩ける筋が 1 本も無い（出口 ${Math.round(e.x)},${Math.round(e.y)} ${Math.round(e.width)}x${Math.round(e.height)}）`);
+    else if (starts < 2 || okLanes / starts < 0.5) fail('A10', `${id} -> ${N(e.to)}: 正面の歩ける筋が ${starts} 本・うち ${okLanes} 本しか ${k} 押し続けで出口に着かない（2 本未満または半分未満）（例 ${bad[0]}・出口 ${Math.round(e.x)},${Math.round(e.y)} ${Math.round(e.width)}x${Math.round(e.height)}）`);
+  }
+}
+if (process.env.A10_TABLE) a10.forEach((r) => console.log(`A10 ${r.id} -> ${r.to} ${r.k} starts=${r.starts} ok=${r.okLanes}`));
+
+// ---- A12: 出口へ入る通路の幅 ----
+//   出口が効く範囲（前縁 P 手前〜箱の奥）で、入る向きと直角に取った歩ける連続幅の最大が 40px（体 24px + 余裕）以上。
+//   狭すぎると十字キーで通路の細い筋へ位置を合わせられず、出口の目の前まで来ても入れない。
+for (const [id, m] of Object.entries(ms.maps)) {
+  const sc = ms.getMapScale(id), WW = m.worldWidth || 800, HH = m.worldHeight || 450;
+  for (const e of (m.exits || [])) {
+    const k = enterKey(ms, id, e), vert = k === 'up' || k === 'down';
+    const P = e.autoEnter ? Math.round(28 * sc) : 12 + Math.max(8, Math.round(8 * sc));
+    ms.currentMap = id;
+    let best = 0;
+    const d0 = (vert ? e.y : e.x) - P, d1 = (vert ? e.y + e.height : e.x + e.width) + P;
+    const l0 = (vert ? e.x : e.y) - P, l1 = (vert ? e.x + e.width : e.y + e.height) + P;
+    for (let d = d0; d <= d1; d += 3) {
+      let run = 0;
+      for (let l = l0; l <= l1; l += 2) {
+        const x = vert ? l : d, y = vert ? d : l;
+        if (x >= 0 && y >= 0 && x < WW && y < HH && ms.isMapPositionWalkable(m, x, y, 24)) { run += 2; if (run > best) best = run; } else run = 0;
+      }
+    }
+    if (best < 40) fail('A12', `${id} -> ${N(e.to)}: 出口へ入る通路の歩ける幅が ${best}px（40px 未満・出口 ${Math.round(e.x)},${Math.round(e.y)} ${Math.round(e.width)}x${Math.round(e.height)}）`);
+  }
+}
+
+// ---- A13: 出口の判定が背景の絵の入口と合っている ----
+//   絵を目で測った「入口（扉・階段・鳥居・転移門の足元）」の範囲（世界座標）を登録し、
+//   出口の判定箱が入口の外へ 40px 以上はみ出さず（柱や壁の上に広がらない）、箱の中心が入口の中に入っていること。
+//   接触の出口は、効き始める線（箱＋体の余白）も入口から 40px 以上手前に出ない（入口の遥か手前で転移しない）。
+//   登録は絵を確かめた出口だけ（登録の増減は絵の差し替え時に見直す）。
+const ART_OPENINGS = {
+  'tokyo_gov_approach>tokyo_gov_floor2': { x: 570, y: 115, w: 130, h: 75 },     // 柱の間の扉（ガラス扉 605-662 / 柱 550-568・700-715）
+  'shrine_south_gate>shrine_inner': { x: 552, y: 95, w: 100, h: 70 },           // 鳥居の脚の間〜石段（脚 537-552・652-667、石段 y122-158）
+  'shopping_street_south>residential_street': { x: 1128, y: 350, w: 112, h: 38 } // 植え込みの低い壁と屋根の間の道
+};
+for (const [key, o] of Object.entries(ART_OPENINGS)) {
+  const [from, to] = key.split('>');
+  const m = ms.maps[from];
+  const e = m && (m.exits || []).find((x) => N(x.to) === to);
+  if (!e) { fail('A13', `${key}: 登録した出口が無い`); continue; }
+  const sc = ms.getMapScale(from), TOL = 40;
+  const P = e.autoEnter ? 0 : 12 + Math.max(8, Math.round(8 * sc));
+  const cx = e.x + e.width / 2, cy = e.y + e.height / 2;
+  const out = (a, b, lo, hi) => Math.max(lo - a, 0, b - hi);
+  const dx = out(e.x - P, e.x + e.width + P, o.x - TOL, o.x + o.w + TOL), dy = out(e.y - P, e.y + e.height + P, o.y - TOL, o.y + o.h + TOL);
+  const centerIn = cx >= o.x && cx <= o.x + o.w && cy >= o.y && cy <= o.y + o.h;
+  if (dx > 0 || dy > 0 || !centerIn) fail('A13', `${key}: 出口 ${Math.round(e.x)},${Math.round(e.y)} ${Math.round(e.width)}x${Math.round(e.height)}（効く範囲は体の余白 ${P}px 込み）が絵の入口 ${o.x},${o.y} ${o.w}x${o.h} から外へ ${Math.round(Math.max(dx, dy))}px はみ出す、または中心 ${Math.round(cx)},${Math.round(cy)} が入口の外`);
+}
+
 // ---- C1/C2: 闇市（black_market_entrance） ----
 {
   const id = 'black_market_entrance';
@@ -308,10 +396,10 @@ table.forEach((r) => console.log(`${r.from} -> ${r.to} | ${r.inKey} | ${r.spawn}
 console.log(`\n遷移 ${transitions} 件・自動扉 ${autoDoors} 件を検査`);
 if (fails.length) {
   const byCode = {};
-  fails.forEach((f) => { const c = f.slice(0, 2); byCode[c] = (byCode[c] || 0) + 1; });
+  fails.forEach((f) => { const c = f.split(' ')[0]; byCode[c] = (byCode[c] || 0) + 1; });
   console.log('[不合格] ' + Object.entries(byCode).map(([c, n]) => `${c}:${n}`).join(' '));
   fails.forEach((f) => console.log('  ' + f));
   console.log('❌ 不合格あり');
   process.exit(1);
 }
-console.log('✅ 全PASS: 到着→すぐ戻れる／押し続けで戻されない／離せば戻れる／向き／自動扉の斜め進入／案内1回／セーブ判定／矢印／開始位置／闇市の切れ込みと案内位置');
+console.log('✅ 全PASS: 出口の正面から入れる／入る通路の幅／出口の判定と絵の入口の一致／到着→すぐ戻れる／押し続けで戻されない／離せば戻れる／向き／自動扉の斜め進入／案内1回／セーブ判定／矢印／開始位置／闇市の切れ込みと案内位置');

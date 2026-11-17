@@ -28,6 +28,10 @@ console.log('\n=== 戦闘v2エンジン・オラクル ===\n');
 console.log('— (1) 魔法ダメージ式（属性/魔法防御）—');
 const caster = { name: 'ヤミ', attack: 40, magic: 200 };
 const lance = { name: 'ダークランス', type: 'offensive', element: 'dark', basePower: 2.0, scalingStat: 'magic' };
+// 倍率の比較なので、ダメージの揺れ(variance = base×乱数×0.12)は固定して比べる。
+// 揺れたままだと「無弱点が上振れ・弱点が下振れ」の時に約1.5倍の判定が乱数で落ちる。
+const realRandom = Math.random;
+Math.random = () => 0.5;
 // 弱点不一致の敵(magDef 24)
 const nonWeak = { name: '敵A', currentHp: 600, maxHp: 600, weakness: null, magicDefense: 24, elementalResistance: null };
 const r1 = ms.computeSkillDamage(caster, nonWeak, lance);
@@ -42,6 +46,7 @@ chk('弱点一致(dark)で約1.5倍', r2.damage > Math.floor(r1.damage * 1.4) &&
 const resistEnemy = { name: '敵C', currentHp: 600, maxHp: 600, weakness: null, magicDefense: 24, elementalResistance: { dark: 0.5 } };
 const r3 = ms.computeSkillDamage(caster, resistEnemy, lance);
 chk('闇耐性0.5でダメージ半減・resisted=true', r3.damage < r1.damage && r3.resisted === true, `無${r1.damage}→耐性${r3.damage}`);
+Math.random = realRandom;
 
 // 物理スキル: attack×bp - physDef/2、属性無関係
 console.log('\n— 物理スキル式 —');

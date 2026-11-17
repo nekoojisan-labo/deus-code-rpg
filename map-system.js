@@ -4768,12 +4768,14 @@ class MapSystem {
                 // ★壁/建物/可動域編集にめり込まないよう、移動の確定は isMapPositionWalkable に通す
                 //   （プレイヤー移動と同じ唯一の関所。壁に当たったら軸スライドで沿って進む）。
                 //   到達(REACH)/会話トリガーは壁で詰まらせない為このまま据え置き(GIVEUP=240で旅程は上限あり)。
-                let movedNpc = false;
-                if (this.isMapPositionWalkable(map, nx, ny, 22)) { npc.x = nx; npc.y = ny; movedNpc = true; }
-                else if (this.isMapPositionWalkable(map, nx, npc.y, 22)) { npc.x = nx; movedNpc = true; }
-                else if (this.isMapPositionWalkable(map, npc.x, ny, 22)) { npc.y = ny; movedNpc = true; }
-                npc.isMoving = movedNpc;
-                this.advanceAnimTime(npc, `approach:${npc.name}`);
+                const fromX = npc.x, fromY = npc.y;
+                if (this.isMapPositionWalkable(map, nx, ny, 22)) { npc.x = nx; npc.y = ny; }
+                else if (this.isMapPositionWalkable(map, nx, npc.y, 22)) { npc.x = nx; }
+                else if (this.isMapPositionWalkable(map, npc.x, ny, 22)) { npc.y = ny; }
+                // 壁に詰まって軸スライドでわずかにしか進めない時(主人公がほぼ真横の壁の向こう等)は、
+                // その場で足踏みせず立って待つ。主人公が近づけば REACH で会話になる。
+                npc.isMoving = Math.hypot(npc.x - fromX, npc.y - fromY) >= SPEED * 0.25;
+                if (npc.isMoving) this.advanceAnimTime(npc, `approach:${npc.name}`);
                 npc.facing = faceDir;
             } else if (dist <= TRIGGER && dist > REACH) {
                 npc._approaching = true;

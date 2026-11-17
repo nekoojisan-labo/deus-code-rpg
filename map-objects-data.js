@@ -1735,7 +1735,7 @@ window.MAP_OBJECTS = {
    {
     "kind": "solid_wall",
     "x": 748,
-    "y": 232,
+    "y": 226,
     "footprint": {
      "w": 104,
      "h": 18
@@ -1747,7 +1747,7 @@ window.MAP_OBJECTS = {
     "y": 346,
     "footprint": {
      "w": 28,
-     "h": 92
+     "h": 84
     }
    },
    {
@@ -1756,7 +1756,7 @@ window.MAP_OBJECTS = {
     "y": 268,
     "footprint": {
      "w": 38,
-     "h": 15
+     "h": 7
     }
    },
    {
@@ -2918,10 +2918,10 @@ window.MAP_OBJECTS = {
     "spawnFace": "right"
    },
    {
-    "x": 356,
-    "y": 108,
-    "width": 88,
-    "height": 48,
+    "x": 358,
+    "y": 65,
+    "width": 60,
+    "height": 26,
     "to": "shrine_inner",
     "direction": "north",
     "spawnX": 401,
@@ -3114,10 +3114,10 @@ window.MAP_OBJECTS = {
    {
     "kind": "solid_wall",
     "x": 630,
-    "y": 246,
+    "y": 226,
     "footprint": {
      "w": 64,
-     "h": 36
+     "h": 16
     }
    },
    {
@@ -3132,10 +3132,10 @@ window.MAP_OBJECTS = {
    {
     "kind": "solid_wall",
     "x": 725,
-    "y": 282,
+    "y": 272,
     "footprint": {
      "w": 60,
-     "h": 34
+     "h": 14
     }
    },
    {
@@ -3461,10 +3461,10 @@ window.MAP_OBJECTS = {
     "spawnFace": "left"
    },
    {
-    "x": 328,
-    "y": 43,
-    "width": 196,
-    "height": 80,
+    "x": 381,
+    "y": 77,
+    "width": 58,
+    "height": 30,
     "to": "tokyo_gov_floor2",
     "direction": "north",
     "spawnX": 401,
