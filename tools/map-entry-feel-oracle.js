@@ -351,8 +351,20 @@ for (const [id, m] of Object.entries(ms.maps)) {
 const ART_OPENINGS = {
   'tokyo_gov_approach>tokyo_gov_floor2': { x: 570, y: 115, w: 130, h: 75 },     // 柱の間の扉（ガラス扉 605-662 / 柱 550-568・700-715）
   'shrine_south_gate>shrine_inner': { x: 552, y: 95, w: 100, h: 70 },           // 鳥居の脚の間〜石段（脚 537-552・652-667、石段 y122-158）
-  'shopping_street_south>residential_street': { x: 1128, y: 350, w: 112, h: 38 } // 植え込みの低い壁と屋根の間の道
+  'shopping_street_south>residential_street': { x: 1128, y: 350, w: 112, h: 38 }, // 植え込みの低い壁と屋根の間の道
+  'shopping_street_south>shop_guild': { x: 852, y: 185, w: 56, h: 72 }           // ギルドの両開きの扉〜石段（扉 856-904）
 };
+// ---- A14: 置物の絵が、登録した入口（扉）を隠さない ----
+//   掲示板などの置物（objects）の描く範囲（足元中心・下端基準）が入口と重ならないこと。
+for (const [key, o] of Object.entries(ART_OPENINGS)) {
+  const from = key.split('>')[0];
+  for (const ob of (ms.maps[from].objects || [])) {
+    if (ob.visible === false || !ob.w || !ob.h) continue;
+    const x0 = ob.x - ob.w / 2, x1 = ob.x + ob.w / 2, y0 = ob.y - ob.h, y1 = ob.y;
+    const ox = Math.min(x1, o.x + o.w) - Math.max(x0, o.x), oy = Math.min(y1, o.y + o.h) - Math.max(y0, o.y);
+    if (ox > 4 && oy > 4) fail('A14', `${key}: 置物 ${ob.kind || ob.sprite} (${Math.round(x0)},${Math.round(y0)} ${Math.round(ob.w)}x${Math.round(ob.h)}) が入口 ${o.x},${o.y} ${o.w}x${o.h} を隠す`);
+  }
+}
 for (const [key, o] of Object.entries(ART_OPENINGS)) {
   const [from, to] = key.split('>');
   const m = ms.maps[from];

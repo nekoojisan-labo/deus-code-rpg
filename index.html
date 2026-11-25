@@ -3575,7 +3575,7 @@
             <div>SPACE: アクション</div>
             <div>Z: 神威発動</div>
             <div>X: メニュー</div>
-            <div>S: セーブ（セーブポイント）</div>
+            <div>SPACE: セーブ（セーブポイントの前で）</div>
         </div>
 
         <!-- マップ遷移演出: 黒幕カーテン＋場所名バナー（window.mapTransitionFX が操作） -->
@@ -3658,11 +3658,11 @@
     <script src="se-system.js?v=1"></script>
     <script src="ui-panel.js?v=7"></script>
     <script src="save-system.js?v=2"></script>
-    <script src="battle-system.js?v=92"></script>
-    <script src="map-walkability-data.js?v=26"></script>
+    <script src="battle-system.js?v=93"></script>
+    <script src="map-walkability-data.js?v=27"></script>
     <script src="object-catalog.js?v=2"></script>
-    <script src="map-objects-data.js?v=40"></script>
-    <script src="map-system.js?v=115"></script>
+    <script src="map-objects-data.js?v=41"></script>
+    <script src="map-system.js?v=116"></script>
     <script src="map-system-grid.js"></script>
     <script src="player-grid-movement.js"></script>
     <script src="bgm-system.js?v=36"></script>
@@ -4743,7 +4743,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 // 浮く1枚絵 = 敵データで type が drone の敵の画像(名前の決め打ちではなく既存の分類から決める)
                 if (battleSystem && battleSystem.enemyDatabase && mapSystem.setHoverSpritePaths) {
                     mapSystem.setHoverSpritePaths(Object.values(battleSystem.enemyDatabase)
-                        .filter(e => e && e.type === 'drone')
+                        .filter(e => e && (e.type === 'drone' || e.floats))
                         .map(e => battleSystem.getEnemyImagePath(e)));
                 }
                 console.log('[DEBUG] ✓ MapSystem initialized (legacy)');
@@ -5029,6 +5029,13 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                     player.x = newX;
                     player.y = newY;
                     moved = true;
+                } else if (newX !== player.x && newY !== player.y && !mapSystem.checkCollision(newX, player.y, 24, oldX, oldY)) {
+                    // 斜めに壁へ当たった時は、動ける向きだけ進む（壁ずり）
+                    player.x = newX;
+                    moved = true;
+                } else if (newX !== player.x && newY !== player.y && !mapSystem.checkCollision(player.x, newY, 24, oldX, oldY)) {
+                    player.y = newY;
+                    moved = true;
                 } else {
                     // 衝突した場合は元の位置に戻す
                     console.log('Collision detected at', newX, newY);
@@ -5098,11 +5105,7 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
                 checkInteractions();
             }
 
-            // セーブポイント（Sキー）→ スロット選択UI（閉じるとフィールドへ戻る）
-            if ((keys['s'] || keys['S']) && checkSavePoint()) {
-                keys['s'] = keys['S'] = false;
-                openSaveScreen(false);
-            }
+            // セーブポイントは「話す」キーで開く（checkInteractions）。S は下への移動と同じキーなので使わない
 
             // ※メニュー開閉は keydown ハンドラ側で M / Escape を直接処理
             // ※X（戻る）はフィールドでは動作なし（メニュー内のみキャンセル）
@@ -5551,9 +5554,15 @@ function drawWalkChar(ctx, cx, footY, facing, isMoving, t, pal, scale){
             const npc = mapSystem.checkNPCInteraction(player.x, player.y);
             const treasure = mapSystem.checkTreasureInteraction(player.x, player.y);
             const entrance = mapSystem.checkMapEntranceInteraction(player.x, player.y);
+            // セーブポイントと人が両方近い時（宿屋のベッドと主人など）は、近い方を選ぶ
+            const savePt = checkSavePoint() ? mapSystem.maps[mapSystem.currentMap].savePoint : null;
+            const saveFirst = !!savePt && (!npc || Math.hypot(player.x - savePt.x, player.y - savePt.y) < Math.hypot(player.x - npc.x, player.y - npc.y));
 
             if (entrance) {
                 runMapTransition(entrance);
+            } else if (saveFirst) {
+                // セーブポイント → スロット選択UI（閉じるとフィールドへ戻る）
+                openSaveScreen(false);
             } else if (npc) {
                 // --- 進行に関わるボス（撃破でフラグ＆イベント） ---
                 if (npc.name === '暴走ドローン') {

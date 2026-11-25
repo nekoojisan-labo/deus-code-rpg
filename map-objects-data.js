@@ -1514,10 +1514,10 @@ window.MAP_OBJECTS = {
     "spawnFace": "up"
    },
    {
-    "x": 592,
-    "y": 150,
+    "x": 552,
+    "y": 140,
     "width": 32,
-    "height": 48,
+    "height": 40,
     "to": "shop_guild",
     "direction": "north",
     "spawnX": 400,
@@ -1937,8 +1937,8 @@ window.MAP_OBJECTS = {
    },
    {
     "kind": "guild_board",
-    "x": 545,
-    "y": 190,
+    "x": 500,
+    "y": 200,
     "w": 86,
     "h": 70,
     "footprint": {

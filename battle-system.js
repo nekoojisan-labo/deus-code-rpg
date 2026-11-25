@@ -415,6 +415,8 @@ class BattleSystem {
             corrupted_drone_boss: {
                 name: '暴走監視ドローン・Ω',
                 emoji: '🛸',
+                floats: true,   // 分類はボスだがドローンの絵なので、フィールドでは浮く動き
+
                 hp: 150,
                 maxHp: 150,
                 mp: 50,

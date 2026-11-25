@@ -2543,7 +2543,8 @@ class MapSystem {
                 '冒険者B': { x: 500, y: 355 }
             },
             shop_bank: {
-                '銀行員': { x: 400, y: 335 }
+                // 入口から入ってすぐの正面（通り道）に立たないよう、中央カウンターの前の右寄りへ
+                '銀行員': { x: 505, y: 322 }
             },
             shop_black_market: {
                 '闇商人': { x: 400, y: 292 }
@@ -2578,7 +2579,8 @@ class MapSystem {
             },
             shop_bank: {
                 walkableRects: [ { x: 16, y: 58, width: 768, height: 392 } ],
-                collisionRects: [ { x: 0, y: 0, width: 800, height: 56 }, { x: 0, y: 56, width: 88, height: 338 }, { x: 776, y: 56, width: 24, height: 394 }, { x: 18, y: 50, width: 100, height: 68 }, { x: 172, y: 62, width: 246, height: 90 }, { x: 614, y: 12, width: 138, height: 98 }, { x: 694, y: 170, width: 96, height: 192 }, { x: 174, y: 158, width: 238, height: 70 }, { x: 266, y: 354, width: 44, height: 80 }, { x: 448, y: 354, width: 46, height: 42 }, { x: 418, y: 62, width: 120, height: 90 }, { x: 412, y: 158, width: 118, height: 70 } ]
+                // 絵に合わせて直した（以前は中央カウンターに判定が無く素通りでき、何も無い床に壁があった）
+                collisionRects: [ { x: 0, y: 0, width: 800, height: 56 }, { x: 0, y: 56, width: 88, height: 338 }, { x: 776, y: 56, width: 24, height: 394 }, { x: 18, y: 40, width: 117, height: 150 }, { x: 195, y: 66, width: 32, height: 54 }, { x: 230, y: 56, width: 330, height: 118 }, { x: 560, y: 24, width: 150, height: 120 }, { x: 694, y: 170, width: 96, height: 192 }, { x: 240, y: 205, width: 305, height: 95 }, { x: 290, y: 352, width: 46, height: 82 }, { x: 440, y: 352, width: 46, height: 82 }, { x: 100, y: 335, width: 36, height: 45 }, { x: 640, y: 335, width: 36, height: 45 } ]
             },
             shop_black_market: {
                 walkableRects: [ { x: 16, y: 58, width: 768, height: 392 } ],
